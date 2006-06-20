@@ -52,3 +52,25 @@ class cmd_loomify(bzrlib.commands.Command):
         # requires a new lock as its a new instance, XXX: teach bzrdir about
         # format changes ?
         loom.new_thread(loom.nick)
+
+        
+class cmd_create_thread(bzrlib.commands.Command):
+    """Add a thread to this loom.
+
+    This creates a new thread in this loom and moves the branch onto that
+    thread.
+
+    The thread-name must be a valid branch 'nickname', and must not be the name
+    of an existing thread in your loom.
+    """
+
+    takes_args = ['thread']
+
+    def run(self, thread):
+        (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        loom.lock_write()
+        try:
+            loom.new_thread(thread, loom.nick)
+            loom.nick = thread
+        finally:
+            loom.unlock()

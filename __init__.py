@@ -25,7 +25,7 @@ import branch
 import commands
 
 
-for command in ['loomify']:
+for command in ['loomify', 'create_thread']:
     bzrlib.commands.register_command(
         getattr(commands, 'cmd_' + command))
 

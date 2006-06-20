@@ -19,6 +19,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 Loom is a bzr plugin which adds new commands to manage a loom of patches.
 
 Currently no new commands are ready for use.
+The commands are:
+ * loomify: This converts a branch into a loom enabled branch. As a result
+   of this, the branch format is converted and you need to have the loom
+   plugin installed to use it after that. The current branch nickname becomes
+   the base thread in the loom.
 
+ * create-thread: This adds a new thread to the loom with the supplied name
+   and positions the branch on the new thrad.
 When complete this is anticipated to be a tool similar to quilt and 
 mercurial queues.

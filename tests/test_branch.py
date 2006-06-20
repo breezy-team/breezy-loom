@@ -75,14 +75,39 @@ class TestLoom(TestCaseWithTransport):
             branch.new_thread, 'foo')
         self.assertEqual([('foo', bzrlib.revision.NULL_REVISION)], branch.get_threads())
 
-    def test_new_thread_with_commits(self):
-        """Test converting a branch to a loom once it has commits."""
+    def get_tree_with_one_commit(self):
+        """Get a tree with a commit in loom format."""
         tree = self.make_branch_and_tree('.')
         rev_id = tree.commit('first post')
         format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
         format.take_over(tree.branch)
-        branch = bzrlib.branch.Branch.open('.')
-        branch.new_thread('foo')
+        return tree.bzrdir.open_workingtree()
+
+    def test_new_thread_with_commits(self):
+        """Test converting a branch to a loom once it has commits."""
+        tree = self.get_tree_with_one_commit()
+        tree.branch.new_thread('foo')
         self.assertEqual(
-            [('foo', rev_id)],
-            branch.get_threads())
+            [('foo', tree.last_revision())],
+            tree.branch.get_threads())
+
+    def test_new_thread_after(self):
+        """Test adding a thread at a nominated position."""
+        tree = self.get_tree_with_one_commit()
+        rev_id = tree.last_revision()
+        tree.branch.new_thread('baseline')
+        tree.branch.new_thread('middlepoint')
+        tree.branch.new_thread('endpoint')
+        tree.branch.new_thread('afterbase', 'baseline')
+        tree.branch.new_thread('aftermiddle', 'middlepoint')
+        tree.branch.new_thread('atend', 'endpoint')
+        self.assertEqual(
+            [('baseline', rev_id),
+             ('afterbase', rev_id),
+             ('middlepoint', rev_id),
+             ('aftermiddle', rev_id),
+             ('endpoint', rev_id),
+             ('atend', rev_id),
+             ],
+            tree.branch.get_threads())
+

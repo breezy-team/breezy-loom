@@ -118,18 +118,26 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         lines = parent_content.read().split('\n')
         return [line for line in lines if line]
 
-    def new_thread(self, thread_name):
+    def new_thread(self, thread_name, after_thread=None):
         """Add a new thread to this branch called 'thread_name'."""
         builder = self.get_commit_builder(self.loom_parents())
         loom_ie = bzrlib.inventory.make_entry(
             'file', 'loom', bzrlib.inventory.ROOT_ID, 'loom_meta_tree')
-        if thread_name in dict(self.get_threads()):
+        threads = self.get_threads()
+        if thread_name in dict(threads):
             raise DuplicateThreadName(self, thread_name)
+        assert after_thread is None or after_thread in dict(threads)
+        if after_thread is None:
+            insertion_point = len(threads) + 1
+        else:
+            thread_names = [name for name, rev in threads]
+            insertion_point = thread_names.index(after_thread) + 1
         content = self._loom_content()
         revision_for_thread = self.last_revision()
         if revision_for_thread is None:
             revision_for_thread = bzrlib.revision.NULL_REVISION
-        content.append("%s %s\n" % (revision_for_thread, thread_name))
+        content.insert(
+            insertion_point, "%s %s\n" % (revision_for_thread, thread_name))
         loom_tree = LoomMetaTree(loom_ie, content)
         builder.record_entry_contents(
             loom_ie, self.loom_parents(), 'loom', loom_tree)
