@@ -34,5 +34,9 @@ The commands are:
  * down-thread: Move the branch down a thread. After doing this commits and 
    merges in this branch will affect the newly selected thread.
 
+ * up-thread: Move the branch up a thread. This will merge in all the changes
+   from the current thread that are not yet integrated into the new thread into
+   it and leave you ready to commit them.
+
 When complete this is anticipated to be a tool similar to quilt and 
 mercurial queues.

@@ -31,6 +31,7 @@ for command in [
     'loomify',
     'record',
     'show_loom',
+    'up_thread',
     ]:
     bzrlib.commands.register_command(
         getattr(commands, 'cmd_' + command))

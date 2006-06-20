@@ -3,9 +3,6 @@ commands to make:
    ensures nick in loom, record tree into loom branch for nick, commit into the
    branch of the nick in the loom and pull that onto the tree, with
    --overwrite.
- - loom-pop - move up the loom - do a merge between the branches and update
-   tree and branch last-revision to the new loom entrie's revision & set branch
-   nick.
  - push and branch - propogate loom data and reference revisions, and set
    branch nick to tip of the loom.
  - eject - remove a entry from the loom, and merge it out of the next one up.

@@ -168,3 +168,82 @@ class TestDown(TestsWithLooms):
         # the branch needs to be updated.
         self.assertEqual(rev, tree.branch.last_revision())
         self.assertFalse(tree.has_filename('afile'))
+
+
+class TestUp(TestsWithLooms):
+
+    def test_up_thread_from_top(self):
+        tree = self.get_vendor_loom()
+        out, err = self.run_bzr('up-thread', retcode=3)
+        self.assertEqual('', out)
+        self.assertEqual(
+            'bzr: ERROR: Cannot move up from the highest thread.\n', err)
+        
+    def test_up_thread_same_revision(self):
+        """moving up when the revision is unchanged should work."""
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'vendor'
+        rev = tree.last_revision()
+        out, err = self.run_bzr('up-thread')
+        self.assertEqual('', out)
+        self.assertEqual('', err)
+        self.assertEqual('patch', tree.branch.nick)
+        self.assertEqual(rev, tree.last_revision())
+        
+    def test_up_thread_preserves_changes(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'vendor'
+        patch_rev = tree.last_revision()
+        # add a change in vendor - a new release.
+        self.build_tree(['afile'])
+        tree.add('afile')
+        vendor_release = tree.commit('new vendor release adds a file.')
+        tree.branch.record_thread('vendor', vendor_release)
+        out, err = self.run_bzr('up-thread')
+        self.assertEqual('', out)
+        self.assertEqual('All changes applied successfully.\nMoved to thread patch.\n', err)
+        self.assertEqual('patch', tree.branch.nick)
+        # the tree needs to be updated.
+        self.assertEqual(patch_rev, tree.last_revision())
+        # the branch needs to be updated.
+        self.assertEqual(patch_rev, tree.branch.last_revision())
+        self.assertTrue(tree.has_filename('afile'))
+        # diff should return 1 now as we have uncommitted changes.
+        self.run_bzr('diff', retcode=1)
+        self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
+
+    def test_up_thread_gets_conflicts(self):
+        """Do a change in both the baseline and the next patch up."""
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'patch'
+        # add a change in patch - a new release.
+        self.build_tree(['afile'])
+        tree.add('afile')
+        patch_rev = tree.commit('add afile as a patch')
+        tree.branch.record_thread('patch', patch_rev)
+        # add a change in vendor - a new release.
+        self.run_bzr('down-thread')
+        self.build_tree(['afile'])
+        tree.add('afile')
+        vendor_release = tree.commit('new vendor release adds a file.')
+        tree.branch.record_thread('vendor', vendor_release)
+        # we want conflicts.
+        out, err = self.run_bzr('up-thread', retcode=1)
+        self.assertEqual('', out)
+        self.assertEqual(
+            'bzr: WARNING: Conflict adding file afile.  Moved existing file to afile.moved.\n'
+            '1 conflicts encountered.\n'
+            'Moved to thread patch.\n', err)
+        self.assertEqual('patch', tree.branch.nick)
+        # the tree needs to be updated.
+        self.assertEqual(patch_rev, tree.last_revision())
+        # the branch needs to be updated.
+        self.assertEqual(patch_rev, tree.branch.last_revision())
+        self.assertTrue(tree.has_filename('afile'))
+        # diff should return 1 now as we have uncommitted changes.
+        self.run_bzr('diff', retcode=1)
+        self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
+
