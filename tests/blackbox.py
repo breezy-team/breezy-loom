@@ -169,6 +169,31 @@ class TestDown(TestsWithLooms):
         self.assertEqual(rev, tree.branch.last_revision())
         self.assertFalse(tree.has_filename('afile'))
 
+    def test_down_thread_switches_history_ok(self):
+        """Do a down thread when the lower patch is not in the r-h of the old."""
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'vendor'
+        # do a null change in vendor - a new release.
+        vendor_release = tree.commit('new vendor release.', allow_pointless=True)
+        tree.branch.record_thread('vendor', vendor_release)
+        # pop up, then down
+        self.run_bzr('up-thread')
+        self.run_bzr('revert')
+        out, err = self.run_bzr('down-thread')
+        self.assertEqual('', out)
+        self.assertEqual(
+            'All changes applied successfully.\n',
+            err)
+        self.assertEqual('vendor', tree.branch.nick)
+        # the tree needs to be updated.
+        self.assertEqual(vendor_release, tree.last_revision())
+        # the branch needs to be updated.
+        self.assertEqual(vendor_release, tree.branch.last_revision())
+        # diff should return 0 - no uncomitted changes.
+        self.run_bzr('diff')
+        self.assertEqual([vendor_release], tree.get_parent_ids())
+
 
 class TestUp(TestsWithLooms):
 
@@ -246,4 +271,3 @@ class TestUp(TestsWithLooms):
         # diff should return 1 now as we have uncommitted changes.
         self.run_bzr('diff', retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
-

@@ -156,8 +156,8 @@ class cmd_down_thread(bzrlib.commands.Command):
                 to_tree,
                 basis_tree,
                 this_tree=tree)
-            tree.set_last_revision(new_thread_rev)
             tree.branch.generate_revision_history(new_thread_rev)
+            tree.set_last_revision(new_thread_rev)
             return result
         finally:
             tree.unlock()
