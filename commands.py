@@ -74,3 +74,27 @@ class cmd_create_thread(bzrlib.commands.Command):
             loom.nick = thread
         finally:
             loom.unlock()
+
+            
+class cmd_show_loom(bzrlib.commands.Command):
+    """Show the threads in this loom.
+
+    Output the threads in this loom with the newest thread at the top and
+    the base thread at the bottom. A => marker indicates the thread that
+    'commit' will commit to.
+    """
+
+    def run(self):
+        (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        loom.lock_read()
+        try:
+            threads = loom.get_threads()
+            nick = loom.nick
+            for thread, revid in reversed(threads):
+                if thread == nick:
+                    symbol = '=>'
+                else:
+                    symbol = '  '
+                print "%s%s" % (symbol, thread)
+        finally:
+            loom.unlock()

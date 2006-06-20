@@ -1,6 +1,5 @@
 commands to make:
  l-commit - ensures nick in loom, record tree into loom branch for nick, commit into the branhc of the nick in the loom and pull that onto the tree, with --overwrite.
- show-loom - shows the loom in order, with # of commits on each, and the current position in the loom.
  loom-push, loom-pop - movve up and down the loom - do a merge between the branches and update last-revision to the new loom entrie's revision & set branch nick.
  push and branch - propogate loom data nd referencec revisions, and set branch nick to tip of the loom.
  eject - remove a entry from the loom, and merge it out of the next one up.
@@ -16,3 +15,6 @@ Create a 'bzr help loom' command to give a good overview.
 rename threads to 'warps' - the threads held under tension by the loom.
 Modelled on a ground loom with the supports to the left and right - old and new
 - of the weaver.
+
+
+override the nick property on the loom to do a push/pop etc as needed.

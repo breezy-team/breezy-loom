@@ -83,3 +83,38 @@ class TestCreate(TestCaseWithTransport):
             tree.branch.get_threads())
         self.assertEqual('feature-foo', tree.branch.nick)
 
+
+class TestShow(TestCaseWithTransport):
+    
+    def test_show_loom(self):
+        """Show the threads in the loom."""
+        tree = self.make_branch_and_tree('.')
+        tree.branch.nick = 'vendor'
+        tree.commit('first release')
+        self.run_bzr('loomify')
+        tree = tree.bzrdir.open_workingtree()
+        self.assertShowLoom(['vendor'], 'vendor')
+        tree.branch.new_thread('debian')
+        self.assertShowLoom(['vendor', 'debian'], 'vendor')
+        tree.branch.nick = 'debian'
+        self.assertShowLoom(['vendor', 'debian'], 'debian')
+        tree.branch.new_thread('patch A', 'vendor')
+        self.assertShowLoom(['vendor', 'patch A', 'debian'], 'debian')
+        tree.branch.nick = 'patch A'
+        self.assertShowLoom(['vendor', 'patch A', 'debian'], 'patch A')
+
+    def assertShowLoom(self, threads, selected_thread):
+        """Check expected show-loom output."""
+        out, err = self.run_bzr('show-loom')
+        # threads are in oldest-last order.
+        expected_out = ''
+        for thread in reversed(threads):
+            if thread == selected_thread:
+                expected_out += '=>'
+            else:
+                expected_out += '  '
+            expected_out += thread
+            expected_out += '\n'
+        self.assertEqual(expected_out, out)
+        self.assertEqual('', err)
+    

@@ -27,5 +27,9 @@ The commands are:
 
  * create-thread: This adds a new thread to the loom with the supplied name
    and positions the branch on the new thrad.
+
+ * show-loom: Shows the threads in the loom. It currently does not show the
+   # of commits in each thread, but it is planned to do that in the future.
+
 When complete this is anticipated to be a tool similar to quilt and 
 mercurial queues.
