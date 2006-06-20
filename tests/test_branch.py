@@ -98,16 +98,33 @@ class TestLoom(TestCaseWithTransport):
         tree.branch.new_thread('baseline')
         tree.branch.new_thread('middlepoint')
         tree.branch.new_thread('endpoint')
+        tree.branch.nick = 'middlepoint'
+        rev_id2 = tree.commit('middle', allow_pointless=True)
+        tree.branch.record_thread('middlepoint', rev_id2)
+        tree.branch.nick = 'endpoint'
+        rev_id3 = tree.commit('end', allow_pointless=True)
+        tree.branch.record_thread('endpoint', rev_id3)
         tree.branch.new_thread('afterbase', 'baseline')
         tree.branch.new_thread('aftermiddle', 'middlepoint')
         tree.branch.new_thread('atend', 'endpoint')
         self.assertEqual(
             [('baseline', rev_id),
              ('afterbase', rev_id),
-             ('middlepoint', rev_id),
-             ('aftermiddle', rev_id),
-             ('endpoint', rev_id),
-             ('atend', rev_id),
+             ('middlepoint', rev_id2),
+             ('aftermiddle', rev_id2),
+             ('endpoint', rev_id3),
+             ('atend', rev_id3),
              ],
             tree.branch.get_threads())
 
+    def test_record_thread(self):
+        tree = self.get_tree_with_one_commit()
+        tree.branch.new_thread('baseline')
+        tree.branch.new_thread('tail')
+        tree.branch.nick = 'baseline'
+        first_rev = tree.last_revision()
+        tree.commit('change something', allow_pointless=True)
+        tree.branch.record_thread('baseline', tree.last_revision())
+        self.assertEqual(
+            [('baseline', tree.last_revision()), ('tail', first_rev)], 
+            tree.branch.get_threads())

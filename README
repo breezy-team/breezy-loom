@@ -31,5 +31,8 @@ The commands are:
  * show-loom: Shows the threads in the loom. It currently does not show the
    # of commits in each thread, but it is planned to do that in the future.
 
+ * down-thread: Move the branch down a thread. After doing this commits and 
+   merges in this branch will affect the newly selected thread.
+
 When complete this is anticipated to be a tool similar to quilt and 
 mercurial queues.

@@ -32,13 +32,21 @@ import bzrlib.errors
 import bzrlib.osutils
 
 
-class DuplicateThreadName(bzrlib.errors.BzrNewError):
-    """The thread %(thread)s already exists in branch %(branch)s."""
+class LoomThreadError(bzrlib.errors.BzrNewError):
+    """Base class for Loom-Thread errors."""
 
     def __init__(self, branch, thread):
         bzrlib.errors.BzrNewError.__init__(self)
         self.branch = branch
         self.thread = thread
+
+
+class DuplicateThreadName(LoomThreadError):
+    """The thread %(thread)s already exists in branch %(branch)s."""
+
+
+class UnchangedThreadRevision(LoomThreadError):
+    """No new commits to record on thread %(thread)s."""
 
 
 class LoomMetaTree(bzrlib.tree.Tree):
@@ -120,31 +128,62 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
 
     def new_thread(self, thread_name, after_thread=None):
         """Add a new thread to this branch called 'thread_name'."""
-        builder = self.get_commit_builder(self.loom_parents())
-        loom_ie = bzrlib.inventory.make_entry(
-            'file', 'loom', bzrlib.inventory.ROOT_ID, 'loom_meta_tree')
         threads = self.get_threads()
         if thread_name in dict(threads):
             raise DuplicateThreadName(self, thread_name)
         assert after_thread is None or after_thread in dict(threads)
         if after_thread is None:
-            insertion_point = len(threads) + 1
+            insertion_point = len(threads)
         else:
             thread_names = [name for name, rev in threads]
             insertion_point = thread_names.index(after_thread) + 1
+        if insertion_point == 0:
+            revision_for_thread = self.last_revision()
+        else:
+            revision_for_thread = threads[insertion_point - 1][1]
         content = self._loom_content()
-        revision_for_thread = self.last_revision()
         if revision_for_thread is None:
             revision_for_thread = bzrlib.revision.NULL_REVISION
         content.insert(
             insertion_point, "%s %s\n" % (revision_for_thread, thread_name))
+        return self._record_loom(content, 'new thread: %s' % thread_name)
+
+    def _record_loom(self, content, message):
+        """Record the loom 'content'.
+
+        :param content: the loom file as a sequence of lines. Each line should
+        be a unicode string or a plain ascii string.
+        """
+        builder = self.get_commit_builder(self.loom_parents())
+        loom_ie = bzrlib.inventory.make_entry(
+            'file', 'loom', bzrlib.inventory.ROOT_ID, 'loom_meta_tree')
         loom_tree = LoomMetaTree(loom_ie, content)
         builder.record_entry_contents(
             loom_ie, self.loom_parents(), 'loom', loom_tree)
         builder.finish_inventory()
-        rev_id = builder.commit('new thread: %s' % thread_name)
+        rev_id = builder.commit(message)
         self.control_files.put_utf8('last-loom', rev_id)
         return rev_id
+
+    def record_thread(self, thread_name, revision_id):
+        """Record an updated version of an existing thread.
+
+        :param thread_name: the thread to record.
+        :param revision_id: the revision it is now at. This should be a child
+        of the next lower thread.
+        """
+        threads = self.get_threads()
+        assert thread_name in dict(threads)
+        content = []
+        if revision_id is None:
+            revision_id = bzrlib.revision.NULL_REVISION
+        for name, rev in threads:
+            if name == thread_name:
+                if revision_id == rev:
+                    raise UnchangedThreadRevision(self, thread_name)
+                rev = revision_id
+            content.append("%s %s\n" % (rev, name))
+        return self._record_loom(content, 'update thread %s' % thread_name)
 
 
 class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):

@@ -24,6 +24,18 @@ import bzrlib
 from bzrlib.tests import TestCaseWithTransport
 
 
+class TestsWithLooms(TestCaseWithTransport):
+    """A base class with useful helpers for loom blackbox tests."""
+
+    def get_vendor_loom(self):
+        """Make a loom with a vendor thread."""
+        tree = self.make_branch_and_tree('.')
+        tree.branch.nick = 'vendor'
+        tree.commit('first release')
+        self.run_bzr('loomify')
+        return tree.bzrdir.open_workingtree()
+    
+
 class TestLoomify(TestCaseWithTransport):
 
     def test_loomify_new_branch(self):
@@ -47,15 +59,7 @@ class TestLoomify(TestCaseWithTransport):
             threads)
 
 
-class TestCreate(TestCaseWithTransport):
-    
-    def get_vendor_loom(self):
-        """Make a loom with a vendor thread."""
-        tree = self.make_branch_and_tree('.')
-        tree.branch.nick = 'vendor'
-        tree.commit('first release')
-        self.run_bzr('loomify')
-        return tree.bzrdir.open_workingtree()
+class TestCreate(TestsWithLooms):
     
     def test_create_no_changes(self):
         tree = self.get_vendor_loom()
@@ -84,15 +88,11 @@ class TestCreate(TestCaseWithTransport):
         self.assertEqual('feature-foo', tree.branch.nick)
 
 
-class TestShow(TestCaseWithTransport):
+class TestShow(TestsWithLooms):
     
     def test_show_loom(self):
         """Show the threads in the loom."""
-        tree = self.make_branch_and_tree('.')
-        tree.branch.nick = 'vendor'
-        tree.commit('first release')
-        self.run_bzr('loomify')
-        tree = tree.bzrdir.open_workingtree()
+        tree = self.get_vendor_loom()
         self.assertShowLoom(['vendor'], 'vendor')
         tree.branch.new_thread('debian')
         self.assertShowLoom(['vendor', 'debian'], 'vendor')
@@ -117,4 +117,54 @@ class TestShow(TestCaseWithTransport):
             expected_out += '\n'
         self.assertEqual(expected_out, out)
         self.assertEqual('', err)
-    
+
+
+class TestShow(TestsWithLooms):
+
+    def test_record_no_change(self):
+        """If there are no changes record should error."""
+        tree = self.get_vendor_loom()
+        out, err = self.run_bzr('record', retcode=3) 
+        self.assertEqual('', out)
+        self.assertEqual(
+            'bzr: ERROR: No new commits to record on thread vendor.\n', err)
+
+
+class TestDown(TestsWithLooms):
+
+    def test_down_thread_from_bottom(self):
+        tree = self.get_vendor_loom()
+        out, err = self.run_bzr('down-thread', retcode=3)
+        self.assertEqual('', out)
+        self.assertEqual('bzr: ERROR: Cannot move down from the lowest thread.\n', err)
+        
+    def test_down_thread_same_revision(self):
+        """moving down when the revision is unchanged should work."""
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'patch'
+        rev = tree.last_revision()
+        out, err = self.run_bzr('down-thread')
+        self.assertEqual('', out)
+        self.assertEqual('', err)
+        self.assertEqual('vendor', tree.branch.nick)
+        self.assertEqual(rev, tree.last_revision())
+        
+    def test_down_thread_removes_changes(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'patch'
+        rev = tree.last_revision()
+        self.build_tree(['afile'])
+        tree.add('afile')
+        tree.commit('add a file')
+        tree.branch.record_thread('patch', tree.last_revision())
+        out, err = self.run_bzr('down-thread')
+        self.assertEqual('', out)
+        self.assertEqual('All changes applied successfully.\n', err)
+        self.assertEqual('vendor', tree.branch.nick)
+        # the tree needs to be updated.
+        self.assertEqual(rev, tree.last_revision())
+        # the branch needs to be updated.
+        self.assertEqual(rev, tree.branch.last_revision())
+        self.assertFalse(tree.has_filename('afile'))

@@ -21,6 +21,7 @@
 import bzrlib.commands
 import bzrlib.branch
 import bzrlib.errors
+import bzrlib.merge
 
 import branch
 
@@ -98,3 +99,59 @@ class cmd_show_loom(bzrlib.commands.Command):
                 print "%s%s" % (symbol, thread)
         finally:
             loom.unlock()
+
+
+class cmd_record(bzrlib.commands.Command):
+    """Record the current last-revision of this tree into the current thread."""
+
+    def run(self):
+        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
+        tree.lock_write()
+        try:
+            thread = tree.branch.nick
+            tree.branch.record_thread(thread, tree.last_revision())
+        finally:
+            tree.unlock()
+
+
+class cmd_down_thread(bzrlib.commands.Command):
+    """Move the branch down a thread in the loom."""
+
+    def run(self):
+        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
+        tree.lock_write()
+        try:
+            if tree.last_revision() != tree.branch.last_revision():
+                raise BzrCommandError('cannot switch threads with an out of '
+                    'date tree. Please run bzr update.')
+            current_revision = tree.last_revision()
+            threadname = tree.branch.nick
+            threads = tree.branch.get_threads()
+            old_thread_rev = None
+            new_thread_name = None
+            new_thread_rev = None
+            for thread, rev in threads:
+                if thread == threadname:
+                    # found the current thread.
+                    old_thread_rev = rev
+                    break
+                new_thread_name = thread
+                new_thread_rev = rev   
+            if new_thread_rev is None:
+                raise bzrlib.errors.BzrCommandError(
+                    'Cannot move down from the lowest thread.')
+            tree.branch.nick = new_thread_name
+            if new_thread_rev == old_thread_rev:
+                # done
+                return 0
+            basis_tree = tree.branch.repository.revision_tree(old_thread_rev)
+            to_tree = tree.branch.repository.revision_tree(new_thread_rev)
+            result = bzrlib.merge.merge_inner(tree.branch,
+                to_tree,
+                basis_tree,
+                this_tree=tree)
+            tree.set_last_revision(new_thread_rev)
+            tree.branch.generate_revision_history(new_thread_rev)
+            return result
+        finally:
+            tree.unlock()
