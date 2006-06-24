@@ -23,3 +23,5 @@ Modelled on a ground loom with the supports to the left and right - old and new
 possibly: override the nick property on the loom to do a push/pop etc as needed.
 
 teach up-thread to use '<<< THREADNAME' rather than '<<< MERGE-SOURCE'
+
+up-thread should not add a merge when the current thread is already merged.
