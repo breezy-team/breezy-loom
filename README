@@ -18,7 +18,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 Loom is a bzr plugin which adds new commands to manage a loom of patches.
 
-Currently no new commands are ready for use.
 The commands are:
  * loomify: This converts a branch into a loom enabled branch. As a result
    of this, the branch format is converted and you need to have the loom
@@ -37,6 +36,9 @@ The commands are:
  * up-thread: Move the branch up a thread. This will merge in all the changes
    from the current thread that are not yet integrated into the new thread into
    it and leave you ready to commit them.
+
+
+The existing bzr commands 'push' and 'branch' are
 
 When complete this is anticipated to be a tool similar to quilt and 
 mercurial queues.

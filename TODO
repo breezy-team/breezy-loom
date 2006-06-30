@@ -3,13 +3,12 @@ commands to make:
    ensures nick in loom, record tree into loom branch for nick, commit into the
    branch of the nick in the loom and pull that onto the tree, with
    --overwrite.
- - push and branch - propogate loom data and reference revisions, and set
-   branch nick to tip of the loom.
+ - push - pushes loom, checks for loom tip correctness.
  - eject - remove a entry from the loom, and merge it out of the next one up.
  - unloomify - remove the loom branch reference.
 
 teach launchpad about looms.
-this fixes the first-push-problem of new branches with bzr for package management because it.
+this fixes the first-push-problem of new branches with bzr for package management because it means one loom per package, not one branch per change.
 
 Create a 'bzr help loom' command to give a good overview.
 
