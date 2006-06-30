@@ -45,7 +45,7 @@ class cmd_loomify(bzrlib.commands.Command):
         (target, path) = bzrlib.branch.Branch.open_containing(location)
         target.lock_write()
         try:
-            if not target.has_explicit_nick():
+            if not target.get_config().has_explicit_nickname():
                 raise bzrlib.errors.BzrCommandError(
                     'You must have a branch nickname set to loomify a branch')
             branch.BzrBranchLoomFormat1().take_over(target)

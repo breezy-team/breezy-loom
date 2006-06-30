@@ -162,7 +162,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         parent = self.get_parent()
         if parent:
             destination.set_parent(parent)
-        if self.has_explicit_nick():
+        if self.get_config().has_explicit_nickname():
             destination.nick = source_nick
     
     def get_threads(self):

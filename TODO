@@ -27,3 +27,7 @@ up-thread should not add a merge when the current thread is already merged.
 
 cut-warp ? eject - whatever - should refuse to eject the last one, or perhaps
 should unloom at that point.
+
+push/branch should not set an explicit nick if there are no threads in the loom
+
+
