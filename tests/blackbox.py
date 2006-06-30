@@ -19,6 +19,7 @@
 
 """UI tests for loom."""
 
+import os
 
 import bzrlib
 from bzrlib.tests import TestCaseWithTransport
@@ -27,12 +28,12 @@ from bzrlib.tests import TestCaseWithTransport
 class TestsWithLooms(TestCaseWithTransport):
     """A base class with useful helpers for loom blackbox tests."""
 
-    def get_vendor_loom(self):
+    def get_vendor_loom(self, path='.'):
         """Make a loom with a vendor thread."""
-        tree = self.make_branch_and_tree('.')
+        tree = self.make_branch_and_tree(path)
         tree.branch.nick = 'vendor'
         tree.commit('first release')
-        self.run_bzr('loomify')
+        self.run_bzr('loomify', path)
         return tree.bzrdir.open_workingtree()
     
 
@@ -52,6 +53,18 @@ class TestLoomify(TestCaseWithTransport):
         out, err = self.run_bzr('loomify')
         # a loomed branch opens with a unique format
         b = bzrlib.branch.Branch.open('.')
+        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
+        threads = b.get_threads()
+        self.assertEqual(
+            [('base', bzrlib.revision.NULL_REVISION)], 
+            threads)
+
+    def test_loomify_path(self):
+        b = self.make_branch('foo')
+        b.nick = 'base'
+        out, err = self.run_bzr('loomify', 'foo')
+        # a loomed branch opens with a unique format
+        b = bzrlib.branch.Branch.open('foo')
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
         threads = b.get_threads()
         self.assertEqual(
@@ -103,9 +116,17 @@ class TestShow(TestsWithLooms):
         tree.branch.nick = 'patch A'
         self.assertShowLoom(['vendor', 'patch A', 'debian'], 'patch A')
 
-    def assertShowLoom(self, threads, selected_thread):
+    def test_show_loom_with_location(self):
+        """Should be able to provide an explicit location to show."""
+        tree = self.get_vendor_loom('subtree')
+        self.assertShowLoom(['vendor'], 'vendor', 'subtree')
+
+    def assertShowLoom(self, threads, selected_thread, location=None):
         """Check expected show-loom output."""
-        out, err = self.run_bzr('show-loom')
+        if location:
+            out, err = self.run_bzr('show-loom', location)
+        else:
+            out, err = self.run_bzr('show-loom')
         # threads are in oldest-last order.
         expected_out = ''
         for thread in reversed(threads):
@@ -119,7 +140,7 @@ class TestShow(TestsWithLooms):
         self.assertEqual('', err)
 
 
-class TestShow(TestsWithLooms):
+class TestRecord(TestsWithLooms):
 
     def test_record_no_change(self):
         """If there are no changes record should error."""
@@ -259,7 +280,7 @@ class TestUp(TestsWithLooms):
         out, err = self.run_bzr('up-thread', retcode=1)
         self.assertEqual('', out)
         self.assertEqual(
-            'bzr: WARNING: Conflict adding file afile.  Moved existing file to afile.moved.\n'
+            'Conflict adding file afile.  Moved existing file to afile.moved.\n'
             '1 conflicts encountered.\n'
             'Moved to thread patch.\n', err)
         self.assertEqual('patch', tree.branch.nick)
@@ -271,3 +292,35 @@ class TestUp(TestsWithLooms):
         # diff should return 1 now as we have uncommitted changes.
         self.run_bzr('diff', retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
+
+
+class TestPush(TestsWithLooms):
+
+    def test_push(self):
+        """Integration smoke test for bzr push of a loom."""
+        tree = self.get_vendor_loom('source')
+        os.chdir('source')
+        out, err = self.run_bzr('push', '../target')
+        os.chdir('..')
+        self.assertEqual('', out)
+        self.assertEqual('1 revision(s) pushed.\n', err)
+        # lower level tests check behaviours, just check show-loom as a smoke
+        # test.
+        out, err = self.run_bzr('show-loom', 'target')
+        self.assertEqual('=>vendor\n', out)
+        self.assertEqual('', err)
+
+
+class TestBranch(TestsWithLooms):
+
+    def test_branch(self):
+        """Integration smoke test for bzr branch of a loom."""
+        tree = self.get_vendor_loom('source')
+        out, err = self.run_bzr('branch', 'source', 'target')
+        self.assertEqual('', out)
+        self.assertEqual('Branched 1 revision(s).\n', err)
+        # lower level tests check behaviours, just check show-loom as a smoke
+        # test.
+        out, err = self.run_bzr('show-loom', 'target')
+        self.assertEqual('=>vendor\n', out)
+        self.assertEqual('', err)

@@ -39,13 +39,13 @@ class cmd_loomify(bzrlib.commands.Command):
     branch nickname becomes the 'base branch' of the loom.
     """
 
-    def run(self):
-        (target, path) = bzrlib.branch.Branch.open_containing('.')
+    takes_args = ['location?']
+
+    def run(self, location='.'):
+        (target, path) = bzrlib.branch.Branch.open_containing(location)
         target.lock_write()
         try:
-            cfg = target.tree_config()
-            nick = cfg.get_option("nickname")
-            if nick is None:
+            if not target.has_explicit_nick():
                 raise bzrlib.errors.BzrCommandError(
                     'You must have a branch nickname set to loomify a branch')
             branch.BzrBranchLoomFormat1().take_over(target)
@@ -87,8 +87,10 @@ class cmd_show_loom(bzrlib.commands.Command):
     'commit' will commit to.
     """
 
-    def run(self):
-        (loom, path) = bzrlib.branch.Branch.open_containing('.')
+    takes_args = ['location?']
+
+    def run(self, location='.'):
+        (loom, path) = bzrlib.branch.Branch.open_containing(location)
         loom.lock_read()
         try:
             threads = loom.get_threads()

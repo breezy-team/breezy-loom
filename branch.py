@@ -28,8 +28,10 @@ loom branch.
 from StringIO import StringIO
 
 import bzrlib.branch
+from bzrlib.decorators import needs_read_lock
 import bzrlib.errors
 import bzrlib.osutils
+import bzrlib.ui
 
 
 class LoomThreadError(bzrlib.errors.BzrNewError):
@@ -39,6 +41,15 @@ class LoomThreadError(bzrlib.errors.BzrNewError):
         bzrlib.errors.BzrNewError.__init__(self)
         self.branch = branch
         self.thread = thread
+
+
+class UnrecordedRevision(bzrlib.errors.BzrNewError):
+    """The revision %(revision_id)s is not recorded in the loom %(branch)s."""
+
+    def __init__(self, branch, revision_id):
+        bzrlib.errors.BzrNewError.__init__(self)
+        self.branch = branch
+        self.revision_id = revision_id
 
 
 class DuplicateThreadName(LoomThreadError):
@@ -89,6 +100,71 @@ class LoomMetaTree(bzrlib.tree.Tree):
 class LoomBranch(bzrlib.branch.BzrBranch5):
     """The Loom branch."""
 
+    @needs_read_lock
+    def clone(self, to_bzrdir, revision_id=None):
+        """Clone the branch into to_bzrdir.
+        
+        This differs from the base clone by cloning the loom.
+        """
+        result = self._format.initialize(to_bzrdir)
+        self.copy_content_into(result, revision_id=revision_id)
+        return  result
+
+    @needs_read_lock
+    def copy_content_into(self, destination, revision_id=None):
+        # XXX: hint for bzrlib - break this into two routines, one for
+        # copying the last-rev pointer, one for copying parent etc.
+        # XXX: possibly we should use revision_id to determine what the
+        # loom looked like when it was committed, rather than taking a
+        # revision id in the loom branch. This suggests recording the 
+        # loom revision when writing a commit to a warp, which would mean
+        # that commit() could not do record() - we would have to record 
+        # a loom revision that was not yet created.
+        source_nick = self.nick
+        threads = self.get_threads()
+        parents = self.loom_parents()
+        new_history = self.revision_history()
+        if revision_id is not None:
+            if threads:
+                # revision_id should be in the loom, or its an error 
+                found_threads = [thread for thread, rev in threads 
+                    if rev == revision_id]
+                if not found_threads:
+                    raise UnrecordedRevision(self, revision_id)
+            else:
+                # no threads yet, be a normal branch
+                try:
+                    new_history = new_history[:new_history.index(revision_id) + 1]
+                except ValueError:
+                    rev = self.repository.get_revision(revision_id)
+                    new_history = rev.get_history(self.repository)[1:]
+                
+            # pull in the warp, which was skipped during the initial pull
+            # because the front end does not know what to pull.
+            # nb: this is mega huge hacky. THINK. RBC 2006062
+            nested = bzrlib.ui.ui_factory.nested_progress_bar()
+            try:
+                if parents:
+                    destination.repository.fetch(self.repository,
+                        revision_id=parents[0])
+            finally:
+                nested.finished()
+        if threads:
+            new_tip = dict(threads)[source_nick]
+            destination.generate_revision_history(new_tip)
+        else:
+            # no threads yet, be a normal branch.
+            destination.set_revision_history(new_history)
+        if parents:
+            destination._set_last_loom(parents[0])
+        else:
+            destination._set_last_loom('')
+        parent = self.get_parent()
+        if parent:
+            destination.set_parent(parent)
+        if self.has_explicit_nick():
+            destination.nick = source_nick
+    
     def get_threads(self):
         """Return the current threads in this loom.
 
@@ -162,7 +238,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             loom_ie, self.loom_parents(), 'loom', loom_tree)
         builder.finish_inventory()
         rev_id = builder.commit(message)
-        self.control_files.put_utf8('last-loom', rev_id)
+        self._set_last_loom(rev_id)
         return rev_id
 
     def record_thread(self, thread_name, revision_id):
@@ -184,6 +260,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 rev = revision_id
             content.append("%s %s\n" % (rev, name))
         return self._record_loom(content, 'update thread %s' % thread_name)
+
+    def _set_last_loom(self, rev_id):
+        """Set the last loom revision in this branch to rev_id."""
+        self.control_files.put_utf8('last-loom', rev_id)
 
 
 class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
@@ -211,7 +291,7 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         super(BzrBranchLoomFormat1, self).initialize(a_bzrdir)
         branch_transport = a_bzrdir.get_branch_transport(self)
         # TODO set this here.
-        utf8_files = [('loom-revision', ''),
+        utf8_files = [('last-loom', ''),
                       ]
         control_files = bzrlib.lockable_files.LockableFiles(
             branch_transport, 'lock', bzrlib.lockdir.LockDir)
