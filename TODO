@@ -30,4 +30,24 @@ should unloom at that point.
 
 push/branch should not set an explicit nick if there are no threads in the loom
 
+normal branch.pull (loom) gets current warp. (default contract ensures this)
+loom.pull(normal branch) pulls into current warp. (default contract ensures this)
+loom.pull(loom) starts at the lowest warp and pulls matching warps until
+a conflict occurs. Optimised by pulling the union of:
+ * current rh-tip and thread rev ids.
 
+LoomTreeDecorator has too much UI code - it raises the wrong exceptions and
+does note calls.
+
+- make merge do something sane...
+        XXX: Currently we do not handle any
+        new warps in the source: they are skipped over
+        deleted warps in this loom: they are treated as new warps in the source
+        renamed warps: threated as new warps in the source.
+        deleted warps in the source: they remain in this loom, though the
+        content removals in the remote loom which have been propogated are
+        propogated here.
+- do merge of a loom logic.
+- teach uncommit to uncommit the loom *IF appropriate*.
+- make pull and push print something sensible rather than revisions pushed.
+  - perhaps a 'change descrption' object that the pull method can return.

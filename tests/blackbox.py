@@ -22,6 +22,7 @@
 import os
 
 import bzrlib
+from bzrlib.plugins.loom.tree import LoomTreeDecorator
 from bzrlib.tests import TestCaseWithTransport
 
 
@@ -179,7 +180,6 @@ class TestDown(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         tree.commit('add a file')
-        tree.branch.record_thread('patch', tree.last_revision())
         out, err = self.run_bzr('down-thread')
         self.assertEqual('', out)
         self.assertEqual('All changes applied successfully.\n', err)
@@ -197,7 +197,6 @@ class TestDown(TestsWithLooms):
         tree.branch.nick = 'vendor'
         # do a null change in vendor - a new release.
         vendor_release = tree.commit('new vendor release.', allow_pointless=True)
-        tree.branch.record_thread('vendor', vendor_release)
         # pop up, then down
         self.run_bzr('up-thread')
         self.run_bzr('revert')
@@ -246,7 +245,6 @@ class TestUp(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
-        tree.branch.record_thread('vendor', vendor_release)
         out, err = self.run_bzr('up-thread')
         self.assertEqual('', out)
         self.assertEqual('All changes applied successfully.\nMoved to thread patch.\n', err)
@@ -269,13 +267,11 @@ class TestUp(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         patch_rev = tree.commit('add afile as a patch')
-        tree.branch.record_thread('patch', patch_rev)
         # add a change in vendor - a new release.
         self.run_bzr('down-thread')
         self.build_tree(['afile'])
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
-        tree.branch.record_thread('vendor', vendor_release)
         # we want conflicts.
         out, err = self.run_bzr('up-thread', retcode=1)
         self.assertEqual('', out)
@@ -323,4 +319,30 @@ class TestBranch(TestsWithLooms):
         # test.
         out, err = self.run_bzr('show-loom', 'target')
         self.assertEqual('=>vendor\n', out)
+        self.assertEqual('', err)
+
+
+class TestPull(TestsWithLooms):
+
+    def test_pull(self):
+        """Integration smoke test for bzr pull loom to loom."""
+        tree = self.get_vendor_loom('source')
+        tree.bzrdir.sprout('target')
+        tree.commit('change the source', allow_pointless=True)
+        tree.branch.new_thread('foo')
+        LoomTreeDecorator(tree).up_thread()
+        os.chdir('target')
+        try:
+            out, err = self.run_bzr('pull')
+        finally:
+            os.chdir('..')
+        self.assertStartsWith(out, 'Using saved location:')
+        self.assertEqual(
+            'All changes applied successfully.\n'
+            '1 revision(s) pulled.\n', 
+            err)
+        # lower level tests check behaviours, just check show-loom as a smoke
+        # test.
+        out, err = self.run_bzr('show-loom', 'target')
+        self.assertEqual('=>foo\n  vendor\n', out)
         self.assertEqual('', err)

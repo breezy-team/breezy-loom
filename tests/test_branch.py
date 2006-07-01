@@ -21,6 +21,8 @@
 
 
 import bzrlib
+from bzrlib.plugins.loom.tests import TestCaseWithLoom
+from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
 from bzrlib.tests import TestCaseWithTransport
 
@@ -50,7 +52,7 @@ class TestFormat(TestCaseWithTransport):
         self.assertEqual([], branch.loom_parents())
 
 
-class TestLoom(TestCaseWithTransport):
+class TestLoom(TestCaseWithLoom):
 
     def test_new_thread_empty_branch(self):
         branch = self.make_branch('.')
@@ -82,13 +84,6 @@ class TestLoom(TestCaseWithTransport):
             branch.new_thread, 'foo')
         self.assertEqual([('foo', bzrlib.revision.NULL_REVISION)], branch.get_threads())
 
-    def get_tree_with_loom(self, path="."):
-        """Get a tree with no commits in loom format."""
-        tree = self.make_branch_and_tree(path)
-        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
-        format.take_over(tree.branch)
-        return tree.bzrdir.open_workingtree()
-
     def get_tree_with_one_commit(self, path='.'):
         """Get a tree with a commit in loom format."""
         tree = self.get_tree_with_loom(path=path)
@@ -112,10 +107,8 @@ class TestLoom(TestCaseWithTransport):
         tree.branch.new_thread('endpoint')
         tree.branch.nick = 'middlepoint'
         rev_id2 = tree.commit('middle', allow_pointless=True)
-        tree.branch.record_thread('middlepoint', rev_id2)
         tree.branch.nick = 'endpoint'
         rev_id3 = tree.commit('end', allow_pointless=True)
-        tree.branch.record_thread('endpoint', rev_id3)
         tree.branch.new_thread('afterbase', 'baseline')
         tree.branch.new_thread('aftermiddle', 'middlepoint')
         tree.branch.new_thread('atend', 'endpoint')
@@ -135,18 +128,25 @@ class TestLoom(TestCaseWithTransport):
         tree.branch.new_thread('tail')
         tree.branch.nick = 'baseline'
         first_rev = tree.last_revision()
-        tree.commit('change something', allow_pointless=True)
-        tree.branch.record_thread('baseline', tree.last_revision())
-        self.assertEqual(
-            [('baseline', tree.last_revision()), ('tail', first_rev)], 
-            tree.branch.get_threads())
+        # lock the tree to prevent unlock triggering implicit record
+        tree.lock_write()
+        try:
+            tree.commit('change something', allow_pointless=True)
+            self.assertEqual(
+                [('baseline', first_rev), ('tail', first_rev)], 
+                tree.branch.get_threads())
+            tree.branch.record_thread('baseline', tree.last_revision())
+            self.assertEqual(
+                [('baseline', tree.last_revision()), ('tail', first_rev)], 
+                tree.branch.get_threads())
+        finally:
+            tree.unlock()
 
     def test_clone_empty_loom(self):
         source_tree = self.get_tree_with_loom('source')
-        # assertLoomTreeEqual looks to see if the nick is preserved.
         source_tree.branch.nick = 'source'
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
-        self.assertLoomTreeEqual(source_tree, target_tree)
+        self.assertLoomSproutedOk(source_tree, target_tree)
 
     def test_sprout_empty_loom(self):
         source_tree = self.get_tree_with_loom('source')
@@ -160,27 +160,20 @@ class TestLoom(TestCaseWithTransport):
         source_tree.branch.new_thread('top')
         source_tree.branch.nick = 'top'
         source_tree.commit('phwoar', allow_pointless=True)
-        source_tree.branch.record_thread('top', source_tree.last_revision())
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
-        self.assertLoomTreeEqual(source_tree, target_tree)
+        self.assertLoomSproutedOk(source_tree, target_tree)
 
     def test_clone_nonempty_loom_bottom(self):
-        """Cloning loom should preserve the current loom pointer."""
+        """Cloning loom should reset the current loom pointer."""
         source_tree = self.get_tree_with_one_commit('source')
         source_tree.branch.new_thread('bottom')
         source_tree.branch.new_thread('top')
         source_tree.branch.nick = 'top'
-        bottom_rev = source_tree.last_revision()
         source_tree.commit('phwoar', allow_pointless=True)
-        source_tree.branch.record_thread('top', source_tree.last_revision())
-        # simulate a down_thread... currently trying to avoid a new tree 
-        # format - that may be wishful thinking.
-        source_tree.branch.nick = 'bottom'
-        source_tree.branch.generate_revision_history(bottom_rev)
-        source_tree.set_last_revision(bottom_rev)
+        LoomTreeDecorator(source_tree).down_thread()
         # now clone
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
-        self.assertLoomTreeEqual(source_tree, target_tree)
+        self.assertLoomSproutedOk(source_tree, target_tree)
 
     def test_sprout_nonempty_loom_bottom(self):
         """Sprouting always resets the loom to the top."""
@@ -188,16 +181,11 @@ class TestLoom(TestCaseWithTransport):
         source_tree.branch.new_thread('bottom')
         source_tree.branch.new_thread('top')
         source_tree.branch.nick = 'top'
-        bottom_rev = source_tree.last_revision()
         source_tree.commit('phwoar', allow_pointless=True)
-        source_tree.branch.record_thread('top', source_tree.last_revision())
-        # simulate a down_thread... currently trying to avoid a new tree 
-        # format - that may be wishful thinking.
-        source_tree.branch.nick = 'bottom'
-        source_tree.branch.generate_revision_history(bottom_rev)
-        source_tree.set_last_revision(bottom_rev)
+        LoomTreeDecorator(source_tree).down_thread()
         # now sprout
         target_tree = source_tree.bzrdir.sprout('target').open_workingtree()
+        self.assertLoomSproutedOk(source_tree, target_tree)
 
     def assertLoomSproutedOk(self, source_tree, target_tree):
         """A sprout resets the loom to the top to ensure up-thread works.
@@ -219,6 +207,9 @@ class TestLoom(TestCaseWithTransport):
         self.assertEqual(
             source_threads,
             target_tree.branch.get_threads())
+        # check content is mirrored
+        for thread, rev_id in source_threads:
+            self.assertTrue(target_tree.branch.repository.has_revision(rev_id))
         # TODO: refactor generate_revision further into a revision
         # creation routine and a set call: until then change the source
         # to the right thread and compare
@@ -231,25 +222,49 @@ class TestLoom(TestCaseWithTransport):
             source_tree.branch.last_revision(),
             target_tree.last_revision())
 
+    def test_pull_loom_at_bottom(self):
+        """Pulling from a loom when in the bottom warp pulls all warps."""
+        source = self.get_tree_with_loom('source')
+        source.branch.new_thread('bottom')
+        source.branch.new_thread('top')
+        source.branch.nick = 'bottom'
+        target = source.bzrdir.sprout('target').open_branch()
+        target.nick = 'top'
+        # put a commit in the bottom and top of this loom
+        bottom_rev1 = source.commit('commit my arse')
+        source_loom_tree = LoomTreeDecorator(source)
+        source_loom_tree.up_thread()
+        top_rev1 = source.commit('integrate bottom changes.')
+        source_loom_tree.down_thread()
+        # and now another commit at the bottom
+        bottom_rev2 = source.commit('bottom 2', allow_pointless=True)
+        # we now have two commits in the bottom warp, one in the top, and
+        # all three should be pulled. We are pulling into a loom which has
+        # a different current thread too, which should not affect us.
+        target.pull(source.branch)
+        for rev in (bottom_rev1, bottom_rev2, top_rev1):
+            self.assertTrue(target.repository.has_revision(rev))
+        # check loom threads
+        threads = target.get_threads()
+        self.assertEqual(
+            [('bottom', bottom_rev2),
+             ('top', top_rev1)],
+            threads)
 
-    def assertLoomTreeEqual(self, source_tree, target_tree):
-        """Check that the loom state of source_tree and target_tree is equal.
-        
-        Due to the calls made, this will ensure the loom content has been
-        pulled, and that the tree state is correct.
-        """
+    def test_implicit_record(self):
+        tree = self.get_tree_with_loom('source')
+        tree.branch.new_thread('bottom')
+        tree.branch.nick = 'bottom'
+        tree.lock_write()
+        try:
+            bottom_rev1 = tree.commit('commit my arse')
+            # regular commands should not record
+            self.assertEqual(
+                [('bottom', bzrlib.revision.NULL_REVISION)],
+                tree.branch.get_threads())
+        finally:
+            tree.unlock()
+        # unlocking should have detected the discrepancy and recorded.
         self.assertEqual(
-            source_tree.branch.loom_parents(),
-            target_tree.branch.loom_parents())
-        self.assertEqual(
-            source_tree.branch.nick,
-            target_tree.branch.nick)
-        self.assertEqual(
-            source_tree.branch.get_threads(),
-            target_tree.branch.get_threads())
-        self.assertEqual(
-            source_tree.branch.revision_history(),
-            target_tree.branch.revision_history())
-        self.assertEqual(
-            source_tree.last_revision(),
-            target_tree.last_revision())
+            [('bottom', bottom_rev1)],
+            tree.branch.get_threads())

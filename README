@@ -38,7 +38,23 @@ The commands are:
    it and leave you ready to commit them.
 
 
-The existing bzr commands 'push' and 'branch' are
+The existing bzr commands 'push' and 'branch' will create a loom branch from
+existing looms. A push into an existing non-loom will not convert it however:
+it will push the current thread into that branch. likewise pull from a normal
+branch will pull into the current thread.
 
 When complete this is anticipated to be a tool similar to quilt and 
 mercurial queues.
+
+Internals
+=========
+
+XXX: In development
+
+Why we dont use the revision_id to index into the loom:
+# XXX: possibly we should use revision_id to determine what the
+# loom looked like when it was committed, rather than taking a
+# revision id in the loom branch. This suggests recording the 
+# loom revision when writing a commit to a warp, which would mean
+# that commit() could not do record() - we would have to record 
+# a loom revision that was not yet created.

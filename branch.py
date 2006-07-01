@@ -104,73 +104,78 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     def clone(self, to_bzrdir, revision_id=None):
         """Clone the branch into to_bzrdir.
         
-        This differs from the base clone by cloning the loom.
+        This differs from the base clone by cloning the loom and 
+        setting the current nick to the top of the loom.
         """
         result = self._format.initialize(to_bzrdir)
         self.copy_content_into(result, revision_id=revision_id)
-        return  result
+        return result
 
     @needs_read_lock
     def copy_content_into(self, destination, revision_id=None):
         # XXX: hint for bzrlib - break this into two routines, one for
         # copying the last-rev pointer, one for copying parent etc.
-        # XXX: possibly we should use revision_id to determine what the
-        # loom looked like when it was committed, rather than taking a
-        # revision id in the loom branch. This suggests recording the 
-        # loom revision when writing a commit to a warp, which would mean
-        # that commit() could not do record() - we would have to record 
-        # a loom revision that was not yet created.
-        source_nick = self.nick
-        threads = self.get_threads()
-        parents = self.loom_parents()
-        new_history = self.revision_history()
-        if revision_id is not None:
-            if threads:
-                # revision_id should be in the loom, or its an error 
-                found_threads = [thread for thread, rev in threads 
-                    if rev == revision_id]
-                if not found_threads:
-                    raise UnrecordedRevision(self, revision_id)
-            else:
-                # no threads yet, be a normal branch
+        destination.lock_write()
+        try:
+            source_nick = self.nick
+            threads = self.get_threads()
+            parents = self.loom_parents()
+            new_history = self.revision_history()
+            if revision_id is not None:
+                if threads:
+                    # revision_id should be in the loom, or its an error 
+                    found_threads = [thread for thread, rev in threads 
+                        if rev == revision_id]
+                    if not found_threads:
+                        raise UnrecordedRevision(self, revision_id)
+                else:
+                    # no threads yet, be a normal branch
+                    try:
+                        new_history = new_history[:new_history.index(revision_id) + 1]
+                    except ValueError:
+                        rev = self.repository.get_revision(revision_id)
+                        new_history = rev.get_history(self.repository)[1:]
+                    
+                # pull in the warp, which was skipped during the initial pull
+                # because the front end does not know what to pull.
+                # nb: this is mega huge hacky. THINK. RBC 2006062
+                nested = bzrlib.ui.ui_factory.nested_progress_bar()
                 try:
-                    new_history = new_history[:new_history.index(revision_id) + 1]
-                except ValueError:
-                    rev = self.repository.get_revision(revision_id)
-                    new_history = rev.get_history(self.repository)[1:]
-                
-            # pull in the warp, which was skipped during the initial pull
-            # because the front end does not know what to pull.
-            # nb: this is mega huge hacky. THINK. RBC 2006062
-            nested = bzrlib.ui.ui_factory.nested_progress_bar()
-            try:
-                if parents:
-                    destination.repository.fetch(self.repository,
-                        revision_id=parents[0])
-            finally:
-                nested.finished()
-        if threads:
-            new_tip = dict(threads)[source_nick]
-            destination.generate_revision_history(new_tip)
-        else:
-            # no threads yet, be a normal branch.
-            destination.set_revision_history(new_history)
-        if parents:
-            destination._set_last_loom(parents[0])
-        else:
-            destination._set_last_loom('')
-        parent = self.get_parent()
-        if parent:
-            destination.set_parent(parent)
-        if self.get_config().has_explicit_nickname():
-            destination.nick = source_nick
+                    if parents:
+                        destination.repository.fetch(self.repository,
+                            revision_id=parents[0])
+                    if threads:
+                        for thread, rev_id in reversed(threads):
+                            # fetch the loom content for this revision
+                            destination.repository.fetch(self.repository,
+                                revision_id=rev_id)
+                finally:
+                    nested.finished()
+            if threads:
+                destination.generate_revision_history(threads[-1][1])
+            else:
+                # no threads yet, be a normal branch.
+                destination.set_revision_history(new_history)
+            if parents:
+                destination._set_last_loom(parents[0])
+            else:
+                destination._set_last_loom('')
+            parent = self.get_parent()
+            if parent:
+                destination.set_parent(parent)
+            if threads:
+                destination.nick = threads[-1][0]
+        finally:
+            destination.unlock()
     
-    def get_threads(self):
+    def get_threads(self, rev_id=None):
         """Return the current threads in this loom.
 
+        :param rev_id: A specific loom revision to retrieve. If not specified
+            the current loom revision is used.
         :return: a list of threads. e.g. [('threadname', 'last_revision')]
         """
-        content = self._loom_content()
+        content = self._loom_content(rev_id)
         result = []
         for line in content:
             rev_id, name = line.split(' ', 1)
@@ -178,8 +183,11 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             result.append((name[:-1], rev_id))
         return result
 
-    def _loom_content(self):
+    def _loom_content(self, rev_id=None):
         """Return the raw formatted content of a loom as a series of lines.
+
+        :param rev_id: A specific loom revision to retrieve. If not specified
+            the current loom revision is used.
 
         Currently the disk format is:
         ----
@@ -188,10 +196,12 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         ----
         if revisionid is null:, this is a new, empty branch.
         """
-        parents = self.loom_parents()
-        if not parents:
-            return []
-        tree = self.repository.revision_tree(parents[0])
+        if rev_id is None:
+            parents = self.loom_parents()
+            if not parents:
+                return []
+            rev_id = parents[0]
+        tree = self.repository.revision_tree(rev_id)
         lines = tree.get_file('loom_meta_tree').readlines()
         assert lines[0] == 'Loom meta 1\n'
         return lines[1:]
@@ -223,6 +233,73 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         content.insert(
             insertion_point, "%s %s\n" % (revision_for_thread, thread_name))
         return self._record_loom(content, 'new thread: %s' % thread_name)
+
+    def pull(self, source, overwrite=False, stop_revision=None):
+        """Pull from a branch into this loom.
+
+        If the remote branch is a non-loom branch, the pull is done against the
+        current warp. If it is a loom branch, then the pull is done against the
+        entire loom and the current thread set to the top thread.
+        """
+        if not isinstance(source, LoomBranch):
+            return super(LoomBranch, self).pull(source,
+                overwrite=overwrite, stop_revision=stop_revision)
+        # pull the loom, and position our
+        pb = bzrlib.ui.ui_factory.nested_progress_bar()
+        try:
+            source.lock_read()
+            try:
+                source_parents = source.loom_parents()
+                if not source_parents:
+                    # no thread commits ever
+                    # just pull the main branch.
+                    new_rev = source.last_revision()
+                    if not overwrite:
+                        new_rev_ancestry = source.repository.get_ancestry(
+                            new_rev)
+                        if self.last_revision() not in new_rev_ancestry:
+                            raise bzrlib.errors.DivergedBranches(self, source)
+                    self.repository.fetch(source.repository,
+                        revision_id=new_rev)
+                    old_count = len(self.revision_history())
+                    self.generate_revision_history(new_rev)
+                    return len(self.revision_history()) - old_count
+
+                source_loom_rev = source.loom_parents()[0]
+                if not overwrite:
+                    # is the loom compatible?
+                    source_ancestry = source.repository.get_ancestry(
+                        source_loom_rev)
+                    if self.loom_parents()[0] not in source_ancestry:
+                        raise bzrlib.errors.DivergedBranches(self, source)
+                # fetch the loom content
+                self.repository.fetch(source.repository,
+                    revision_id=source_loom_rev)
+                # get the threads for that revision
+                threads = self.get_threads(rev_id=source_loom_rev)
+                revisions = [rev for name,rev in threads]
+                # for each thread from top to bottom, retrieve its referenced
+                # content. XXX FIXME: a revision_ids parameter to fetch would be
+                # nice here.
+                # the order is reversed because the common case is for the top
+                # thread to include all content.
+                for rev_id in reversed(revisions):
+                    # fetch the loom content for this revision
+                    self.repository.fetch(source.repository,
+                        revision_id=rev_id)
+                # now change the last loom revision. At this point all the data
+                # is in place.
+                self._set_last_loom(source_loom_rev)
+                # set the branch nick.
+                self.nick = threads[-1][0]
+                # and position the branch on the top loom
+                old_count = len(self.revision_history())
+                self.generate_revision_history(threads[-1][1])
+                return len(self.revision_history()) - old_count
+            finally:
+                source.unlock()
+        finally:
+            pb.finished()
 
     def _record_loom(self, content, message):
         """Record the loom 'content'.
@@ -264,6 +341,25 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     def _set_last_loom(self, rev_id):
         """Set the last loom revision in this branch to rev_id."""
         self.control_files.put_utf8('last-loom', rev_id)
+
+    def unlock(self):
+        """Unlock the loom after a lock.
+
+        If at the end of the lock, the current revision in the branch is not
+        recorded correctly in the loom, an automatic record is attempted.
+        """
+        if (self.control_files._lock_count==1 and
+            self.control_files._lock_mode=='w'):
+            # about to release the lock
+            threads = self.get_threads()
+            if len(threads):
+                # looms are enabled:
+                lastrev = self.last_revision()
+                if lastrev is None:
+                    lastrev = bzrlib.revision.NULL_REVISION
+                if dict(threads)[self.nick] != lastrev:
+                    self.record_thread(self.nick, lastrev)
+        super(LoomBranch, self).unlock()
 
 
 class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):

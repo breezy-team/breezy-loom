@@ -20,13 +20,27 @@
 """Tests for the loom plugin."""
 
 
+import bzrlib.plugins.loom.branch
+from bzrlib.tests import TestCaseWithTransport
 from bzrlib.tests.TestUtil import TestLoader, TestSuite
 
 
 def test_suite():
     module_names = [
         'bzrlib.plugins.loom.tests.test_branch',
+        'bzrlib.plugins.loom.tests.test_tree',
         'bzrlib.plugins.loom.tests.blackbox',
         ]
     loader = TestLoader()
     return loader.loadTestsFromModuleNames(module_names)
+
+
+class TestCaseWithLoom(TestCaseWithTransport):
+
+    def get_tree_with_loom(self, path="."):
+        """Get a tree with no commits in loom format."""
+        tree = self.make_branch_and_tree(path)
+        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
+        format.take_over(tree.branch)
+        return tree.bzrdir.open_workingtree()
+
