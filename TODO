@@ -51,3 +51,11 @@ does note calls.
 - teach uncommit to uncommit the loom *IF appropriate*.
 - make pull and push print something sensible rather than revisions pushed.
   - perhaps a 'change descrption' object that the pull method can return.
+- make pull BRANCH#warp work to grab one element of a warp. 
+  In a warp this should attempt to pull the lower warp elements first?, then 
+  just pull the warp into this warp. A reason to grab the lower warp
+  elements is to preserve the right delta between the lower warp elements. A
+  reason not to, is that the 3-way merge will do the right thing anyway, and
+  there is no need to require my warp to have all the subcomponents of yours
+  when I just want the resulting patch as a component of my warp. If your 
+  baseline warp is ahead of mine, I'll just get no-op updates.
