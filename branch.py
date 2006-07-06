@@ -240,8 +240,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         if after_thread is None:
             insertion_point = len(threads)
         else:
-            thread_names = [name for name, rev in threads]
-            insertion_point = thread_names.index(after_thread) + 1
+            insertion_point = self._thread_index(threads, after_thread) + 1
         if insertion_point == 0:
             revision_for_thread = self.last_revision()
         else:
@@ -253,6 +252,11 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         content.insert(
             insertion_point, "%s %s" % (revision_for_thread, thread_name))
         self.control_files.put_utf8('last-loom', '\n'.join(content))
+
+    def _thread_index(self, threads, after_thread):
+        """Find the index of after_thread in threads."""
+        thread_names = [name for name, rev in threads]
+        return thread_names.index(after_thread)
 
     def _parse_loom(self, content):
         """Parse the body of a loom file."""
@@ -383,6 +387,44 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             content.append("%s %s" % (rev, name))
         content.append('') # end with a \n
         self.control_files.put_utf8('last-loom', '\n'.join(content))
+
+    @needs_write_lock
+    def revert_loom(self):
+        """Revert the loom to be the same as the basis loom."""
+        parents = self.loom_parents()
+        if not parents:
+            self._set_last_loom(None, [])
+        else:
+            self._self_last_loom([parents[0]], self.get_threads(parents[0]))
+
+    @needs_write_lock
+    def revert_thread(self, thread):
+        """Revert a single thread.
+        
+        :param thread: the thread to restore to its state in
+            the basis. If it was not present in the basis it 
+            will be removed from the current loom.
+        """
+        parents = self.loom_parents()
+        current_content = self._current_loom_content()
+        threads = self.get_threads()
+        position = self._thread_index(threads, thread)
+        if not parents:
+            basis_threads = []
+        else:
+            basis_threads = self.get_threads(parents[0])
+        if thread in dict(basis_threads):
+            threads[position] = (thread, dict(basis_threads)[thread])
+            self._set_last_loom(parents, threads)
+        else:
+            del threads[position]
+            self._set_last_loom(parents, threads)
+        if self.nick not in dict(threads):
+            if len(threads) == position:
+                # removed the end
+                # take the new end thread
+                self.nick = threads[-1][0]
+                self.generate_revision_history(threads[-1][1])
 
     def _set_last_loom(self, parents, threads=None):
         """Set the last-loom file.

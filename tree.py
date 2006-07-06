@@ -144,5 +144,48 @@ class LoomTreeDecorator(object):
     def lock_write(self):
         self.tree.lock_write()
 
+    @needs_write_lock
+    def revert_loom(self, thread=None):
+        """Revert the loom. This function takes care of tree state for revert.
+
+        If the current loom is not altered, the tree is not altered. If it is
+        then the tree will be altered as 'most' appropriate.
+
+        :param thread: Only revert a single thread.
+        """
+        if self.tree.last_revision() != self.tree.branch.last_revision():
+            raise BzrCommandError('cannot switch threads with an out of '
+                'date tree. Please run bzr update.')
+        current_thread = self.branch.nick
+        last_rev = self.tree.last_revision()
+        old_threads = self.branch.get_threads()
+        current_thread_rev = dict(old_threads)[current_thread]
+        if thread is None:
+            self.branch.revert_loom()
+        else:
+            self.branch.revert_thread(thread)
+        threads = self.branch.get_threads()
+        threads_dict = dict(threads)
+        # TODO find the next up thread if needed
+        if not threads_dict:
+            # last thread nuked
+            to_rev = bzrlib.revision.NULL_REVISION
+        elif current_thread != self.branch.nick:
+            # thread change occured
+            to_rev = threads_dict[self.branch.nick]
+        else:
+            # same thread tweaked
+            if last_rev == threads_dict[current_thread]:
+                return
+            to_rev = threads_dict[current_thread]
+        # the thread changed, do a merge to match.
+        basis_tree = self.tree.branch.repository.revision_tree(current_thread_rev)
+        to_tree = self.tree.branch.repository.revision_tree(to_rev)
+        result = bzrlib.merge.merge_inner(self.tree.branch,
+            to_tree,
+            basis_tree,
+            this_tree=self.tree)
+        self.tree.set_last_revision(to_rev)
+
     def unlock(self):
         self.tree.unlock()

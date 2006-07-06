@@ -30,7 +30,12 @@ class TestsWithLooms(TestCaseWithLoom):
     """A base class with useful helpers for loom blackbox tests."""
 
     def get_vendor_loom(self, path='.'):
-        """Make a loom with a vendor thread."""
+        """Make a loom with a vendor thread.
+        
+        This returns a loom with a vendor thread, which has the current 
+        commit recorded in it, but nothing in the basis loom - its
+        empty.
+        """
         tree = self.make_branch_and_tree(path)
         tree.branch.nick = 'vendor'
         tree.commit('first release')
@@ -359,3 +364,50 @@ class TestPull(TestsWithLooms):
         out, err = self.run_bzr('show-loom', 'target')
         self.assertEqual('=>foo\n  vendor\n', out)
         self.assertEqual('', err)
+
+
+class TestRevert(TestsWithLooms):
+
+    def test_revert_loom(self):
+        """bzr revert-loom should give help."""
+        tree = self.get_vendor_loom('.')
+        out, err = self.run_bzr('revert-loom')
+        self.assertEqual('', out)
+        self.assertEqual('Please see revert-loom -h.\n', err)
+
+    def test_revert_loom_all(self):
+        """bzr revert-loom --all should restore the state of a loom."""
+        tree = self.get_vendor_loom('.')
+        tree.branch.new_thread('foo')
+        last_rev = tree.last_revision()
+        self.assertNotEqual(None, last_rev)
+        out, err = self.run_bzr('revert-loom', '--all')
+        self.assertEqual('', out)
+        self.assertEqual(
+            'All changes applied successfully.\n'
+            'All threads reverted.\n',
+            err)
+        self.assertNotEqual(last_rev, tree.last_revision())
+        self.assertEqual(None, tree.last_revision())
+        self.assertEqual([], tree.branch.get_threads())
+        
+    def test_revert_thread(self):
+        """bzr revert-loom threadname should restore the state of that thread."""
+        # we want a loom with > 1 threads, with a change made to a thread we are
+        # not in, so we can revert that by name,
+        tree = self.get_vendor_loom('.')
+        tree.branch.new_thread('after-vendor')
+        tree.branch.nick = 'after-vendor'
+        tree.commit('after-vendor commit', allow_pointless=True)
+        tree.branch.record_loom('save loom with vendor and after-vendor')
+        old_threads = tree.branch.get_threads()
+        tree.commit('after-vendor commit 2', allow_pointless=True)
+        LoomTreeDecorator(tree).down_thread()
+        last_rev = tree.last_revision()
+        self.assertNotEqual(None, last_rev)
+        out, err = self.run_bzr('revert-loom', 'after-vendor')
+        self.assertEqual('', out)
+        self.assertEqual("thread 'after-vendor' reverted.\n", err)
+        self.assertEqual(last_rev, tree.last_revision())
+        self.assertEqual(old_threads, tree.branch.get_threads())
+        

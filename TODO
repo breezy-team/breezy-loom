@@ -6,6 +6,9 @@ commands to make:
  - push - pushes loom, checks for loom tip correctness.
  - eject - remove a entry from the loom, and merge it out of the next one up.
  - unloomify - remove the loom branch reference.
+ - revert  loom-merge
+ - diff
+ - status
 
 teach launchpad about looms.
 this fixes the first-push-problem of new branches with bzr for package management because it means one loom per package, not one branch per change.
@@ -68,4 +71,8 @@ does note calls.
 - ' merge into a loom to create combined loom.'
 - record_thread_preserves_loom_parents
 - include basis and parent revids in current-loom for each warp.
-- 
+- revert loom falls back to the next lower thread.
+- factor our LoomParsing etc into a helper class.
+- test for revert -thread when the thread stays present.
+- branch.get_basis_threads() to be written, factors out a bunch of stuff
+- revert thread puts you on the next up remaining thread when the current thread goes awol if there are up-threads to go to.

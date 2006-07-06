@@ -56,3 +56,52 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
+
+    def test_revert_loom(self):
+        tree = self.get_tree_with_loom(',')
+        # ensure we have some stuff to revert
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        tree.branch.nick = 'bar'
+        tree.commit('change something', allow_pointless=True)
+        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree.revert_loom()
+        # the tree should be reverted
+        self.assertEqual(None, tree.last_revision())
+        # the current loom should be reverted 
+        # (we assume this means branch.revert_loom was called())
+        self.assertEqual([], tree.branch.get_threads())
+
+    def test_revert_thread(self):
+        tree = self.get_tree_with_loom(',')
+        # ensure we have some stuff to revert
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        tree.branch.nick = 'bar'
+        tree.commit('change something', allow_pointless=True)
+        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree.revert_loom(thread='bar')
+        # the tree should be reverted
+        self.assertEqual(None, tree.last_revision())
+        # the current loom should be reverted 
+        # (we assume this means branch.revert_loom was called())
+        self.assertEqual(
+            [('foo', bzrlib.revision.NULL_REVISION)],
+            tree.branch.get_threads())
+        
+    def test_revert_thread_different_thread(self):
+        tree = self.get_tree_with_loom(',')
+        # ensure we have some stuff to revert
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        tree.branch.nick = 'bar'
+        tree.commit('change something', allow_pointless=True)
+        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree.revert_loom(thread='foo')
+        # the tree should not be reverted
+        self.assertNotEqual(None, tree.last_revision())
+        # the bottom thread should be reverted
+        # (we assume this means branch.revert_thread was 
+        # called())
+        self.assertEqual([('bar', tree.last_revision())],
+            tree.branch.get_threads())

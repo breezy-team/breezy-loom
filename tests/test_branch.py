@@ -298,3 +298,25 @@ class TestLoom(TestCaseWithLoom):
         rev_id = tree.branch.record_loom('Setup test loom.')
         # after recording, the parents list should have changed.
         self.assertEqual([rev_id], tree.branch.loom_parents())
+
+    def test_revert_loom(self):
+        tree = self.get_tree_with_loom(',')
+        # ensure we have some stuff to revert
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        tree.branch.revert_loom()
+        self.assertEqual([], tree.branch.get_threads())
+
+    def test_revert_thread(self):
+        tree = self.get_tree_with_loom(',')
+        # ensure we have some stuff to revert
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        # do a commit, so the last_revision should change.
+        tree.branch.nick = 'bar'
+        tree.commit('bar-ness', allow_pointless=True)
+        tree.branch.revert_thread('bar')
+        self.assertEqual(
+            [('foo', bzrlib.revision.NULL_REVISION)],
+            tree.branch.get_threads())
+        self.assertEqual(None, tree.branch.last_revision())

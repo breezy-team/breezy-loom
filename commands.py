@@ -22,6 +22,7 @@ import bzrlib.commands
 import bzrlib.branch
 import bzrlib.errors
 import bzrlib.merge
+from bzrlib.option import Option
 import bzrlib.revision
 import bzrlib.trace
 
@@ -115,6 +116,34 @@ class cmd_record(bzrlib.commands.Command):
         (abranch, path) = bzrlib.branch.Branch.open_containing('.')
         abranch.record_loom(message)
         print "Loom recorded."
+
+
+class cmd_revert_loom(bzrlib.commands.Command):
+    """Revert part of all of a loom.
+    
+    This will update the current loom to be the same as the basis when --all
+    is supplied. If no parameters or options are supplied then nothing will
+    happen. If a thread is named, then only that thread is reverted to its
+    state in the last committed loom.
+    """
+
+    takes_args = ['thread?']
+    takes_options = [Option('all', 
+                        help='revert all threads'),
+                     ]
+
+    def run(self, thread=None, all=None):
+        if thread is None and all is None:
+            bzrlib.trace.note('Please see revert-loom -h.')
+            return
+        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
+        tree = LoomTreeDecorator(tree)
+        if all:
+            tree.revert_loom()
+            bzrlib.trace.note('All threads reverted.')
+        else:
+            tree.revert_loom(thread)
+            bzrlib.trace.note("thread '%s' reverted.", thread)
 
 
 class cmd_down_thread(bzrlib.commands.Command):

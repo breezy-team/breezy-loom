@@ -51,6 +51,7 @@ for command in [
     'down_thread',
     'loomify',
     'record',
+    'revert_loom',
     'show_loom',
     'up_thread',
     ]:
