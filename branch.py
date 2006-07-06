@@ -100,6 +100,9 @@ class LoomMetaTree(bzrlib.tree.Tree):
 class LoomBranch(bzrlib.branch.BzrBranch5):
     """The Loom branch."""
 
+    # the current loom format marker
+    _CURRENT_LOOM_FORMAT_STRING = "Loom current 1"
+
     @needs_read_lock
     def clone(self, to_bzrdir, revision_id=None):
         """Clone the branch into to_bzrdir.
@@ -192,7 +195,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         Currently the disk format is:
         ----
         Loom meta 1
-        revisionid threadname_inu_tf8
+        revisionid threadname_in_utf8
         ----
         if revisionid is null:, this is a new, empty branch.
         """
@@ -206,11 +209,26 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         assert lines[0] == 'Loom meta 1\n'
         return lines[1:]
 
+    def _current_loom_content(self):
+        """Return the raw formatted content of the 'last-loom'.
+
+        Currently the disk format is:
+        ----
+        Loom current 1
+        [parent_rev_id [parent_rev_id ...]]
+        [revisionid_parent1 [revisionid_parent2 ...]] current_revisionid threadname_in_utf8
+        ----
+        any revisionid of null: refers to an EmptyTree as the tree state.
+        """
+        current_content = self.control_files.get_utf8('last-loom')
+        lines = current_content.read().split('\n')
+        assert lines[0] == LoomBranch._CURRENT_LOOM_FORMAT_STRING
+        return lines
+
     def loom_parents(self):
         """Return the current parents to use in the next commit."""
-        parent_content = self.control_files.get_utf8('last-loom')
-        lines = parent_content.read().split('\n')
-        return [line for line in lines if line]
+        current_content = self._current_loom_content()
+        return current_content[1].split()
 
     def new_thread(self, thread_name, after_thread=None):
         """Add a new thread to this branch called 'thread_name'."""
@@ -227,9 +245,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             revision_for_thread = self.last_revision()
         else:
             revision_for_thread = threads[insertion_point - 1][1]
-        content = self._loom_content()
         if revision_for_thread is None:
             revision_for_thread = bzrlib.revision.NULL_REVISION
+        content = self._loom_content()
         content.insert(
             insertion_point, "%s %s\n" % (revision_for_thread, thread_name))
         return self._record_loom(content, 'new thread: %s' % thread_name)
@@ -340,7 +358,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
 
     def _set_last_loom(self, rev_id):
         """Set the last loom revision in this branch to rev_id."""
-        self.control_files.put_utf8('last-loom', rev_id)
+        content = self._current_loom_content()
+        content[1] = "%s" % rev_id
+        self.control_files.put_utf8('last-loom', '\n'.join(content))
 
     def unlock(self):
         """Unlock the loom after a lock.
@@ -387,7 +407,7 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         super(BzrBranchLoomFormat1, self).initialize(a_bzrdir)
         branch_transport = a_bzrdir.get_branch_transport(self)
         # TODO set this here.
-        utf8_files = [('last-loom', ''),
+        utf8_files = [('last-loom', LoomBranch._CURRENT_LOOM_FORMAT_STRING + '\n'),
                       ]
         control_files = bzrlib.lockable_files.LockableFiles(
             branch_transport, 'lock', bzrlib.lockdir.LockDir)
@@ -429,7 +449,7 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         """
         assert branch._format.__class__ is bzrlib.branch.BzrBranchFormat5
         branch.control_files.put_utf8('format', self.get_format_string())
-        branch.control_files.put_utf8('last-loom', '')
+        branch.control_files.put_utf8('last-loom', LoomBranch._CURRENT_LOOM_FORMAT_STRING + '\n')
 
 
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat1())

@@ -34,7 +34,7 @@ class TestFormat(TestCaseWithTransport):
         bzrdir.create_repository()
         format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
         branch = format.initialize(bzrdir)
-        self.assertFileEqual('', '.bzr/branch/last-loom')
+        self.assertFileEqual('Loom current 1\n', '.bzr/branch/last-loom')
 
     def test_take_over_branch(self):
         branch = self.make_branch('.')
@@ -47,8 +47,8 @@ class TestFormat(TestCaseWithTransport):
         # a loomed branch opens with a different format
         branch = bzrlib.branch.Branch.open('.')
         self.assertIsInstance(branch, bzrlib.plugins.loom.branch.LoomBranch)
-        # and it should have recorded loom content so we can do
-        self.assertFileEqual('', '.bzr/branch/last-loom')
+        # and it should have no recorded loom content so we can do
+        self.assertFileEqual('Loom current 1\n', '.bzr/branch/last-loom')
         self.assertEqual([], branch.loom_parents())
 
 
