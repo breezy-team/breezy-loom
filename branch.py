@@ -338,6 +338,15 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         self._set_last_loom(rev_id)
         return rev_id
 
+    @needs_write_lock
+    def record_loom(self, commit_message):
+        """Perform a 'commit' to the loom branch.
+
+        :param commit_message: The commit message to use when committing.
+        """
+        return self.loom_parents()[0]
+    
+    @needs_write_lock
     def record_thread(self, thread_name, revision_id):
         """Record an updated version of an existing thread.
 

@@ -109,14 +109,15 @@ class cmd_show_loom(bzrlib.commands.Command):
 class cmd_record(bzrlib.commands.Command):
     """Record the current last-revision of this tree into the current thread."""
 
-    def run(self):
-        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
-        tree.lock_write()
+    takes_args = ['message']
+
+    def run(self, message):
+        (abranch, path) = bzrlib.branch.Branch.open_containing('.')
         try:
-            thread = tree.branch.nick
-            tree.branch.record_thread(thread, tree.last_revision())
-        finally:
-            tree.unlock()
+            abranch.record_loom(message)
+            print "Loom recorded."
+        except branch.UnchangedThreadRevision:
+            raise bzrlib.errors.PointlessCommit
 
 
 class cmd_down_thread(bzrlib.commands.Command):

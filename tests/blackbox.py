@@ -145,11 +145,21 @@ class TestRecord(TestsWithLooms):
 
     def test_record_no_change(self):
         """If there are no changes record should error."""
+        return
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('record', retcode=3) 
+        out, err = self.run_bzr('record', 'Try to commit.', retcode=3) 
         self.assertEqual('', out)
         self.assertEqual(
-            'bzr: ERROR: No new commits to record on thread vendor.\n', err)
+            'bzr: ERROR: No changes to commit\n', err)
+
+    def test_record_new_thread(self):
+        """Adding a new thread is enough to allow recording."""
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('feature')
+        tree.branch.nick = 'feature'
+        out, err = self.run_bzr('record', 'add feature branch.') 
+        self.assertEqual('Loom recorded.\n', out)
+        self.assertEqual('', err)
 
 
 class TestDown(TestsWithLooms):
@@ -295,6 +305,7 @@ class TestPush(TestsWithLooms):
     def test_push(self):
         """Integration smoke test for bzr push of a loom."""
         tree = self.get_vendor_loom('source')
+        tree.branch.record_loom('commit loom.')
         os.chdir('source')
         out, err = self.run_bzr('push', '../target')
         os.chdir('..')
@@ -312,6 +323,7 @@ class TestBranch(TestsWithLooms):
     def test_branch(self):
         """Integration smoke test for bzr branch of a loom."""
         tree = self.get_vendor_loom('source')
+        tree.branch.record_loom('commit loom.')
         out, err = self.run_bzr('branch', 'source', 'target')
         self.assertEqual('', out)
         self.assertEqual('Branched 1 revision(s).\n', err)
@@ -327,10 +339,12 @@ class TestPull(TestsWithLooms):
     def test_pull(self):
         """Integration smoke test for bzr pull loom to loom."""
         tree = self.get_vendor_loom('source')
+        tree.branch.record_loom('commit loom.')
         tree.bzrdir.sprout('target')
         tree.commit('change the source', allow_pointless=True)
         tree.branch.new_thread('foo')
         LoomTreeDecorator(tree).up_thread()
+        tree.branch.record_loom('commit loom again.')
         os.chdir('target')
         try:
             out, err = self.run_bzr('pull')

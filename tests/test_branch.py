@@ -161,6 +161,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree.branch.new_thread('top')
         source_tree.branch.nick = 'top'
         source_tree.commit('phwoar', allow_pointless=True)
+        source_tree.branch.record_loom('commit to loom')
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
 
@@ -171,6 +172,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree.branch.new_thread('top')
         source_tree.branch.nick = 'top'
         source_tree.commit('phwoar', allow_pointless=True)
+        source_tree.branch.record_loom('commit to loom')
         LoomTreeDecorator(source_tree).down_thread()
         # now clone
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
@@ -183,6 +185,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree.branch.new_thread('top')
         source_tree.branch.nick = 'top'
         source_tree.commit('phwoar', allow_pointless=True)
+        source_tree.branch.record_loom('commit to loom')
         LoomTreeDecorator(source_tree).down_thread()
         # now sprout
         target_tree = source_tree.bzrdir.sprout('target').open_workingtree()
@@ -194,12 +197,16 @@ class TestLoom(TestCaseWithLoom):
         Due to the calls made, this will ensure the loom content has been
         pulled, and that the tree state is correct.
         """
-        # the loom pointer is the same,
+        # the loom pointer has a parent of the source looms tip
+        source_parents = source_tree.branch.loom_parents()
         self.assertEqual(
-            source_tree.branch.loom_parents(),
+            source_parents[:1],
             target_tree.branch.loom_parents())
         # the branch nick is the top warp.
-        source_threads = source_tree.branch.get_threads()
+        if source_parents:
+            source_threads = source_tree.branch.get_threads(rev_id = source_parents[0])
+        else:
+            source_threads = []
         if source_threads:
             self.assertEqual(
                 source_threads[-1][0],
@@ -229,6 +236,7 @@ class TestLoom(TestCaseWithLoom):
         source.branch.new_thread('bottom')
         source.branch.new_thread('top')
         source.branch.nick = 'bottom'
+        source.branch.record_loom('commit to loom')
         target = source.bzrdir.sprout('target').open_branch()
         target.nick = 'top'
         # put a commit in the bottom and top of this loom
@@ -239,6 +247,7 @@ class TestLoom(TestCaseWithLoom):
         source_loom_tree.down_thread()
         # and now another commit at the bottom
         bottom_rev2 = source.commit('bottom 2', allow_pointless=True)
+        source.branch.record_loom('commit to loom again')
         # we now have two commits in the bottom warp, one in the top, and
         # all three should be pulled. We are pulling into a loom which has
         # a different current thread too, which should not affect us.
@@ -274,3 +283,14 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual(
             [('bottom', bottom_rev1)],
             tree.branch.get_threads())
+
+    def test_trivial_record_loom(self):
+        tree = self.get_tree_with_loom('.')
+        # for this test, we want to ensure that we have an empty loom-branch.
+        self.assertEqual([], tree.branch.loom_parents())
+        # add a thread and record it.
+        tree.branch.new_thread('bottom')
+        tree.branch.nick = 'bottom'
+        rev_id = tree.branch.record_loom('Setup test loom.')
+        # after recording, the parents list should have changed.
+        self.assertEqual([rev_id], tree.branch.loom_parents())

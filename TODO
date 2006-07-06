@@ -59,3 +59,10 @@ does note calls.
   there is no need to require my warp to have all the subcomponents of yours
   when I just want the resulting patch as a component of my warp. If your 
   baseline warp is ahead of mine, I'll just get no-op updates.
+- record loom with no changes to refuse to commit
+- record loom with merges to record a merge
+- record loom with conflicts to refuce to commit
+- pull with uncommitted changes to ignore them and use the committed loom
+  only.
+- pull into a 'new loom' without error or warning.
+- ' merge into a loom to create combined loom.'
