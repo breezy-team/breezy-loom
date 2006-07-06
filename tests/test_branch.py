@@ -21,6 +21,7 @@
 
 
 import bzrlib
+import bzrlib.errors as errors
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
@@ -34,7 +35,7 @@ class TestFormat(TestCaseWithTransport):
         bzrdir.create_repository()
         format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
         branch = format.initialize(bzrdir)
-        self.assertFileEqual('Loom current 1\n', '.bzr/branch/last-loom')
+        self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
 
     def test_take_over_branch(self):
         branch = self.make_branch('.')
@@ -48,7 +49,7 @@ class TestFormat(TestCaseWithTransport):
         branch = bzrlib.branch.Branch.open('.')
         self.assertIsInstance(branch, bzrlib.plugins.loom.branch.LoomBranch)
         # and it should have no recorded loom content so we can do
-        self.assertFileEqual('Loom current 1\n', '.bzr/branch/last-loom')
+        self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
         self.assertEqual([], branch.loom_parents())
 
 
@@ -60,14 +61,14 @@ class TestLoom(TestCaseWithLoom):
         format.take_over(branch)
         branch = bzrlib.branch.Branch.open('.')
         branch.new_thread('foo')
-        # TODO: assert that no loom data is committed
-        # self.assertEqual([], branch.loom_parents())
+        # assert that no loom data is committed, this change should
+        # have been current-loom only
+        self.assertEqual([], branch.loom_parents())
         self.assertEqual(
             [('foo', bzrlib.revision.NULL_REVISION)],
             branch.get_threads())
         branch.new_thread('bar')
-        # TODO: assert that no loom data is committed
-        # self.assertEqual([], branch.loom_parents())
+        self.assertEqual([], branch.loom_parents())
         self.assertEqual(
             [('foo', bzrlib.revision.NULL_REVISION),
              ('bar', bzrlib.revision.NULL_REVISION)],
@@ -121,6 +122,10 @@ class TestLoom(TestCaseWithLoom):
              ],
             tree.branch.get_threads())
 
+    def test_record_loom_no_changes(self):
+        tree = self.get_tree_with_loom()
+        self.assertRaises(errors.PointlessCommit, tree.branch.record_loom, 'foo')
+            
     def test_record_thread(self):
         tree = self.get_tree_with_one_commit()
         tree.branch.new_thread('baseline')
@@ -138,8 +143,7 @@ class TestLoom(TestCaseWithLoom):
             self.assertEqual(
                 [('baseline', tree.last_revision()), ('tail', first_rev)], 
                 tree.branch.get_threads())
-            # TODO: assert that no loom data is committed
-            # self.assertEqual([], tree.branch.loom_parents())
+            self.assertEqual([], tree.branch.loom_parents())
         finally:
             tree.unlock()
 

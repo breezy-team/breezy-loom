@@ -66,3 +66,6 @@ does note calls.
   only.
 - pull into a 'new loom' without error or warning.
 - ' merge into a loom to create combined loom.'
+- record_thread_preserves_loom_parents
+- include basis and parent revids in current-loom for each warp.
+- 

@@ -113,11 +113,8 @@ class cmd_record(bzrlib.commands.Command):
 
     def run(self, message):
         (abranch, path) = bzrlib.branch.Branch.open_containing('.')
-        try:
-            abranch.record_loom(message)
-            print "Loom recorded."
-        except branch.UnchangedThreadRevision:
-            raise bzrlib.errors.PointlessCommit
+        abranch.record_loom(message)
+        print "Loom recorded."
 
 
 class cmd_down_thread(bzrlib.commands.Command):

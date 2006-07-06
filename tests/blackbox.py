@@ -23,10 +23,10 @@ import os
 
 import bzrlib
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
-from bzrlib.tests import TestCaseWithTransport
+from bzrlib.plugins.loom.tests import TestCaseWithLoom
 
 
-class TestsWithLooms(TestCaseWithTransport):
+class TestsWithLooms(TestCaseWithLoom):
     """A base class with useful helpers for loom blackbox tests."""
 
     def get_vendor_loom(self, path='.'):
@@ -38,7 +38,7 @@ class TestsWithLooms(TestCaseWithTransport):
         return tree.bzrdir.open_workingtree()
     
 
-class TestLoomify(TestCaseWithTransport):
+class TestLoomify(TestCaseWithLoom):
 
     def test_loomify_new_branch(self):
         b = self.make_branch('.')
@@ -145,8 +145,7 @@ class TestRecord(TestsWithLooms):
 
     def test_record_no_change(self):
         """If there are no changes record should error."""
-        return
-        tree = self.get_vendor_loom()
+        tree = self.get_tree_with_loom()
         out, err = self.run_bzr('record', 'Try to commit.', retcode=3) 
         self.assertEqual('', out)
         self.assertEqual(
