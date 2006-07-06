@@ -59,16 +59,15 @@ class TestLoom(TestCaseWithLoom):
         format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
         format.take_over(branch)
         branch = bzrlib.branch.Branch.open('.')
-        loom_rev_id = branch.new_thread('foo')
-        self.assertNotEqual(None, loom_rev_id)
-        self.assertEqual([loom_rev_id], branch.loom_parents())
+        branch.new_thread('foo')
+        # TODO: assert that no loom data is committed
+        # self.assertEqual([], branch.loom_parents())
         self.assertEqual(
             [('foo', bzrlib.revision.NULL_REVISION)],
             branch.get_threads())
-        loom_rev_id_2 = branch.new_thread('bar')
-        self.assertNotEqual(loom_rev_id, loom_rev_id_2)
-        self.assertNotEqual(None, loom_rev_id_2)
-        self.assertEqual([loom_rev_id_2], branch.loom_parents())
+        branch.new_thread('bar')
+        # TODO: assert that no loom data is committed
+        # self.assertEqual([], branch.loom_parents())
         self.assertEqual(
             [('foo', bzrlib.revision.NULL_REVISION),
              ('bar', bzrlib.revision.NULL_REVISION)],
@@ -139,6 +138,8 @@ class TestLoom(TestCaseWithLoom):
             self.assertEqual(
                 [('baseline', tree.last_revision()), ('tail', first_rev)], 
                 tree.branch.get_threads())
+            # TODO: assert that no loom data is committed
+            # self.assertEqual([], tree.branch.loom_parents())
         finally:
             tree.unlock()
 
@@ -250,6 +251,11 @@ class TestLoom(TestCaseWithLoom):
             [('bottom', bottom_rev2),
              ('top', top_rev1)],
             threads)
+        # check loom tip was pulled
+        loom_rev_ids = source.branch.loom_parents()
+        for rev_id in loom_rev_ids:
+            self.assertTrue(target.repository.has_revision(rev_id))
+        self.assertEqual(source.branch.loom_parents(), target.loom_parents())
 
     def test_implicit_record(self):
         tree = self.get_tree_with_loom('source')

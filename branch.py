@@ -28,7 +28,7 @@ loom branch.
 from StringIO import StringIO
 
 import bzrlib.branch
-from bzrlib.decorators import needs_read_lock
+from bzrlib.decorators import needs_read_lock, needs_write_lock
 import bzrlib.errors
 import bzrlib.osutils
 import bzrlib.ui
@@ -252,6 +252,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             insertion_point, "%s %s\n" % (revision_for_thread, thread_name))
         return self._record_loom(content, 'new thread: %s' % thread_name)
 
+    @needs_write_lock
     def pull(self, source, overwrite=False, stop_revision=None):
         """Pull from a branch into this loom.
 
@@ -283,6 +284,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                     self.generate_revision_history(new_rev)
                     return len(self.revision_history()) - old_count
 
+                # the first parent is the 'tip' revision.
                 source_loom_rev = source.loom_parents()[0]
                 if not overwrite:
                     # is the loom compatible?
