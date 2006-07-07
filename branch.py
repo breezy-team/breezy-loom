@@ -124,10 +124,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             parents = self.loom_parents()
             if parents:
                 loom_tip = parents[0]
-                threads = self.get_threads(loom_tip)
             else:
                 loom_tip = None
-                threads = []
+            threads = self.get_basis_threads()
             new_history = self.revision_history()
             if revision_id is not None:
                 if threads:
@@ -173,7 +172,17 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 destination.nick = threads[-1][0]
         finally:
             destination.unlock()
-    
+
+    def get_basis_threads(self):
+        """Return the threads for the basis revision."""
+        content = self._current_loom_content()
+        parents = content[1].split()
+        if not parents:
+            return []
+        else:
+            old_content = self._loom_content(parents[0])
+            return self._parse_loom(old_content)
+
     def get_threads(self, rev_id=None):
         """Return the current threads in this loom.
 
@@ -309,7 +318,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 # fetch the loom content
                 self.repository.fetch(source.repository,
                     revision_id=source_loom_rev)
-                # get the threads for that revision
+                # get the threads for the revision we are 
+                # stopping at from our repository.
                 threads = self.get_threads(rev_id=source_loom_rev)
                 revisions = [rev for name,rev in threads]
                 # for each thread from top to bottom, retrieve its referenced
@@ -392,10 +402,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     def revert_loom(self):
         """Revert the loom to be the same as the basis loom."""
         parents = self.loom_parents()
-        if not parents:
-            self._set_last_loom(None, [])
-        else:
-            self._self_last_loom([parents[0]], self.get_threads(parents[0]))
+        parents = parents[0:1]
+        self._set_last_loom(parents, self.get_basis_threads())
 
     @needs_write_lock
     def revert_thread(self, thread):
@@ -409,10 +417,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         current_content = self._current_loom_content()
         threads = self.get_threads()
         position = self._thread_index(threads, thread)
-        if not parents:
-            basis_threads = []
-        else:
-            basis_threads = self.get_threads(parents[0])
+        basis_threads = self.get_basis_threads()
         if thread in dict(basis_threads):
             threads[position] = (thread, dict(basis_threads)[thread])
             self._set_last_loom(parents, threads)

@@ -320,3 +320,14 @@ class TestLoom(TestCaseWithLoom):
             [('foo', bzrlib.revision.NULL_REVISION)],
             tree.branch.get_threads())
         self.assertEqual(None, tree.branch.last_revision())
+    
+    def test_get_basis_threads(self):
+        tree = self.get_tree_with_loom('.')
+        self.assertEqual([], tree.branch.get_basis_threads())
+        tree.branch.new_thread('a new thread')
+        tree.branch.nick = 'a new thread'
+        self.assertEqual([], tree.branch.get_basis_threads())
+        tree.branch.record_loom('commit loom')
+        self.assertEqual(
+            [('a new thread', bzrlib.revision.NULL_REVISION)],
+            tree.branch.get_basis_threads())
