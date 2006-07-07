@@ -104,7 +104,6 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     """The Loom branch."""
 
     # the current loom format marker
-    _CURRENT_LOOM_FORMAT_STRING = "Loom current 1"
 
     @needs_read_lock
     def clone(self, to_bzrdir, revision_id=None):
@@ -162,13 +161,15 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                                 revision_id=rev_id)
                 finally:
                     nested.finished()
+            state = loom_state.LoomState()
             if threads:
                 destination.generate_revision_history(threads[-1][1])
-                destination._set_last_loom([loom_tip], threads)
+                state.set_parents([(loom_tip, threads)])
+                state.set_threads(threads)
             else:
                 # no threads yet, be a normal branch.
                 destination.set_revision_history(new_history)
-                destination._set_last_loom(None, [])
+            destination._set_last_loom(state)
             parent = self.get_parent()
             if parent:
                 destination.set_parent(parent)
@@ -236,7 +237,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         """
         current_content = self.control_files.get_utf8('last-loom')
         lines = current_content.read().split('\n')
-        assert lines[0] == LoomBranch._CURRENT_LOOM_FORMAT_STRING
+        assert lines[0] == loom_io._CURRENT_LOOM_FORMAT_STRING
         return lines
 
     def loom_parents(self):
@@ -295,7 +296,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         try:
             source.lock_read()
             try:
-                source_parents = source.loom_parents()
+                source_state = source.get_loom_state()
+                source_parents = source_state.get_parents()
                 if not source_parents:
                     # no thread commits ever
                     # just pull the main branch.
@@ -310,21 +312,22 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                     old_count = len(self.revision_history())
                     self.generate_revision_history(new_rev)
                     return len(self.revision_history()) - old_count
-
+                # pulling a loom
                 # the first parent is the 'tip' revision.
-                source_loom_rev = source.loom_parents()[0]
+                my_state = self.get_loom_state()
+                source_loom_rev = source_state.get_parents()[0]
                 if not overwrite:
                     # is the loom compatible?
                     source_ancestry = source.repository.get_ancestry(
                         source_loom_rev)
-                    if self.loom_parents()[0] not in source_ancestry:
+                    if my_state.get_parents()[0] not in source_ancestry:
                         raise bzrlib.errors.DivergedBranches(self, source)
                 # fetch the loom content
                 self.repository.fetch(source.repository,
                     revision_id=source_loom_rev)
-                # get the threads for the revision we are 
+                # get the threads for the new basis
+                threads = source_state.get_basis_threads()
                 # stopping at from our repository.
-                threads = self.get_threads(rev_id=source_loom_rev)
                 revisions = [rev for name,rev in threads]
                 # for each thread from top to bottom, retrieve its referenced
                 # content. XXX FIXME: a revision_ids parameter to fetch would be
@@ -335,9 +338,13 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                     # fetch the loom content for this revision
                     self.repository.fetch(source.repository,
                         revision_id=rev_id)
-                # now change the last loom revision. At this point all the data
-                # is in place.
-                self._set_last_loom([source_loom_rev], threads)
+                # set our work threads to match (this is where we lose data if
+                # there are local mods)
+                my_state.set_threads(threads)
+                # and the new parent data
+                my_state.set_parents([(source_loom_rev, threads)])
+                # and save the state.
+                self._set_last_loom(my_state)
                 # set the branch nick.
                 self.nick = threads[-1][0]
                 # and position the branch on the top loom
@@ -374,7 +381,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             loom_ie, parents, 'loom', loom_tree)
         builder.finish_inventory()
         rev_id = builder.commit(commit_message)
-        self._set_last_loom([rev_id])
+        state.set_parents([(rev_id, threads)])
+        self._set_last_loom(state)
         return rev_id
     
     @needs_write_lock
@@ -388,27 +396,27 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         state = self.get_loom_state()
         threads = state.get_threads()
         assert thread_name in dict(threads)
-        content = [LoomBranch._CURRENT_LOOM_FORMAT_STRING]
-        # TODO: dont access the loom content twice here.
-        content.append(' '.join(self.loom_parents()))
         if revision_id is None:
             revision_id = bzrlib.revision.NULL_REVISION
-        for name, rev in threads:
+        for position, (name, rev) in enumerate(threads):
             if name == thread_name:
                 if revision_id == rev:
                     raise UnchangedThreadRevision(self, thread_name)
-                rev = revision_id
-            content.append("%s %s" % (rev, name))
-        content.append('') # end with a \n
-        self.control_files.put_utf8('last-loom', '\n'.join(content))
+                threads[position] = (name, revision_id)
+        state.set_threads(threads)
+        self._set_last_loom(state)
 
     @needs_write_lock
     def revert_loom(self):
         """Revert the loom to be the same as the basis loom."""
         state = self.get_loom_state()
+        # reset the current threads
+        state.set_threads(state.get_basis_threads())
         parents = state.get_parents()
-        parents = parents[0:1]
-        self._set_last_loom(parents, state.get_basis_threads())
+        # reset the parents list to just the basis.
+        if len(parents):
+            state.set_parents([(parents[0], state.get_basis_threads())])
+        self._set_last_loom(state)
 
     @needs_write_lock
     def revert_thread(self, thread):
@@ -425,10 +433,11 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         basis_threads = state.get_basis_threads()
         if thread in dict(basis_threads):
             threads[position] = (thread, dict(basis_threads)[thread])
-            self._set_last_loom(parents, threads)
         else:
             del threads[position]
-            self._set_last_loom(parents, threads)
+        state.set_threads(threads)
+        self._set_last_loom(state)
+        # adjust the nickname to be valid
         if self.nick not in dict(threads):
             if len(threads) == position:
                 # removed the end
@@ -436,25 +445,13 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 self.nick = threads[-1][0]
                 self.generate_revision_history(threads[-1][1])
 
-    def _set_last_loom(self, parents, threads=None):
-        """Set the last-loom file.
-        
-        :param parents: the parents to record.
-        :param content: If supplied, the loom to be recorded.
-        """
-        if threads is None:
-            content = self._current_loom_content()
-        else:
-            content = [LoomBranch._CURRENT_LOOM_FORMAT_STRING]
-            content.append('')
-            for thread, thread_rev in threads:
-                content.append('%s %s' % (thread_rev, thread))
-            content.append('')
-        if parents is not None:
-            content[1] = ' '.join(parents)
-        else:
-            content[1] = ''
-        self.control_files.put_utf8('last-loom', '\n'.join(content))
+    def _set_last_loom(self, state):
+        """Record state to the last-loom control file."""
+        stream = StringIO()
+        writer = loom_io.LoomStateWriter(state)
+        writer.write(stream)
+        stream.seek(0)
+        self.control_files.put('last-loom', stream)
 
     def unlock(self):
         """Unlock the loom after a lock.
@@ -501,14 +498,19 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         """Create a branch of this format in a_bzrdir."""
         super(BzrBranchLoomFormat1, self).initialize(a_bzrdir)
         branch_transport = a_bzrdir.get_branch_transport(self)
-        utf8_files = [('last-loom', LoomBranch._CURRENT_LOOM_FORMAT_STRING + '\n\n'),
-                      ]
+        files = []
+        state = loom_state.LoomState()
+        writer = loom_io.LoomStateWriter(state)
+        state_stream = StringIO()
+        writer.write(state_stream)
+        state_stream.seek(0)
+        files.append(('last-loom', state_stream))
         control_files = bzrlib.lockable_files.LockableFiles(
             branch_transport, 'lock', bzrlib.lockdir.LockDir)
         control_files.lock_write()
         try:
-            for file, content in utf8_files:
-                control_files.put_utf8(file, content)
+            for name, stream in files:
+                control_files.put(name, stream)
         finally:
             control_files.unlock()
         return self.open(a_bzrdir, _found=True, )
@@ -543,7 +545,12 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         """
         assert branch._format.__class__ is bzrlib.branch.BzrBranchFormat5
         branch.control_files.put_utf8('format', self.get_format_string())
-        branch.control_files.put_utf8('last-loom', LoomBranch._CURRENT_LOOM_FORMAT_STRING + '\n\n')
+        state = loom_state.LoomState()
+        writer = loom_io.LoomStateWriter(state)
+        state_stream = StringIO()
+        writer.write(state_stream)
+        state_stream.seek(0)
+        branch.control_files.put('last-loom', state_stream)
 
 
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat1())

@@ -23,6 +23,11 @@
 import bzrlib.osutils
 
 
+# The current format marker for serialised loom state.
+# This belongs in a format object at some point.
+_CURRENT_LOOM_FORMAT_STRING = "Loom current 1"
+
+
 class LoomWriter(object):
     """LoomWriter objects are used to serialise looms."""
 
@@ -34,3 +39,22 @@ class LoomWriter(object):
         thread_content = thread_content.encode('utf8')
         stream.write(thread_content)
         return bzrlib.osutils.sha_strings([thread_content])
+
+
+class LoomStateWriter(object):
+    """LoomStateWriter objects are used to write out LoomState objects."""
+
+    def __init__(self, state):
+        """Initialise a LoomStateWriter with a state object.
+
+        :param state: The LoomState object to be written out.
+        """
+        self._state = state
+
+    def write(self, stream):
+        """Write the state object to stream."""
+        lines = [_CURRENT_LOOM_FORMAT_STRING + '\n']
+        lines.append(' '.join(self._state.get_parents()) + '\n')
+        for thread, rev_id in self._state.get_threads():
+            lines.append('%s %s\n' % (rev_id, thread))
+        stream.write(''.join(lines).encode('utf8'))

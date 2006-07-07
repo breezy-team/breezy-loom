@@ -45,7 +45,7 @@ class LoomState(object):
 
     def get_threads(self):
         """Get the threads for the current state."""
-        return self._threads
+        return list(self._threads)
 
     def set_parents(self, parent_list):
         """Set the parents of this state to parent_list.

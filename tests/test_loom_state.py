@@ -49,6 +49,9 @@ class TestLoomState(TestCase):
         self.assertEqual(sample_threads, state.get_threads())
         sample_threads.append('foo')
         self.assertNotEqual(sample_threads, state.get_threads())
+        sample_threads = state.get_threads()
+        sample_threads.append('foo')
+        self.assertNotEqual(sample_threads, state.get_threads())
 
     def test_set_get_parents(self):
         state = loom_state.LoomState()

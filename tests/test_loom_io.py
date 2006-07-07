@@ -26,6 +26,7 @@ import bzrlib
 import bzrlib.errors as errors
 import bzrlib.osutils
 import bzrlib.plugins.loom.loom_io as loom_io
+import bzrlib.plugins.loom.loom_state as loom_state
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
 from bzrlib.tests import TestCase
@@ -35,8 +36,10 @@ class TestLoomIO(TestCase):
 
     def test_writer_constructors(self):
         writer = loom_io.LoomWriter()
+        state = loom_state.LoomState()
+        writer = loom_io.LoomStateWriter(state)
 
-    def assertWritesCorrectly(self, expected_stream, threads):
+    def assertWritesThreadsCorrectly(self, expected_stream, threads):
         """Write threads through a LoomWriter and check the output and sha1."""
         writer = loom_io.LoomWriter()
         stream = StringIO()
@@ -45,10 +48,10 @@ class TestLoomIO(TestCase):
         self.assertEqual(expected_stream, stream.getvalue())
 
     def test_write_empty_threads(self):
-        self.assertWritesCorrectly('Loom meta 1\n', [])
+        self.assertWritesThreadsCorrectly('Loom meta 1\n', [])
 
     def test_write_threads(self):
-        self.assertWritesCorrectly(
+        self.assertWritesThreadsCorrectly(
             'Loom meta 1\n'
             'null: baseline\n'
             'asdasdasdxxxrr not the baseline\n',
@@ -57,10 +60,72 @@ class TestLoomIO(TestCase):
             )
 
     def test_write_unicode_threads(self):
-        self.assertWritesCorrectly(
+        self.assertWritesThreadsCorrectly(
             'Loom meta 1\n'
             'null: base\xc3\x9eline\n'
             'asd\xc3\xadasdasdxxxrr not the baseline\n',
             [(u'base\xdeline', bzrlib.revision.NULL_REVISION),
              ('not the baseline', u'asd\xedasdasdxxxrr')],
             )
+
+    def assertWritesStateCorrectly(self, expected_stream, state):
+        """Write state to a stream and check it against expected_stream."""
+        writer = loom_io.LoomStateWriter(state)
+        stream = StringIO()
+        writer.write(stream)
+        self.assertEqual(expected_stream, stream.getvalue())
+
+    def test_write_empty_state(self):
+        state = loom_state.LoomState()
+        self.assertWritesStateCorrectly(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n\n',
+            state)
+
+    def test_write_state_with_parent(self):
+        state = loom_state.LoomState()
+        state.set_parents([('1', [('name', 'revid')])])
+        self.assertWritesStateCorrectly(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '1\n',
+            state)
+
+    def test_write_state_with_parents(self):
+        state = loom_state.LoomState()
+        state.set_parents(
+            [('1', [('name', 'revid')]),
+             (u'2\xeb', [(u'n\xbcame', u'rev\xed')]),
+             ])
+        self.assertWritesStateCorrectly(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '1 2\xc3\xab\n',
+            state)
+
+    def test_write_state_with_threads(self):
+        state = loom_state.LoomState()
+        state.set_threads(
+            [('base ', 'baserev'),
+             (u'\xedtop', u'\xe9toprev'),
+             ])
+        self.assertWritesStateCorrectly(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '\n'
+            'baserev base \n'
+            '\xc3\xa9toprev \xc3\xadtop\n',
+            state)
+        
+    def test_write_state_with_threads_and_parents(self):
+        state = loom_state.LoomState()
+        state.set_threads(
+            [('base ', 'baserev'),
+             (u'\xedtop', u'\xe9toprev'),
+             ])
+        state.set_parents(
+            [('1', [('name', 'revid')]),
+             (u'2\xeb', [(u'n\xbcame', u'rev\xed')]),
+             ])
+        self.assertWritesStateCorrectly(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '1 2\xc3\xab\n'
+            'baserev base \n'
+            '\xc3\xa9toprev \xc3\xadtop\n',
+            state)
