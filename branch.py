@@ -33,6 +33,8 @@ import bzrlib.errors
 import bzrlib.osutils
 import bzrlib.ui
 
+import loom_io
+
 
 class LoomThreadError(bzrlib.errors.BzrNewError):
     """Base class for Loom-Thread errors."""
@@ -63,22 +65,22 @@ class UnchangedThreadRevision(LoomThreadError):
 class LoomMetaTree(bzrlib.tree.Tree):
     """A 'tree' object that is used to commit the loom meta branch."""
 
-    def __init__(self, loom_meta_ie, loom_content_lines):
+    def __init__(self, loom_meta_ie, loom_stream, loom_sha1):
         """Create a Loom Meta Tree.
 
         :param loom_content_lines: the unicode content to be used for the loom.
         """
         self._inventory = bzrlib.inventory.Inventory()
         self.inventory.add(loom_meta_ie)
-        self.loom_content_lines = ['Loom meta 1\n'] + [
-            line.encode('utf8') for line in loom_content_lines]
+        self._loom_stream = loom_stream
+        self._loom_sha1 = loom_sha1
     
     def get_file(self, file_id):
         """Get the content of file_id from this tree.
 
         As usual this must be for the single existing file 'loom'.
         """
-        return StringIO(''.join(self.loom_content_lines))
+        return self._loom_stream
     
     def get_file_sha1(self, file_id, path):
         """Get the sha1 for a file. 
@@ -87,7 +89,7 @@ class LoomMetaTree(bzrlib.tree.Tree):
         """
         assert path == 'loom'
         assert file_id == 'loom_meta_tree'
-        return bzrlib.osutils.sha_strings(self.loom_content_lines)
+        return self._loom_sha1
 
     def is_executable(self, file_id, path):
         """get the executable status for file_id.
@@ -353,20 +355,19 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         """
         content = self._current_loom_content()
         parents = content[1].split()
-        if not parents:
-            old_threads = []
-        else:
-            old_content = self._loom_content(parents[0])
-            old_threads = self._parse_loom(old_content)
+        old_threads = self.get_basis_threads()
         threads = self._parse_loom(content[2:-1])
         # check the semantic value, not the serialised value for equality.
         if old_threads == threads:
             raise bzrlib.errors.PointlessCommit
-        content = ['%s\n' % line for line in content[2:-1]]
         builder = self.get_commit_builder(parents)
         loom_ie = bzrlib.inventory.make_entry(
             'file', 'loom', bzrlib.inventory.ROOT_ID, 'loom_meta_tree')
-        loom_tree = LoomMetaTree(loom_ie, content)
+        writer = loom_io.LoomWriter()
+        loom_stream = StringIO()
+        loom_sha1 = writer.write_threads(threads, loom_stream)
+        loom_stream.seek(0)
+        loom_tree = LoomMetaTree(loom_ie, loom_stream, loom_sha1)
         builder.record_entry_contents(
             loom_ie, parents, 'loom', loom_tree)
         builder.finish_inventory()

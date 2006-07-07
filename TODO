@@ -74,3 +74,8 @@ does note calls.
 - factor our LoomParsing etc into a helper class.
 - test for revert -thread when the thread stays present.
 - revert thread puts you on the next up remaining thread when the current thread goes awol if there are up-threads to go to.
+- want to be able to say 'here is a partial loom, now change it'
+- want to be able to say 'here is a loom stream, read it'
+- want to be able to say 'here are some threads, write a loom'
+- want to be able to say 'here are some parents, write a current-loom'
+- want to be able to say 'here is a current-loom, want to update it.'
