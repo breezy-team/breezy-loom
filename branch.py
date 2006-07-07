@@ -261,11 +261,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             revision_for_thread = threads[insertion_point - 1][1]
         if revision_for_thread is None:
             revision_for_thread = bzrlib.revision.NULL_REVISION
-        insertion_point += 2 # header + parents
-        content = self._current_loom_content()
-        content.insert(
-            insertion_point, "%s %s" % (revision_for_thread, thread_name))
-        self.control_files.put_utf8('last-loom', '\n'.join(content))
+        threads.insert(insertion_point, (thread_name, revision_for_thread))
+        state.set_threads(threads)
+        self._set_last_loom(state)
 
     def _thread_index(self, threads, after_thread):
         """Find the index of after_thread in threads."""
