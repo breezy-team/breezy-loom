@@ -34,6 +34,7 @@ import bzrlib.osutils
 import bzrlib.ui
 
 import loom_io
+import loom_state
 
 
 class LoomThreadError(bzrlib.errors.BzrNewError):
@@ -123,12 +124,13 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         destination.lock_write()
         try:
             source_nick = self.nick
-            parents = self.loom_parents()
+            state = self.get_loom_state()
+            parents = state.get_parents()
             if parents:
                 loom_tip = parents[0]
             else:
                 loom_tip = None
-            threads = self.get_basis_threads()
+            threads = state.get_basis_threads()
             new_history = self.revision_history()
             if revision_id is not None:
                 if threads:
@@ -175,27 +177,27 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         finally:
             destination.unlock()
 
-    def get_basis_threads(self):
-        """Return the threads for the basis revision."""
-        content = self._current_loom_content()
-        parents = content[1].split()
-        if not parents:
-            return []
-        else:
-            old_content = self._loom_content(parents[0])
-            return self._parse_loom(old_content)
-
-    def get_threads(self, rev_id=None):
+    def get_loom_state(self):
+        """Get the current loom state object."""
+        # TODO: cache the loom state during the transaction lifetime.
+        state = loom_state.LoomState()
+        parent_details = []
+        current_content = self._current_loom_content()
+        for parent in current_content[1].split():
+            content = self._loom_content(parent)
+            threads = self._parse_loom(content)
+            parent_details.append((parent, threads))
+        state.set_parents(parent_details)
+        state.set_threads(self._parse_loom(current_content[2:-1]))
+        return state
+    
+    def get_threads(self, rev_id):
         """Return the current threads in this loom.
 
-        :param rev_id: A specific loom revision to retrieve. If not specified
-            the current loom revision is used.
+        :param rev_id: A specific loom revision to retrieve.
         :return: a list of threads. e.g. [('threadname', 'last_revision')]
         """
-        if rev_id is None:
-            content = self._current_loom_content()[2:-1]
-        else:
-            content = self._loom_content(rev_id)
+        content = self._loom_content(rev_id)
         return self._parse_loom(content)
 
     def _loom_content(self, rev_id=None):
@@ -239,12 +241,12 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
 
     def loom_parents(self):
         """Return the current parents to use in the next commit."""
-        current_content = self._current_loom_content()
-        return current_content[1].split()
+        return self.get_loom_state().get_parents()
 
     def new_thread(self, thread_name, after_thread=None):
         """Add a new thread to this branch called 'thread_name'."""
-        threads = self.get_threads()
+        state = self.get_loom_state()
+        threads = state.get_threads()
         if thread_name in dict(threads):
             raise DuplicateThreadName(self, thread_name)
         assert after_thread is None or after_thread in dict(threads)
@@ -353,10 +355,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
 
         :param commit_message: The commit message to use when committing.
         """
-        content = self._current_loom_content()
-        parents = content[1].split()
-        old_threads = self.get_basis_threads()
-        threads = self._parse_loom(content[2:-1])
+        state = self.get_loom_state()
+        parents = state.get_parents()
+        old_threads = state.get_basis_threads()
+        threads = state.get_threads()
         # check the semantic value, not the serialised value for equality.
         if old_threads == threads:
             raise bzrlib.errors.PointlessCommit
@@ -383,7 +385,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         :param revision_id: the revision it is now at. This should be a child
         of the next lower thread.
         """
-        threads = self.get_threads()
+        state = self.get_loom_state()
+        threads = state.get_threads()
         assert thread_name in dict(threads)
         content = [LoomBranch._CURRENT_LOOM_FORMAT_STRING]
         # TODO: dont access the loom content twice here.
@@ -402,9 +405,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     @needs_write_lock
     def revert_loom(self):
         """Revert the loom to be the same as the basis loom."""
-        parents = self.loom_parents()
+        state = self.get_loom_state()
+        parents = state.get_parents()
         parents = parents[0:1]
-        self._set_last_loom(parents, self.get_basis_threads())
+        self._set_last_loom(parents, state.get_basis_threads())
 
     @needs_write_lock
     def revert_thread(self, thread):
@@ -414,11 +418,11 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             the basis. If it was not present in the basis it 
             will be removed from the current loom.
         """
-        parents = self.loom_parents()
-        current_content = self._current_loom_content()
-        threads = self.get_threads()
+        state = self.get_loom_state()
+        parents = state.get_parents()
+        threads = state.get_threads()
         position = self._thread_index(threads, thread)
-        basis_threads = self.get_basis_threads()
+        basis_threads = state.get_basis_threads()
         if thread in dict(basis_threads):
             threads[position] = (thread, dict(basis_threads)[thread])
             self._set_last_loom(parents, threads)
@@ -461,7 +465,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         if (self.control_files._lock_count==1 and
             self.control_files._lock_mode=='w'):
             # about to release the lock
-            threads = self.get_threads()
+            state = self.get_loom_state()
+            threads = state.get_threads()
             if len(threads):
                 # looms are enabled:
                 lastrev = self.last_revision()

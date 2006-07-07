@@ -55,7 +55,7 @@ class LoomTreeDecorator(object):
         # set it up:
         current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
-        threads = self.tree.branch.get_threads()
+        threads = self.tree.branch.get_loom_state().get_threads()
         old_thread_rev = None
         new_thread_name = None
         new_thread_rev = None
@@ -113,7 +113,7 @@ class LoomTreeDecorator(object):
                 'date tree. Please run bzr update.')
         current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
-        threads = self.tree.branch.get_threads()
+        threads = self.tree.branch.get_loom_state().get_threads()
         old_thread_rev = None
         new_thread_name = None
         new_thread_rev = None
@@ -158,13 +158,13 @@ class LoomTreeDecorator(object):
                 'date tree. Please run bzr update.')
         current_thread = self.branch.nick
         last_rev = self.tree.last_revision()
-        old_threads = self.branch.get_threads()
+        old_threads = self.branch.get_loom_state().get_threads()
         current_thread_rev = dict(old_threads)[current_thread]
         if thread is None:
             self.branch.revert_loom()
         else:
             self.branch.revert_thread(thread)
-        threads = self.branch.get_threads()
+        threads = self.branch.get_loom_state().get_threads()
         threads_dict = dict(threads)
         # TODO find the next up thread if needed
         if not threads_dict:

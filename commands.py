@@ -95,7 +95,7 @@ class cmd_show_loom(bzrlib.commands.Command):
         (loom, path) = bzrlib.branch.Branch.open_containing(location)
         loom.lock_read()
         try:
-            threads = loom.get_threads()
+            threads = loom.get_loom_state().get_threads()
             nick = loom.nick
             for thread, revid in reversed(threads):
                 if thread == nick:

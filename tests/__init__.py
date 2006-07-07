@@ -29,6 +29,7 @@ def test_suite():
     module_names = [
         'bzrlib.plugins.loom.tests.test_branch',
         'bzrlib.plugins.loom.tests.test_loom_io',
+        'bzrlib.plugins.loom.tests.test_loom_state',
         'bzrlib.plugins.loom.tests.test_tree',
         'bzrlib.plugins.loom.tests.blackbox',
         ]

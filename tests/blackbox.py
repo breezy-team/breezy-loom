@@ -60,7 +60,7 @@ class TestLoomify(TestCaseWithLoom):
         # a loomed branch opens with a unique format
         b = bzrlib.branch.Branch.open('.')
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
-        threads = b.get_threads()
+        threads = b.get_loom_state().get_threads()
         self.assertEqual(
             [('base', bzrlib.revision.NULL_REVISION)], 
             threads)
@@ -72,7 +72,7 @@ class TestLoomify(TestCaseWithLoom):
         # a loomed branch opens with a unique format
         b = bzrlib.branch.Branch.open('foo')
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
-        threads = b.get_threads()
+        threads = b.get_loom_state().get_threads()
         self.assertEqual(
             [('base', bzrlib.revision.NULL_REVISION)], 
             threads)
@@ -88,7 +88,7 @@ class TestCreate(TestsWithLooms):
         revid = tree.last_revision()
         self.assertEqual(
             [('vendor', revid), ('debian', revid)],
-            tree.branch.get_threads())
+            tree.branch.get_loom_state().get_threads())
         self.assertEqual('debian', tree.branch.nick)
 
     def test_create_not_end(self):
@@ -103,7 +103,7 @@ class TestCreate(TestsWithLooms):
         revid = tree.last_revision()
         self.assertEqual(
             [('vendor', revid), ('feature-foo', revid), ('debian', revid)],
-            tree.branch.get_threads())
+            tree.branch.get_loom_state().get_threads())
         self.assertEqual('feature-foo', tree.branch.nick)
 
 
@@ -389,7 +389,7 @@ class TestRevert(TestsWithLooms):
             err)
         self.assertNotEqual(last_rev, tree.last_revision())
         self.assertEqual(None, tree.last_revision())
-        self.assertEqual([], tree.branch.get_threads())
+        self.assertEqual([], tree.branch.get_loom_state().get_threads())
         
     def test_revert_thread(self):
         """bzr revert-loom threadname should restore the state of that thread."""
@@ -400,7 +400,7 @@ class TestRevert(TestsWithLooms):
         tree.branch.nick = 'after-vendor'
         tree.commit('after-vendor commit', allow_pointless=True)
         tree.branch.record_loom('save loom with vendor and after-vendor')
-        old_threads = tree.branch.get_threads()
+        old_threads = tree.branch.get_loom_state().get_threads()
         tree.commit('after-vendor commit 2', allow_pointless=True)
         LoomTreeDecorator(tree).down_thread()
         last_rev = tree.last_revision()
@@ -409,5 +409,5 @@ class TestRevert(TestsWithLooms):
         self.assertEqual('', out)
         self.assertEqual("thread 'after-vendor' reverted.\n", err)
         self.assertEqual(last_rev, tree.last_revision())
-        self.assertEqual(old_threads, tree.branch.get_threads())
+        self.assertEqual(old_threads, tree.branch.get_loom_state().get_threads())
         

@@ -64,4 +64,3 @@ class TestLoomIO(TestCase):
             [(u'base\xdeline', bzrlib.revision.NULL_REVISION),
              ('not the baseline', u'asd\xedasdasdxxxrr')],
             )
-

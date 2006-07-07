@@ -70,7 +70,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         self.assertEqual(None, tree.last_revision())
         # the current loom should be reverted 
         # (we assume this means branch.revert_loom was called())
-        self.assertEqual([], tree.branch.get_threads())
+        self.assertEqual([], tree.branch.get_loom_state().get_threads())
 
     def test_revert_thread(self):
         tree = self.get_tree_with_loom(',')
@@ -87,7 +87,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         # (we assume this means branch.revert_loom was called())
         self.assertEqual(
             [('foo', bzrlib.revision.NULL_REVISION)],
-            tree.branch.get_threads())
+            tree.branch.get_loom_state().get_threads())
         
     def test_revert_thread_different_thread(self):
         tree = self.get_tree_with_loom(',')
@@ -104,4 +104,4 @@ class TestTreeDecorator(TestCaseWithLoom):
         # (we assume this means branch.revert_thread was 
         # called())
         self.assertEqual([('bar', tree.last_revision())],
-            tree.branch.get_threads())
+            tree.branch.get_loom_state().get_threads())

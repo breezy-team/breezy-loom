@@ -79,3 +79,5 @@ does note calls.
 - want to be able to say 'here are some threads, write a loom'
 - want to be able to say 'here are some parents, write a current-loom'
 - want to be able to say 'here is a current-loom, want to update it.'
+- cache loom state objects in the transaction entity cache
+- TODO: a merge of a no-change commit should be allowed?
