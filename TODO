@@ -85,3 +85,7 @@ does note calls.
 - raise clear errors on corrupt loom-state.
 - lazy use of LoomStateReader in LoomState?
 - LoomState to enforce valid revisions in set_parents etc - no \n or whitespace.
+- bug: up-thread incorrectly sets pending merge when the thread is already merged.
+- UI question - show a marker on all 'applied' threads. i.e. a 'empire state besides the threads list'.
+- revert-loom unnamed-thread fails with BzrCommandError not bound
+- revert-loom thread did not reset branch status correctly in the tree.
