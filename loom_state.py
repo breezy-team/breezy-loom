@@ -27,10 +27,21 @@ class LoomState(object):
     by the LoomBranch and have data fed into it.
     """
 
-    def __init__(self):
+    def __init__(self, reader=None):
+        """Create a loom state object.
+
+        :param reader: If not None, this should be a LoomStateReader from
+            which this LoomState is meant to retrieve its current data.
+        """
         self._parents = []
         self._parent_threads = []
         self._threads = []
+        if reader is not None:
+            # perhaps this should be lazy evaluated at some point?
+            self._parents = reader.read_parents()
+            for thread in reader.read_thread_details():
+                self._threads.append(thread[0:2])
+                # discard parent details for now.
 
     def get_basis_threads(self):
         """Get the basis threads for the this state."""

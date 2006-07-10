@@ -129,3 +129,48 @@ class TestLoomIO(TestCase):
             'baserev base \n'
             '\xc3\xa9toprev \xc3\xadtop\n',
             state)
+
+    def assertReadState(self, parents, threads, state_stream):
+        """Check that the state in stream can be read correctly."""
+        state_reader = loom_io.LoomStateReader(state_stream)
+        self.assertEqual(parents, state_reader.read_parents())
+        self.assertEqual(threads, state_reader.read_thread_details())
+
+    def test_read_state_empty(self):
+        state_stream = StringIO(loom_io._CURRENT_LOOM_FORMAT_STRING + '\n\n')
+        self.assertReadState([], [], state_stream)
+
+    def test_read_state_no_parents_threads(self):
+        state_stream = StringIO(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '\n'
+            'baserev base \n'
+            '\xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
+        self.assertReadState(
+            [], 
+            [('base ', 'baserev', []),
+             (u'\xedtop', u'\xe9toprev', []),
+             ],
+            state_stream)
+        
+    def test_read_state_parents(self):
+        state_stream = StringIO(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '1 2\xc3\xab\n')
+        self.assertReadState(
+            ['1', u'2\xeb'],
+            [],
+            state_stream)
+
+    def test_read_state_parents_threads(self):
+        state_stream = StringIO(
+            loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
+            '1 2\xc3\xab\n'
+            'baserev base \n'
+            '\xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
+        self.assertReadState(
+            ['1', u'2\xeb'],
+            [('base ', 'baserev', [None, None]),
+             (u'\xedtop', u'\xe9toprev', [None, None]),
+             ],
+            state_stream)

@@ -58,3 +58,59 @@ class LoomStateWriter(object):
         for thread, rev_id in self._state.get_threads():
             lines.append('%s %s\n' % (rev_id, thread))
         stream.write(''.join(lines).encode('utf8'))
+
+
+class LoomStateReader(object):
+    """LoomStateReaders are used to pull LoomState objects into memory."""
+
+    def __init__(self, stream):
+        """Initialise a LoomStateReader with a serialised loom-state stream.
+
+        :param stream: The stream that contains a loom-state object. This 
+            should allow relative seeking.
+        """
+        self._stream = stream
+        self._content = None
+
+    def _read(self):
+        """Read the entire stream into memory.
+
+        This is just a first approximation - eventually partial reads
+        are desirable.
+        """
+        if self._content is None:
+            self._content = self._stream.read().decode('utf8').split('\n')
+            # this is where detection of different formats should go.
+            # we probably want either a  factory for readers, or a strategy
+            # for the reader that is looked up on this format string.
+            # either way, its in the future.
+            assert self._content[0] == _CURRENT_LOOM_FORMAT_STRING 
+
+    def read_parents(self):
+        """Read the parents field from the stream.
+        
+        :return: a list of parent revision ids.
+        """
+        self._read()
+        return self._content[1].split()
+
+    def read_thread_details(self):
+        """Read the details for the threads.
+
+        :return: a list of thread details. Each thread detail is a 3-tuple
+            containing the thread name, the current thread revision, and a
+            list of parent thread revisions, in the same order and length
+            as the list returned by read_parents. In the parent thread 
+            revision list, None means 'no present in the parent', and 
+            'null:' means 'present but had no commits'.
+        """
+        result = []
+        parent_count = len(self.read_parents())
+        # skip the format and parent lines, and the trailing \n line.
+        for line in self._content[2:-1]:
+            rev_id, name = line.split(' ', 1)
+            parents = []
+            for pos in range(parent_count):
+                parents.append(None)
+            result.append((name, rev_id, parents))
+        return result

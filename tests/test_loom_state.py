@@ -25,6 +25,7 @@ from cStringIO import StringIO
 import bzrlib
 import bzrlib.errors as errors
 import bzrlib.osutils
+import bzrlib.plugins.loom.loom_io as loom_io
 import bzrlib.plugins.loom.loom_state as loom_state
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
@@ -33,12 +34,33 @@ from bzrlib.tests import TestCase
 
 class TestLoomState(TestCase):
 
-    def test_constructor(self):
+    def test_default_constructor(self):
         state = loom_state.LoomState()
         # the default object must have no parents and no threads.
         self.assertEqual([], state.get_parents())
         self.assertEqual([], state.get_threads())
         self.assertEqual([], state.get_basis_threads())
+
+    def test_reader_constructor(self):
+        # make a state
+        state = loom_state.LoomState()
+        state.set_threads([('name', 'rev'), ('dangerous name', 'rev2')])
+        state.set_parents(
+            [('bar', [('name', 'revision')]),
+             ('am', [('zaphod', 'wasapreachere')]),
+             ])
+        stream = StringIO()
+        writer = loom_io.LoomStateWriter(state)
+        writer.write(stream)
+        # creating state from a serialised loom
+        stream.seek(0)
+        reader = loom_io.LoomStateReader(stream)
+        state = loom_state.LoomState(reader)
+        self.assertEqual(['bar', 'am'], state.get_parents())
+        self.assertEqual(
+            [('name', 'rev'), ('dangerous name', 'rev2')],
+            state.get_threads())
+        #self.assertEqual([('name', 'revision')], state.get_basis_threads())
 
     def test_set_get_threads(self):
         state = loom_state.LoomState()

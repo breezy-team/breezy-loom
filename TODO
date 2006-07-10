@@ -82,3 +82,6 @@ does note calls.
 - cache loom state objects in the transaction entity cache
 - TODO: a merge of a no-change commit should be allowed?
 - disallow pull with a modified current loom, or do a merge during pull.
+- raise clear errors on corrupt loom-state.
+- lazy use of LoomStateReader in LoomState?
+- LoomState to enforce valid revisions in set_parents etc - no \n or whitespace.

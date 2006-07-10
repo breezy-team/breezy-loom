@@ -181,19 +181,17 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     def get_loom_state(self):
         """Get the current loom state object."""
         # TODO: cache the loom state during the transaction lifetime.
-        state = loom_state.LoomState()
+        current_content = self.control_files.get('last-loom')
+        reader = loom_io.LoomStateReader(current_content)
+        state = loom_state.LoomState(reader)
         parent_details = []
-        current_content = self._current_loom_content()
-        for parent in current_content[1].split():
-            content = self._loom_content(parent)
-            threads = self._parse_loom(content)
-            parent_details.append((parent, threads))
+        for parent in state.get_parents():
+            parent_details.append((parent, self.get_threads(parent)))
         state.set_parents(parent_details)
-        state.set_threads(self._parse_loom(current_content[2:-1]))
         return state
     
     def get_threads(self, rev_id):
-        """Return the current threads in this loom.
+        """Return the threads from a loom revision.
 
         :param rev_id: A specific loom revision to retrieve.
         :return: a list of threads. e.g. [('threadname', 'last_revision')]
@@ -223,22 +221,6 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         lines = tree.get_file('loom_meta_tree').read().split('\n')
         assert lines[0] == 'Loom meta 1'
         return lines[1:-1]
-
-    def _current_loom_content(self):
-        """Return the raw formatted content of the 'last-loom'.
-
-        Currently the disk format is:
-        ----
-        Loom current 1
-        [parent_rev_id [parent_rev_id ...]]
-        [revisionid_parent1 [revisionid_parent2 ...]] current_revisionid threadname_in_utf8
-        ----
-        any revisionid of null: refers to an EmptyTree as the tree state.
-        """
-        current_content = self.control_files.get_utf8('last-loom')
-        lines = current_content.read().split('\n')
-        assert lines[0] == loom_io._CURRENT_LOOM_FORMAT_STRING
-        return lines
 
     def loom_parents(self):
         """Return the current parents to use in the next commit."""
