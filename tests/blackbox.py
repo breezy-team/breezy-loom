@@ -375,6 +375,13 @@ class TestRevert(TestsWithLooms):
         self.assertEqual('', out)
         self.assertEqual('Please see revert-loom -h.\n', err)
 
+    def test_revert_loom_missing_thread(self):
+        """bzr revert-loom missing-thread should give an error."""
+        tree = self.get_vendor_loom('.')
+        out, err = self.run_bzr('revert-loom', 'unknown-thread', retcode=3)
+        self.assertEqual('', out)
+        self.assertEqual("bzr: ERROR: No such thread 'unknown-thread'.\n", err)
+
     def test_revert_loom_all(self):
         """bzr revert-loom --all should restore the state of a loom."""
         tree = self.get_vendor_loom('.')

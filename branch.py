@@ -63,6 +63,10 @@ class UnchangedThreadRevision(LoomThreadError):
     """No new commits to record on thread %(thread)s."""
 
 
+class NoSuchThread(LoomThreadError):
+    """No such thread '%(thread)s'."""
+
+
 class LoomMetaTree(bzrlib.tree.Tree):
     """A 'tree' object that is used to commit the loom meta branch."""
 
@@ -250,7 +254,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     def _thread_index(self, threads, after_thread):
         """Find the index of after_thread in threads."""
         thread_names = [name for name, rev in threads]
-        return thread_names.index(after_thread)
+        try:
+            return thread_names.index(after_thread)
+        except ValueError:
+            raise NoSuchThread(self, after_thread)
 
     def _parse_loom(self, content):
         """Parse the body of a loom file."""
