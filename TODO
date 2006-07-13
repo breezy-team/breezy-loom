@@ -68,7 +68,6 @@ does note calls.
   only.
 - pull into a 'new loom' without error or warning.
 - ' merge into a loom to create combined loom.'
-- record_thread_preserves_loom_parents
 - include basis and parent revids in current-loom for each warp.
 - revert loom falls back to the next lower thread.
 - factor our LoomParsing etc into a helper class.
@@ -89,3 +88,6 @@ does note calls.
 - UI question - show a marker on all 'applied' threads. i.e. a 'empire state besides the threads list'.
 - revert-loom thread did not reset branch status correctly in the tree.
 - bug: up-thread with an out of date tree fails with BzrCommandError not bound.
+- bzr loomify && bzr revert-loom should preserve revision history.
+- nice errors for loom branch commands on non-loom branches.
+- better offset management for adjust_current_index.

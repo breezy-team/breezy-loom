@@ -302,10 +302,65 @@ class TestLoom(TestCaseWithLoom):
     def test_revert_loom(self):
         tree = self.get_tree_with_loom(',')
         # ensure we have some stuff to revert
+        # new threads
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
+        tree.branch.nick = 'bar'
+        last_rev = tree.branch.last_revision()
+        # and a change to the revision history of this thread
+        tree.commit('change bar', allow_pointless=True)
         tree.branch.revert_loom()
+        # the threads list should be restored
         self.assertEqual([], tree.branch.get_loom_state().get_threads())
+        self.assertEqual(last_rev, tree.branch.last_revision())
+        
+    def test_revert_loom_changes_current_thread_history(self):
+        tree = self.get_tree_with_loom(',')
+        # new threads
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        tree.branch.nick = 'bar'
+        # and a change to the revision history of this thread
+        tree.commit('change bar', allow_pointless=True)
+        # now record
+        tree.branch.record_loom('change bar')
+        last_rev = tree.branch.last_revision()
+        # and a change to the revision history of this thread to revert
+        tree.commit('change bar', allow_pointless=True)
+        tree.branch.revert_loom()
+        # the threads list should be restored
+        self.assertEqual(
+            [(u'foo', u'null:'),
+             (u'bar', last_rev)],
+            tree.branch.get_loom_state().get_threads())
+        self.assertEqual(last_rev, tree.branch.last_revision())
+
+    def test_revert_loom_remove_current_thread_mid_loom(self):
+        # given the loom Base, => mid, top, with a basis of Base, top, revert
+        # of the loom should end up with Base, =>top, including last-revision
+        # changes
+        tree = self.get_tree_with_loom(',')
+        tree = LoomTreeDecorator(tree)
+        # new threads
+        tree.branch.new_thread('base')
+        tree.branch.new_thread('top')
+        tree.branch.nick = 'top'
+        # and a change to the revision history of this thread
+        tree.tree.commit('change top', allow_pointless=True)
+        last_rev = tree.branch.last_revision()
+        # now record
+        tree.branch.record_loom('change top')
+        tree.down_thread()
+        tree.branch.new_thread('middle', 'base')
+        tree.up_thread()
+        self.assertEqual('middle', tree.branch.nick)
+        tree.branch.revert_loom()
+        # the threads list should be restored
+        self.assertEqual(
+            [(u'base', u'null:'),
+             (u'top', last_rev)],
+            tree.branch.get_loom_state().get_threads())
+        self.assertEqual(last_rev, tree.branch.last_revision())
 
     def test_revert_thread(self):
         tree = self.get_tree_with_loom(',')

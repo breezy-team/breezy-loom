@@ -107,7 +107,35 @@ class LoomMetaTree(bzrlib.tree.Tree):
 class LoomBranch(bzrlib.branch.BzrBranch5):
     """The Loom branch."""
 
-    # the current loom format marker
+    def _adjust_nick_after_changing_threads(self, threads, current_index):
+        """Adjust the branch nick when we may have removed a current thread.
+
+        :param threads: The current threads.
+        :param position: The position in the old threads self.nick had.
+        """
+        threads_dict = dict(threads)
+        if self.nick not in threads_dict:
+            if not len(threads):
+                # all threads gone
+                # revert to being a normal branch: revert to an empty revision
+                # history.
+                self.generate_revision_history(bzrlib.revision.NULL_REVISION)
+                return
+            # TODO, calculate the offset of removed threads.
+            # i.e. if there are ten threads removed, and current_index is 5, 
+            # if 4 of the ten removed were 2,3,4,5, then the new index should
+            # be 2.
+            if len(threads) <= current_index:
+                # removed the end
+                # take the new end thread
+                self.nick = threads[-1][0]
+                self.generate_revision_history(threads[-1][1])
+                return
+            # non-end thread removed.
+            self.nick = threads[current_index][0]
+            self.generate_revision_history(threads[current_index][1])
+        elif self.last_revision() != threads_dict[self.nick]:
+            self.generate_revision_history(threads_dict[self.nick])
 
     @needs_read_lock
     def clone(self, to_bzrdir, revision_id=None):
@@ -397,12 +425,15 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
     def revert_loom(self):
         """Revert the loom to be the same as the basis loom."""
         state = self.get_loom_state()
+        # get the current position
+        position = self._thread_index(state.get_threads(), self.nick)
         # reset the current threads
         state.set_threads(state.get_basis_threads())
         parents = state.get_parents()
         # reset the parents list to just the basis.
         if len(parents):
             state.set_parents([(parents[0], state.get_basis_threads())])
+        self._adjust_nick_after_changing_threads(state.get_threads(), position)
         self._set_last_loom(state)
 
     @needs_write_lock
@@ -425,12 +456,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         state.set_threads(threads)
         self._set_last_loom(state)
         # adjust the nickname to be valid
-        if self.nick not in dict(threads):
-            if len(threads) == position:
-                # removed the end
-                # take the new end thread
-                self.nick = threads[-1][0]
-                self.generate_revision_history(threads[-1][1])
+        self._adjust_nick_after_changing_threads(threads, position)
 
     def _set_last_loom(self, state):
         """Record state to the last-loom control file."""
