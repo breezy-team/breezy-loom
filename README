@@ -16,9 +16,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 
-Loom is a bzr plugin which adds new commands to manage a loom of patches.
+Loom is a bzr plugin which extends bzr with features to manage a loom of patches.
 
-The commands are:
+Loom adds the following new commands:
  * loomify: This converts a branch into a loom enabled branch. As a result
    of this, the branch format is converted and you need to have the loom
    plugin installed to use it after that. The current branch nickname becomes
@@ -26,6 +26,12 @@ The commands are:
 
  * create-thread: This adds a new thread to the loom with the supplied name
    and positions the branch on the new thrad.
+
+ * record: Perform a commit of the loom - record the current stack of patches
+   into history, allowing it to be pushed, pulled and merged.
+
+ * revert-loom: Revert all change in the current stack of patches to the last
+   recorded one.
 
  * show-loom: Shows the threads in the loom. It currently does not show the
    # of commits in each thread, but it is planned to do that in the future.
@@ -37,14 +43,33 @@ The commands are:
    from the current thread that are not yet integrated into the new thread into
    it and leave you ready to commit them.
 
+ * combine-thread: Combine the current thread with the thread below it. If
+   It is the last thread, this will currently refuse to operate, but in the
+   future will just turn the loom into a normal branch again. Use this command
+   to remove a thread which has been merged into upstream. 
 
 The existing bzr commands 'push' and 'branch' will create a loom branch from
 existing looms. A push into an existing non-loom will not convert it however:
 it will push the current thread into that branch. likewise pull from a normal
-branch will pull into the current thread.
+branch will pull into the current thread. This assymetry is a feature because
+it allows easy interoperation with developers not using looms.
 
-When complete this is anticipated to be a tool similar to quilt and 
-mercurial queues.
+
+Loom is similar in concept to the tools 'quilt', 'stacked git' and 'mercurial
+queues'. Its most significant difference is the ability to collaborate on the
+stack of patches, without needing to do conflict resolution, and managing of
+the list of patches via diff hunks. Instead you are able to develop the stack
+using the full power of a version control system - you can rollback, annotate,
+and push and pull the stack that is being built. We call the tool Loom because
+unlike the three tools mentioned above there are two dimensions to the loom:
+ - The up and down dimension, which is precisely equivalent to the quilt/
+   stacked git/ mercurial queues stack of patches, which you can go up and 
+   down in.
+ - The time dimension, where we record the stack of patches as it alters over
+   time. It is this new dimension that allows us to push, pull and merge the
+   loom between users, much like adding a time dimension to a normal source
+   tree allows easier sharing between developers.
+
 
 Internals
 =========

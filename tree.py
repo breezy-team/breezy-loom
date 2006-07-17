@@ -99,7 +99,7 @@ class LoomTreeDecorator(object):
             other_tree,
             base_tree,
             this_tree=self.tree)
-        bzrlib.trace.note('Moved to thread %s.' % new_thread_name)
+        bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
         if result != 0:
             return 1
         else:
@@ -130,6 +130,7 @@ class LoomTreeDecorator(object):
         self.tree.branch.nick = new_thread_name
         if new_thread_rev == old_thread_rev:
             # done
+            bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
             return 0
         basis_tree = self.tree.branch.repository.revision_tree(old_thread_rev)
         to_tree = self.tree.branch.repository.revision_tree(new_thread_rev)
@@ -139,6 +140,7 @@ class LoomTreeDecorator(object):
             this_tree=self.tree)
         self.tree.branch.generate_revision_history(new_thread_rev)
         self.tree.set_last_revision(new_thread_rev)
+        bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
         return result
         
     def lock_write(self):

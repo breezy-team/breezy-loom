@@ -18,7 +18,7 @@
 
 """Loom is a bzr plugin which adds new commands to manage a loom of patches.
 
-The commands are:
+Loom adds the following new commands:
  * loomify: This converts a branch into a loom enabled branch. As a result
    of this, the branch format is converted and you need to have the loom
    plugin installed to use it after that. The current branch nickname becomes
@@ -26,6 +26,12 @@ The commands are:
 
  * create-thread: This adds a new thread to the loom with the supplied name
    and positions the branch on the new thrad.
+
+ * record: Perform a commit of the loom - record the current stack of patches
+   into history, allowing it to be pushed, pulled and merged.
+
+ * revert-loom: Revert all change in the current stack of patches to the last
+   recorded one.
 
  * show-loom: Shows the threads in the loom. It currently does not show the
    # of commits in each thread, but it is planned to do that in the future.
@@ -37,6 +43,11 @@ The commands are:
    from the current thread that are not yet integrated into the new thread into
    it and leave you ready to commit them.
 
+ * combine-thread: Combine the current thread with the thread below it. If
+   It is the last thread, this will currently refuse to operate, but in the
+   future will just turn the loom into a normal branch again. Use this command
+   to remove a thread which has been merged into upstream. 
+
 """
 
 
@@ -47,6 +58,7 @@ import commands
 
 
 for command in [
+    'combine_thread',
     'create_thread',
     'down_thread',
     'loomify',

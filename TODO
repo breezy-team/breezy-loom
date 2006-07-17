@@ -64,9 +64,7 @@ does note calls.
   baseline warp is ahead of mine, I'll just get no-op updates.
 - record loom with merges to record a merge
 - record loom with conflicts to refuce to commit
-- pull with uncommitted changes to ignore them and use the committed loom
-  only.
-- pull into a 'new loom' without error or warning.
+- pull into a 'new loom' without error or warning from an existing loom.
 - ' merge into a loom to create combined loom.'
 - include basis and parent revids in current-loom for each warp.
 - revert loom falls back to the next lower thread.
@@ -91,3 +89,12 @@ does note calls.
 - bzr loomify && bzr revert-loom should preserve revision history.
 - nice errors for loom branch commands on non-loom branches.
 - better offset management for adjust_current_index.
+- nice 'split diff into branches' tool
+- diff -r thread: to diff against lower thread (using -ancestry logic)
+- export-patch to export the diff from this thread to the lower thread (using -ancestry logic) to a file named as the warp is named. (what about / ?)
+- during up-thread, if we could pull or if there is no diff, then the thread has been merged, offer to remove it.
+- loom to have the same 'tree root id' as its branches, to allow nested looms by reference. EEK!.
+- show-loom to allow -r -1.
+- combine-thread to warn if the thread being combined has changes not present in the one below it. I.e. by ancestry, or by doing a merge and recording differences. For bonus points, do the merge, but record the lower thread as the last-revision in the tree still, and set no pending-merges. This preserves the difference whilst still combining the threads.
+- revert-thread on a combined or ejected thread should do something reasonable.
+- branch.remove_thread needs testing for cases: no such thread, thread is the current thread.

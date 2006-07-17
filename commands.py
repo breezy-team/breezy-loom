@@ -18,6 +18,7 @@
 
 """Loom commands."""
 
+from bzrlib import workingtree
 import bzrlib.commands
 import bzrlib.branch
 import bzrlib.errors
@@ -58,7 +59,39 @@ class cmd_loomify(bzrlib.commands.Command):
         # format changes ?
         loom.new_thread(loom.nick)
 
-        
+
+class cmd_combine_thread(bzrlib.commands.Command):
+    """Combine the current thread with the thread below it.
+    
+    This will currently refuse to operate on the last thread, but in the future
+    will just turn the loom into a normal branch again.
+    
+    Use combine-thread to remove a thread which has been merged into upstream.
+
+    In precise terms this will:
+     * Remove the entry from the loom for the current thread.
+     * Change threads to the thread below.
+    """
+
+    def run(self):
+        (tree, path) = workingtree.WorkingTree.open_containing('.')
+        tree.lock_write()
+        try:
+            current_thread = tree.branch.nick
+            state = tree.branch.get_loom_state()
+            threads = state.get_threads()
+            if len(threads) < 2 or threads[0][0] == current_thread:
+                raise branch.CannotCombineOnLastThread
+            current_index = tree.branch._thread_index(threads, current_thread)
+            new_thread = threads[current_index - 1][0]
+            bzrlib.trace.note("Combining thread '%s' into '%s'",
+                current_thread, new_thread)
+            LoomTreeDecorator(tree).down_thread()
+            tree.branch.remove_thread(current_thread)
+        finally:
+            tree.unlock()
+
+
 class cmd_create_thread(bzrlib.commands.Command):
     """Add a thread to this loom.
 
@@ -136,7 +169,7 @@ class cmd_revert_loom(bzrlib.commands.Command):
         if thread is None and all is None:
             bzrlib.trace.note('Please see revert-loom -h.')
             return
-        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
+        (tree, path) = workingtree.WorkingTree.open_containing('.')
         tree = LoomTreeDecorator(tree)
         if all:
             tree.revert_loom()
@@ -154,7 +187,7 @@ class cmd_down_thread(bzrlib.commands.Command):
     """
 
     def run(self):
-        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
+        (tree, path) = workingtree.WorkingTree.open_containing('.')
         tree = LoomTreeDecorator(tree)
         return tree.down_thread()
 
@@ -168,6 +201,6 @@ class cmd_up_thread(bzrlib.commands.Command):
     """
 
     def run(self):
-        (tree, path) = bzrlib.workingtree.WorkingTree.open_containing('.')
+        (tree, path) = workingtree.WorkingTree.open_containing('.')
         tree = LoomTreeDecorator(tree)
         return tree.up_thread()

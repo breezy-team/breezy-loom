@@ -289,7 +289,7 @@ class TestLoom(TestCaseWithLoom):
             tree.branch.get_loom_state().get_threads())
 
     def test_trivial_record_loom(self):
-        tree = self.get_tree_with_loom('.')
+        tree = self.get_tree_with_loom()
         # for this test, we want to ensure that we have an empty loom-branch.
         self.assertEqual([], tree.branch.loom_parents())
         # add a thread and record it.
@@ -300,7 +300,7 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual([rev_id], tree.branch.loom_parents())
 
     def test_revert_loom(self):
-        tree = self.get_tree_with_loom(',')
+        tree = self.get_tree_with_loom()
         # ensure we have some stuff to revert
         # new threads
         tree.branch.new_thread('foo')
@@ -315,7 +315,7 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual(last_rev, tree.branch.last_revision())
         
     def test_revert_loom_changes_current_thread_history(self):
-        tree = self.get_tree_with_loom(',')
+        tree = self.get_tree_with_loom()
         # new threads
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
@@ -339,7 +339,7 @@ class TestLoom(TestCaseWithLoom):
         # given the loom Base, => mid, top, with a basis of Base, top, revert
         # of the loom should end up with Base, =>top, including last-revision
         # changes
-        tree = self.get_tree_with_loom(',')
+        tree = self.get_tree_with_loom()
         tree = LoomTreeDecorator(tree)
         # new threads
         tree.branch.new_thread('base')
@@ -363,7 +363,7 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual(last_rev, tree.branch.last_revision())
 
     def test_revert_thread(self):
-        tree = self.get_tree_with_loom(',')
+        tree = self.get_tree_with_loom()
         # ensure we have some stuff to revert
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
@@ -375,3 +375,12 @@ class TestLoom(TestCaseWithLoom):
             [('foo', bzrlib.revision.NULL_REVISION)],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(None, tree.branch.last_revision())
+
+    def test_remove_thread(self):
+        tree = self.get_tree_with_loom()
+        tree.branch.new_thread('bar')
+        tree.branch.new_thread('foo')
+        tree.branch.nick = 'bar'
+        tree.branch.remove_thread('foo')
+        state = tree.branch.get_loom_state()
+        self.assertEqual([('bar', 'null:')], state.get_threads())

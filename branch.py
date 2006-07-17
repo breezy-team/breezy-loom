@@ -67,6 +67,10 @@ class NoSuchThread(LoomThreadError):
     """No such thread '%(thread)s'."""
 
 
+class CannotCombineOnLastThread(bzrlib.errors.BzrNewError):
+    """Cannot combine threads on the bottom thread."""
+
+
 class LoomMetaTree(bzrlib.tree.Tree):
     """A 'tree' object that is used to commit the loom meta branch."""
 
@@ -418,6 +422,19 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 if revision_id == rev:
                     raise UnchangedThreadRevision(self, thread_name)
                 threads[position] = (name, revision_id)
+        state.set_threads(threads)
+        self._set_last_loom(state)
+
+    @needs_write_lock
+    def remove_thread(self, thread_name):
+        """Remove thread from the current loom.
+
+        :param thread_name: The thread to remove.
+        """
+        state = self.get_loom_state()
+        threads = state.get_threads()
+        current_index = self._thread_index(threads, thread_name)
+        del threads[current_index]
         state.set_threads(threads)
         self._set_last_loom(state)
 
