@@ -27,6 +27,15 @@ import bzrlib.osutils
 # This belongs in a format object at some point.
 _CURRENT_LOOM_FORMAT_STRING = "Loom current 1"
 
+# the current loom format :
+# first line is the format signature
+# second line is the list of parents
+# third line and beyond are the current threads.
+# each thread line has one field for current status
+## planned # one field for each parent
+# one field for the current revision id
+# and then the rest of the line for the thread name.
+
 
 class LoomWriter(object):
     """LoomWriter objects are used to serialise looms."""
@@ -56,7 +65,8 @@ class LoomStateWriter(object):
         lines = [_CURRENT_LOOM_FORMAT_STRING + '\n']
         lines.append(' '.join(self._state.get_parents()) + '\n')
         for thread, rev_id in self._state.get_threads():
-            lines.append('%s %s\n' % (rev_id, thread))
+            # leading space for conflict status
+            lines.append(' %s %s\n' % (rev_id, thread))
         stream.write(''.join(lines).encode('utf8'))
 
 
@@ -108,7 +118,7 @@ class LoomStateReader(object):
         parent_count = len(self.read_parents())
         # skip the format and parent lines, and the trailing \n line.
         for line in self._content[2:-1]:
-            rev_id, name = line.split(' ', 1)
+            conflict_status, rev_id, name = line.split(' ', 2)
             parents = []
             for pos in range(parent_count):
                 parents.append(None)

@@ -106,8 +106,8 @@ class TestLoomIO(TestCase):
         self.assertWritesStateCorrectly(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '\n'
-            'baserev base \n'
-            '\xc3\xa9toprev \xc3\xadtop\n',
+            ' baserev base \n'
+            ' \xc3\xa9toprev \xc3\xadtop\n',
             state)
         
     def test_write_state_with_threads_and_parents(self):
@@ -120,8 +120,8 @@ class TestLoomIO(TestCase):
         self.assertWritesStateCorrectly(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '1 2\xc3\xab\n'
-            'baserev base \n'
-            '\xc3\xa9toprev \xc3\xadtop\n',
+            ' baserev base \n'
+            ' \xc3\xa9toprev \xc3\xadtop\n',
             state)
 
     def assertReadState(self, parents, threads, state_stream):
@@ -138,8 +138,8 @@ class TestLoomIO(TestCase):
         state_stream = StringIO(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '\n'
-            'baserev base \n'
-            '\xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
+            ' baserev base \n'
+            ' \xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
         self.assertReadState(
             [], 
             [('base ', 'baserev', []),
@@ -160,8 +160,8 @@ class TestLoomIO(TestCase):
         state_stream = StringIO(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '1 2\xc3\xab\n'
-            'baserev base \n'
-            '\xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
+            ' baserev base \n'
+            ' \xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
         self.assertReadState(
             ['1', u'2\xeb'],
             [('base ', 'baserev', [None, None]),
