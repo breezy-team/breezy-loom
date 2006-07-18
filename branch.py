@@ -117,7 +117,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         :param threads: The current threads.
         :param position: The position in the old threads self.nick had.
         """
-        threads_dict = dict(threads)
+        threads_dict = dict(thread[0:2] for thread in threads)
         if self.nick not in threads_dict:
             if not len(threads):
                 # all threads gone
@@ -201,7 +201,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             if threads:
                 destination.generate_revision_history(threads[-1][1])
                 state.set_parents([loom_tip])
-                state.set_threads(threads)
+                state.set_threads(
+                    (thread + ([thread[1]],) for thread in threads)
+                    )
             else:
                 # no threads yet, be a normal branch.
                 destination.set_revision_history(new_history)
@@ -258,9 +260,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         """Add a new thread to this branch called 'thread_name'."""
         state = self.get_loom_state()
         threads = state.get_threads()
-        if thread_name in dict(threads):
+        if thread_name in state.get_threads_dict():
             raise DuplicateThreadName(self, thread_name)
-        assert after_thread is None or after_thread in dict(threads)
+        assert after_thread is None or after_thread in state.get_threads_dict()
         if after_thread is None:
             insertion_point = len(threads)
         else:
@@ -271,13 +273,19 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             revision_for_thread = threads[insertion_point - 1][1]
         if revision_for_thread is None:
             revision_for_thread = bzrlib.revision.NULL_REVISION
-        threads.insert(insertion_point, (thread_name, revision_for_thread))
+        threads.insert(
+            insertion_point,
+            (thread_name,
+             revision_for_thread,
+             [None] * len(state.get_parents())
+             )
+            )
         state.set_threads(threads)
         self._set_last_loom(state)
 
     def _thread_index(self, threads, after_thread):
         """Find the index of after_thread in threads."""
-        thread_names = [name for name, rev in threads]
+        thread_names = [name for name, rev, parents in threads]
         try:
             return thread_names.index(after_thread)
         except ValueError:
@@ -351,7 +359,9 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                         revision_id=rev_id)
                 # set our work threads to match (this is where we lose data if
                 # there are local mods)
-                my_state.set_threads(threads)
+                my_state.set_threads(
+                    (thread + ([thread[1]],) for thread in threads)
+                    )
                 # and the new parent data
                 my_state.set_parents([source_loom_rev])
                 # and save the state.
@@ -385,7 +395,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             'file', 'loom', bzrlib.inventory.ROOT_ID, 'loom_meta_tree')
         writer = loom_io.LoomWriter()
         loom_stream = StringIO()
-        loom_sha1 = writer.write_threads(threads, loom_stream)
+        new_threads = [thread[0:2] for thread in threads]
+        loom_sha1 = writer.write_threads(new_threads, loom_stream)
         loom_stream.seek(0)
         loom_tree = LoomMetaTree(loom_ie, loom_stream, loom_sha1)
         builder.record_entry_contents(
@@ -393,6 +404,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         builder.finish_inventory()
         rev_id = builder.commit(commit_message)
         state.set_parents([rev_id])
+        state.set_threads((thread + ([thread[1]],) for thread in new_threads))
         self._set_last_loom(state)
         return rev_id
     
@@ -406,14 +418,14 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         """
         state = self.get_loom_state()
         threads = state.get_threads()
-        assert thread_name in dict(threads)
+        assert thread_name in state.get_threads_dict()
         if revision_id is None:
             revision_id = bzrlib.revision.NULL_REVISION
-        for position, (name, rev) in enumerate(threads):
+        for position, (name, rev, parents) in enumerate(threads):
             if name == thread_name:
                 if revision_id == rev:
                     raise UnchangedThreadRevision(self, thread_name)
-                threads[position] = (name, revision_id)
+                threads[position] = (name, revision_id, parents)
         state.set_threads(threads)
         self._set_last_loom(state)
 
@@ -438,11 +450,13 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         position = self._thread_index(state.get_threads(), self.nick)
         # reset the current threads
         basis_threads = self.get_threads(state.get_basis_revision_id())
-        state.set_threads(basis_threads)
-        parents = state.get_parents()
+        state.set_threads(
+            (thread + ([thread[1]],) for thread in basis_threads)
+            )
+        basis_rev_id = state.get_basis_revision_id()
         # reset the parents list to just the basis.
-        if len(parents):
-            state.set_parents([parents[0]])
+        if basis_rev_id is not None:
+            state.set_parents([basis_rev_id])
         self._adjust_nick_after_changing_threads(state.get_threads(), position)
         self._set_last_loom(state)
 
@@ -460,7 +474,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         position = self._thread_index(threads, thread)
         basis_threads = self.get_threads(state.get_basis_revision_id())
         if thread in dict(basis_threads):
-            threads[position] = (thread, dict(basis_threads)[thread])
+            basis_rev = dict(basis_threads)[thread]
+            threads[position] = (thread, basis_rev, threads[position][2])
         else:
             del threads[position]
         state.set_threads(threads)
@@ -492,7 +507,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 lastrev = self.last_revision()
                 if lastrev is None:
                     lastrev = bzrlib.revision.NULL_REVISION
-                if dict(threads)[self.nick] != lastrev:
+                if dict(state.get_threads_dict())[self.nick][0] != lastrev:
                     self.record_thread(self.nick, lastrev)
         super(LoomBranch, self).unlock()
 

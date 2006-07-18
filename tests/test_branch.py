@@ -65,13 +65,13 @@ class TestLoom(TestCaseWithLoom):
         # have been current-loom only
         self.assertEqual([], branch.loom_parents())
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION)],
+            [('foo', bzrlib.revision.NULL_REVISION, [])],
             branch.get_loom_state().get_threads())
         branch.new_thread('bar')
         self.assertEqual([], branch.loom_parents())
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION),
-             ('bar', bzrlib.revision.NULL_REVISION)],
+            [('foo', bzrlib.revision.NULL_REVISION, []),
+             ('bar', bzrlib.revision.NULL_REVISION, [])],
             branch.get_loom_state().get_threads())
 
     def test_new_thread_no_duplicate_names(self):
@@ -82,7 +82,9 @@ class TestLoom(TestCaseWithLoom):
         branch.new_thread('foo')
         self.assertRaises(bzrlib.plugins.loom.branch.DuplicateThreadName, 
             branch.new_thread, 'foo')
-        self.assertEqual([('foo', bzrlib.revision.NULL_REVISION)], branch.get_loom_state().get_threads())
+        self.assertEqual(
+            [('foo', bzrlib.revision.NULL_REVISION, [])],
+            branch.get_loom_state().get_threads())
 
     def get_tree_with_one_commit(self, path='.'):
         """Get a tree with a commit in loom format."""
@@ -95,7 +97,7 @@ class TestLoom(TestCaseWithLoom):
         tree = self.get_tree_with_one_commit()
         tree.branch.new_thread('foo')
         self.assertEqual(
-            [('foo', tree.last_revision())],
+            [('foo', tree.last_revision(), [])],
             tree.branch.get_loom_state().get_threads())
 
     def test_new_thread_after(self):
@@ -113,12 +115,12 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.new_thread('aftermiddle', 'middlepoint')
         tree.branch.new_thread('atend', 'endpoint')
         self.assertEqual(
-            [('baseline', rev_id),
-             ('afterbase', rev_id),
-             ('middlepoint', rev_id2),
-             ('aftermiddle', rev_id2),
-             ('endpoint', rev_id3),
-             ('atend', rev_id3),
+            [('baseline', rev_id, []),
+             ('afterbase', rev_id, []),
+             ('middlepoint', rev_id2, []),
+             ('aftermiddle', rev_id2, []),
+             ('endpoint', rev_id3, []),
+             ('atend', rev_id3, []),
              ],
             tree.branch.get_loom_state().get_threads())
 
@@ -137,11 +139,13 @@ class TestLoom(TestCaseWithLoom):
         try:
             tree.commit('change something', allow_pointless=True)
             self.assertEqual(
-                [('baseline', first_rev), ('tail', first_rev)], 
+                [('baseline', first_rev, []),
+                 ('tail', first_rev, [])], 
                 tree.branch.get_loom_state().get_threads())
             tree.branch.record_thread('baseline', tree.last_revision())
             self.assertEqual(
-                [('baseline', tree.last_revision()), ('tail', first_rev)], 
+                [('baseline', tree.last_revision(), []), 
+                 ('tail', first_rev, [])], 
                 tree.branch.get_loom_state().get_threads())
             self.assertEqual([], tree.branch.loom_parents())
         finally:
@@ -207,17 +211,17 @@ class TestLoom(TestCaseWithLoom):
             source_parents[:1],
             target_tree.branch.loom_parents())
         # the branch nick is the top warp.
-        if source_parents:
-            source_threads = source_tree.branch.get_threads(rev_id = source_parents[0])
-        else:
-            source_threads = []
+        source_threads = source_tree.branch.get_threads(
+            source_tree.branch.get_loom_state().get_basis_revision_id())
         if source_threads:
             self.assertEqual(
                 source_threads[-1][0],
                 target_tree.branch.nick)
         # no threads, nick is irrelevant
+        # check that the working threads were created correctly:
+        # the same revid for the parents as the created one.
         self.assertEqual(
-            source_threads,
+            [thread + ([thread[1]],) for thread in source_threads],
             target_tree.branch.get_loom_state().get_threads())
         # check content is mirrored
         for thread, rev_id in source_threads:
@@ -261,8 +265,8 @@ class TestLoom(TestCaseWithLoom):
         # check loom threads
         threads = target.get_loom_state().get_threads()
         self.assertEqual(
-            [('bottom', bottom_rev2),
-             ('top', top_rev1)],
+            [('bottom', bottom_rev2, [bottom_rev2]),
+             ('top', top_rev1, [top_rev1])],
             threads)
         # check loom tip was pulled
         loom_rev_ids = source.branch.loom_parents()
@@ -279,13 +283,13 @@ class TestLoom(TestCaseWithLoom):
             bottom_rev1 = tree.commit('commit my arse')
             # regular commands should not record
             self.assertEqual(
-                [('bottom', bzrlib.revision.NULL_REVISION)],
+                [('bottom', bzrlib.revision.NULL_REVISION, [])],
                 tree.branch.get_loom_state().get_threads())
         finally:
             tree.unlock()
         # unlocking should have detected the discrepancy and recorded.
         self.assertEqual(
-            [('bottom', bottom_rev1)],
+            [('bottom', bottom_rev1, [])],
             tree.branch.get_loom_state().get_threads())
 
     def test_trivial_record_loom(self):
@@ -330,8 +334,8 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.revert_loom()
         # the threads list should be restored
         self.assertEqual(
-            [(u'foo', u'null:'),
-             (u'bar', last_rev)],
+            [(u'foo', u'null:', ['null:']),
+             (u'bar', last_rev, [last_rev])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(last_rev, tree.branch.last_revision())
 
@@ -357,12 +361,12 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.revert_loom()
         # the threads list should be restored
         self.assertEqual(
-            [(u'base', u'null:'),
-             (u'top', last_rev)],
+            [(u'base', u'null:', ['null:']),
+             (u'top', last_rev, [last_rev])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(last_rev, tree.branch.last_revision())
 
-    def test_revert_thread(self):
+    def test_revert_thread_not_in_basis(self):
         tree = self.get_tree_with_loom()
         # ensure we have some stuff to revert
         tree.branch.new_thread('foo')
@@ -372,7 +376,26 @@ class TestLoom(TestCaseWithLoom):
         tree.commit('bar-ness', allow_pointless=True)
         tree.branch.revert_thread('bar')
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION)],
+            [('foo', bzrlib.revision.NULL_REVISION, [])],
+            tree.branch.get_loom_state().get_threads())
+        self.assertEqual(None, tree.branch.last_revision())
+
+    def test_revert_thread_in_basis(self):
+        tree = self.get_tree_with_loom()
+        # ensure we have some stuff to revert
+        tree.branch.new_thread('foo')
+        tree.branch.new_thread('bar')
+        tree.branch.nick = 'foo'
+        # record the loom to put the threads in the basis
+        tree.branch.record_loom('record it!')
+        # do a commit, so the last_revision should change.
+        tree.branch.nick = 'bar'
+        tree.commit('bar-ness', allow_pointless=True)
+        tree.branch.revert_thread('bar')
+        self.assertEqual(
+            [('foo', bzrlib.revision.NULL_REVISION, [bzrlib.revision.NULL_REVISION]),
+             ('bar', bzrlib.revision.NULL_REVISION, [bzrlib.revision.NULL_REVISION]),
+            ],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(None, tree.branch.last_revision())
 
@@ -383,7 +406,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.nick = 'bar'
         tree.branch.remove_thread('foo')
         state = tree.branch.get_loom_state()
-        self.assertEqual([('bar', 'null:')], state.get_threads())
+        self.assertEqual([('bar', 'null:', [])], state.get_threads())
 
     def test_get_threads_none(self):
         tree = self.get_tree_with_loom()

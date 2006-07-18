@@ -60,7 +60,7 @@ class LoomTreeDecorator(object):
         new_thread_name = None
         new_thread_rev = None
         # TODO: Factor this out into a search routine.
-        for thread, rev in reversed(threads):
+        for thread, rev, parents in reversed(threads):
             if thread == threadname:
                 # found the current thread.
                 old_thread_rev = rev
@@ -117,7 +117,7 @@ class LoomTreeDecorator(object):
         old_thread_rev = None
         new_thread_name = None
         new_thread_rev = None
-        for thread, rev in threads:
+        for thread, rev, parents in threads:
             if thread == threadname:
                 # found the current thread.
                 old_thread_rev = rev
@@ -160,24 +160,26 @@ class LoomTreeDecorator(object):
                 'date tree. Please run bzr update.')
         current_thread = self.branch.nick
         last_rev = self.tree.last_revision()
-        old_threads = self.branch.get_loom_state().get_threads()
-        current_thread_rev = dict(old_threads)[current_thread]
+        state = self.branch.get_loom_state()
+        old_threads = state.get_threads()
+        current_thread_rev = self.branch.last_revision()
         if thread is None:
             self.branch.revert_loom()
         else:
             self.branch.revert_thread(thread)
-        threads = self.branch.get_loom_state().get_threads()
-        threads_dict = dict(threads)
+        state = self.branch.get_loom_state()
+        threads = state.get_threads()
+        threads_dict = state.get_threads_dict()
         # TODO find the next up thread if needed
         if not threads_dict:
             # last thread nuked
             to_rev = bzrlib.revision.NULL_REVISION
         elif current_thread != self.branch.nick:
             # thread change occured
-            to_rev = threads_dict[self.branch.nick]
+            to_rev = threads_dict[self.branch.nick][0]
         else:
             # same thread tweaked
-            if last_rev == threads_dict[current_thread]:
+            if last_rev == threads_dict[current_thread][0]:
                 return
             to_rev = threads_dict[current_thread]
         # the thread changed, do a merge to match.

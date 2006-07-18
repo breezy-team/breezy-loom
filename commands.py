@@ -130,7 +130,7 @@ class cmd_show_loom(bzrlib.commands.Command):
         try:
             threads = loom.get_loom_state().get_threads()
             nick = loom.nick
-            for thread, revid in reversed(threads):
+            for thread, revid, parents in reversed(threads):
                 if thread == nick:
                     symbol = '=>'
                 else:

@@ -62,7 +62,7 @@ class TestLoomify(TestCaseWithLoom):
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
-            [('base', bzrlib.revision.NULL_REVISION)], 
+            [('base', bzrlib.revision.NULL_REVISION, [])], 
             threads)
 
     def test_loomify_path(self):
@@ -74,7 +74,7 @@ class TestLoomify(TestCaseWithLoom):
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
-            [('base', bzrlib.revision.NULL_REVISION)], 
+            [('base', bzrlib.revision.NULL_REVISION, [])],
             threads)
 
 
@@ -87,7 +87,8 @@ class TestCreate(TestsWithLooms):
         self.assertEqual('', err)
         revid = tree.last_revision()
         self.assertEqual(
-            [('vendor', revid), ('debian', revid)],
+            [('vendor', revid, []),
+             ('debian', revid, [])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual('debian', tree.branch.nick)
 
@@ -102,7 +103,9 @@ class TestCreate(TestsWithLooms):
         self.assertEqual('', err)
         revid = tree.last_revision()
         self.assertEqual(
-            [('vendor', revid), ('feature-foo', revid), ('debian', revid)],
+            [('vendor', revid, []),
+             ('feature-foo', revid, []),
+             ('debian', revid, [])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual('feature-foo', tree.branch.nick)
 

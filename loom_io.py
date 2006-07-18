@@ -32,7 +32,7 @@ _CURRENT_LOOM_FORMAT_STRING = "Loom current 1"
 # second line is the list of parents
 # third line and beyond are the current threads.
 # each thread line has one field for current status
-## planned # one field for each parent
+# one field for each parent
 # one field for the current revision id
 # and then the rest of the line for the thread name.
 
@@ -64,9 +64,16 @@ class LoomStateWriter(object):
         """Write the state object to stream."""
         lines = [_CURRENT_LOOM_FORMAT_STRING + '\n']
         lines.append(' '.join(self._state.get_parents()) + '\n')
-        for thread, rev_id in self._state.get_threads():
+        for thread, rev_id, parents in self._state.get_threads():
+            assert len(parents) == len(self._state.get_parents())
             # leading space for conflict status
-            lines.append(' %s %s\n' % (rev_id, thread))
+            line = " "
+            for parent in parents:
+                if parent is not None:
+                    line += "%s " % parent
+                else:
+                    line += " "
+            lines.append('%s%s %s\n' % (line, rev_id, thread))
         stream.write(''.join(lines).encode('utf8'))
 
 
@@ -116,11 +123,17 @@ class LoomStateReader(object):
         """
         result = []
         parent_count = len(self.read_parents())
+        split_count = parent_count + 2
         # skip the format and parent lines, and the trailing \n line.
         for line in self._content[2:-1]:
-            conflict_status, rev_id, name = line.split(' ', 2)
+            line_elements = line.split(' ', split_count)
+            conflict_status = line_elements[0]
+            rev_id, name = line_elements[-2:]
             parents = []
-            for pos in range(parent_count):
-                parents.append(None)
+            for parent in line_elements[1:parent_count + 1]:
+                if parent == '':
+                    parents.append(None)
+                else:
+                    parents.append(parent)
             result.append((name, rev_id, parents))
         return result

@@ -39,8 +39,7 @@ class LoomState(object):
             # perhaps this should be lazy evaluated at some point?
             self._parents = reader.read_parents()
             for thread in reader.read_thread_details():
-                self._threads.append(thread[0:2])
-                # discard parent details for now.
+                self._threads.append(thread)
 
     def get_basis_revision_id(self):
         """Get the revision id for the basis revision.
@@ -59,6 +58,14 @@ class LoomState(object):
     def get_threads(self):
         """Get the threads for the current state."""
         return list(self._threads)
+
+    def get_threads_dict(self):
+        """Get the threads as a dict. 
+
+        This loses ordering, but is useful for quickly locating the details on 
+        a given thread.
+        """
+        return dict((thread[0], thread[1:]) for thread in self._threads)
 
     def set_parents(self, parent_list):
         """Set the parents of this state to parent_list.

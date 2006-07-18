@@ -98,3 +98,5 @@ does note calls.
 - combine-thread to warn if the thread being combined has changes not present in the one below it. I.e. by ancestry, or by doing a merge and recording differences. For bonus points, do the merge, but record the lower thread as the last-revision in the tree still, and set no pending-merges. This preserves the difference whilst still combining the threads.
 - revert-thread on a combined or ejected thread should do something reasonable.
 - branch.remove_thread needs testing for cases: no such thread, thread is the current thread.
+- record_thread should allow a record to happen even if the thread is not changed IF the parents list is different, not counting None entries.
+- pull should not throwaway local commits - they should get preserved in some manner. i.e. if the revision id in last-loom != that in the basis loom, it should become a parent in last-loom. This implies a variable length list of parents for every line.

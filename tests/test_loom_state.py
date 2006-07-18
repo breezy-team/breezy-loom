@@ -40,11 +40,12 @@ class TestLoomState(TestCase):
         self.assertEqual([], state.get_parents())
         self.assertEqual([], state.get_threads())
         self.assertEqual(None, state.get_basis_revision_id())
+        self.assertEqual({}, state.get_threads_dict())
 
     def test_reader_constructor(self):
         # make a state
         state = loom_state.LoomState()
-        state.set_threads([('name', 'rev'), ('dangerous name', 'rev2')])
+        state.set_threads([('name', 'rev', [None, None]), ('dangerous name', 'rev2', [None, None])])
         state.set_parents(['bar', 'am'])
         stream = StringIO()
         writer = loom_io.LoomStateWriter(state)
@@ -55,26 +56,30 @@ class TestLoomState(TestCase):
         state = loom_state.LoomState(reader)
         self.assertEqual(['bar', 'am'], state.get_parents())
         self.assertEqual(
-            [('name', 'rev'), ('dangerous name', 'rev2')],
+            [('name', 'rev', [None, None]),
+             ('dangerous name', 'rev2', [None, None])],
             state.get_threads())
         self.assertEqual('bar', state.get_basis_revision_id())
 
     def test_set_get_threads(self):
         state = loom_state.LoomState()
-        sample_threads = [('foo', 'bar'), (u'g\xbe', 'bar')]
+        sample_threads = [('foo', 'bar', []), (u'g\xbe', 'bar', [])]
         state.set_threads(sample_threads)
         self.assertEqual([], state.get_parents())
         self.assertEqual(None, state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
+        # alter the sample threads we just set, to see that the stored copy is
+        # separate
         sample_threads.append('foo')
         self.assertNotEqual(sample_threads, state.get_threads())
+        # and check the returned copy is also independent.
         sample_threads = state.get_threads()
         sample_threads.append('foo')
         self.assertNotEqual(sample_threads, state.get_threads())
 
     def test_set_get_parents(self):
         state = loom_state.LoomState()
-        sample_threads = [('foo', 'bar')]
+        sample_threads = [('foo', 'bar', [])]
         state.set_threads(sample_threads)
         # can set parents to nothing with no side effects
         state.set_parents([])
@@ -96,3 +101,13 @@ class TestLoomState(TestCase):
         self.assertEqual(['bar', ' am'], state.get_parents())
         self.assertEqual('bar', state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
+
+    def test_get_threads_dict(self):
+        state = loom_state.LoomState()
+        sample_threads = [('foo', 'bar', []), (u'g\xbe', 'bar', [])]
+        state.set_threads(sample_threads)
+        self.assertEqual(
+            {'foo':('bar', []),
+             u'g\xbe':('bar', []),
+             },
+            state.get_threads_dict())
