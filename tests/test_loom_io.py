@@ -83,7 +83,7 @@ class TestLoomIO(TestCase):
 
     def test_write_state_with_parent(self):
         state = loom_state.LoomState()
-        state.set_parents([('1', [('name', 'revid')])])
+        state.set_parents(['1'])
         self.assertWritesStateCorrectly(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '1\n',
@@ -91,10 +91,7 @@ class TestLoomIO(TestCase):
 
     def test_write_state_with_parents(self):
         state = loom_state.LoomState()
-        state.set_parents(
-            [('1', [('name', 'revid')]),
-             (u'2\xeb', [(u'n\xbcame', u'rev\xed')]),
-             ])
+        state.set_parents(['1', u'2\xeb'])
         self.assertWritesStateCorrectly(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '1 2\xc3\xab\n',
@@ -119,10 +116,7 @@ class TestLoomIO(TestCase):
             [('base ', 'baserev'),
              (u'\xedtop', u'\xe9toprev'),
              ])
-        state.set_parents(
-            [('1', [('name', 'revid')]),
-             (u'2\xeb', [(u'n\xbcame', u'rev\xed')]),
-             ])
+        state.set_parents(['1', u'2\xeb'])
         self.assertWritesStateCorrectly(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '1 2\xc3\xab\n'

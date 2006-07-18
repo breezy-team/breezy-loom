@@ -34,7 +34,6 @@ class LoomState(object):
             which this LoomState is meant to retrieve its current data.
         """
         self._parents = []
-        self._parent_threads = []
         self._threads = []
         if reader is not None:
             # perhaps this should be lazy evaluated at some point?
@@ -43,13 +42,16 @@ class LoomState(object):
                 self._threads.append(thread[0:2])
                 # discard parent details for now.
 
-    def get_basis_threads(self):
-        """Get the basis threads for the this state."""
-        if not self._parent_threads:
-            return []
+    def get_basis_revision_id(self):
+        """Get the revision id for the basis revision.
+
+        None is return if there is no basis revision.
+        """
+        if not self._parents:
+            return None
         else:
-            return self._parent_threads[0]
-        
+            return self._parents[0]
+ 
     def get_parents(self):
         """Get the list of loom revisions that are parents to this state."""
         return self._parents
@@ -63,11 +65,7 @@ class LoomState(object):
 
         :param parent_list: A list of (parent_id, threads) tuples.
         """
-        self._parents = []
-        self._parent_threads = []
-        for parent, parent_threads in parent_list:
-            self._parents.append(parent)
-            self._parent_threads.append(parent_threads)
+        self._parents = list(parent_list)
 
     def set_threads(self, threads):
         """Set the current threads to threads.

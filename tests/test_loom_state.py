@@ -39,16 +39,13 @@ class TestLoomState(TestCase):
         # the default object must have no parents and no threads.
         self.assertEqual([], state.get_parents())
         self.assertEqual([], state.get_threads())
-        self.assertEqual([], state.get_basis_threads())
+        self.assertEqual(None, state.get_basis_revision_id())
 
     def test_reader_constructor(self):
         # make a state
         state = loom_state.LoomState()
         state.set_threads([('name', 'rev'), ('dangerous name', 'rev2')])
-        state.set_parents(
-            [('bar', [('name', 'revision')]),
-             ('am', [('zaphod', 'wasapreachere')]),
-             ])
+        state.set_parents(['bar', 'am'])
         stream = StringIO()
         writer = loom_io.LoomStateWriter(state)
         writer.write(stream)
@@ -60,14 +57,14 @@ class TestLoomState(TestCase):
         self.assertEqual(
             [('name', 'rev'), ('dangerous name', 'rev2')],
             state.get_threads())
-        #self.assertEqual([('name', 'revision')], state.get_basis_threads())
+        self.assertEqual('bar', state.get_basis_revision_id())
 
     def test_set_get_threads(self):
         state = loom_state.LoomState()
         sample_threads = [('foo', 'bar'), (u'g\xbe', 'bar')]
         state.set_threads(sample_threads)
         self.assertEqual([], state.get_parents())
-        self.assertEqual([], state.get_basis_threads())
+        self.assertEqual(None, state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
         sample_threads.append('foo')
         self.assertNotEqual(sample_threads, state.get_threads())
@@ -82,23 +79,20 @@ class TestLoomState(TestCase):
         # can set parents to nothing with no side effects
         state.set_parents([])
         self.assertEqual([], state.get_parents())
-        self.assertEqual([], state.get_basis_threads())
+        self.assertEqual(None, state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
         # can set a single parent with no threads
-        state.set_parents([('foo', [])])
+        state.set_parents(['foo'])
         self.assertEqual(['foo'], state.get_parents())
-        self.assertEqual([], state.get_basis_threads())
+        self.assertEqual('foo', state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
         # can set a single parent with threads
-        state.set_parents([('bar', [('name', 'rev')])])
+        state.set_parents(['bar'])
         self.assertEqual(['bar'], state.get_parents())
-        self.assertEqual([('name', 'rev')], state.get_basis_threads())
+        self.assertEqual('bar', state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
         # can set multiple parents
-        state.set_parents(
-            [('bar', [('name', 'rev')]),
-             (' am', [('zaphod', 'wasapreachere')]),
-             ])
+        state.set_parents(['bar', ' am'])
         self.assertEqual(['bar', ' am'], state.get_parents())
-        self.assertEqual([('name', 'rev')], state.get_basis_threads())
+        self.assertEqual('bar', state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
