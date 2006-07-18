@@ -100,3 +100,4 @@ does note calls.
 - branch.remove_thread needs testing for cases: no such thread, thread is the current thread.
 - record_thread should allow a record to happen even if the thread is not changed IF the parents list is different, not counting None entries.
 - pull should not throwaway local commits - they should get preserved in some manner. i.e. if the revision id in last-loom != that in the basis loom, it should become a parent in last-loom. This implies a variable length list of parents for every line - which is catered for.
+- remove thunks to NULL_REVISION to be EMPTY_REVISION once bzrlib supports that.

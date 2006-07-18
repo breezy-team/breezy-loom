@@ -37,6 +37,9 @@ import loom_io
 import loom_state
 
 
+EMPTY_REVISION = 'empty:'
+
+
 class LoomThreadError(bzrlib.errors.BzrNewError):
     """Base class for Loom-Thread errors."""
 
@@ -133,13 +136,22 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 # removed the end
                 # take the new end thread
                 self.nick = threads[-1][0]
-                self.generate_revision_history(threads[-1][1])
+                new_rev = threads[-1][1]
+                if new_rev == EMPTY_REVISION:
+                    new_rev = bzrlib.revision.NULL_REVISION
+                self.generate_revision_history(new_rev)
                 return
             # non-end thread removed.
             self.nick = threads[current_index][0]
-            self.generate_revision_history(threads[current_index][1])
+            new_rev = threads[current_index][1]
+            if new_rev == EMPTY_REVISION:
+                new_rev = bzrlib.revision.NULL_REVISION
+            self.generate_revision_history(new_rev)
         elif self.last_revision() != threads_dict[self.nick]:
-            self.generate_revision_history(threads_dict[self.nick])
+            new_rev = threads_dict[self.nick]
+            if new_rev == EMPTY_REVISION:
+                new_rev = bzrlib.revision.NULL_REVISION
+            self.generate_revision_history(new_rev)
 
     @needs_read_lock
     def clone(self, to_bzrdir, revision_id=None):
@@ -199,7 +211,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                     nested.finished()
             state = loom_state.LoomState()
             if threads:
-                destination.generate_revision_history(threads[-1][1])
+                last_rev = threads[-1][1]
+                if last_rev == EMPTY_REVISION:
+                    last_rev = bzrlib.revision.NULL_REVISION
+                destination.generate_revision_history(last_rev)
                 state.set_parents([loom_tip])
                 state.set_threads(
                     (thread + ([thread[1]],) for thread in threads)
@@ -245,7 +260,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         Loom meta 1
         revisionid threadname_in_utf8
         ----
-        if revisionid is null:, this is a new, empty branch.
+        if revisionid is empty:, this is a new, empty branch.
         """
         tree = self.repository.revision_tree(rev_id)
         lines = tree.get_file('loom_meta_tree').read().split('\n')
@@ -272,7 +287,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         else:
             revision_for_thread = threads[insertion_point - 1][1]
         if revision_for_thread is None:
-            revision_for_thread = bzrlib.revision.NULL_REVISION
+            revision_for_thread = EMPTY_REVISION
         threads.insert(
             insertion_point,
             (thread_name,
@@ -329,6 +344,8 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                     self.repository.fetch(source.repository,
                         revision_id=new_rev)
                     old_count = len(self.revision_history())
+                    if new_rev == EMPTY_REVISION:
+                        new_rev = bzrlib.revision.NULL_REVISION
                     self.generate_revision_history(new_rev)
                     return len(self.revision_history()) - old_count
                 # pulling a loom
@@ -370,7 +387,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 self.nick = threads[-1][0]
                 # and position the branch on the top loom
                 old_count = len(self.revision_history())
-                self.generate_revision_history(threads[-1][1])
+                new_rev = threads[-1][1]
+                if new_rev == EMPTY_REVISION:
+                    new_rev = bzrlib.revision.NULL_REVISION
+                self.generate_revision_history(new_rev)
                 return len(self.revision_history()) - old_count
             finally:
                 source.unlock()
@@ -420,7 +440,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         threads = state.get_threads()
         assert thread_name in state.get_threads_dict()
         if revision_id is None:
-            revision_id = bzrlib.revision.NULL_REVISION
+            revision_id = EMPTY_REVISION
         for position, (name, rev, parents) in enumerate(threads):
             if name == thread_name:
                 if revision_id == rev:
@@ -506,7 +526,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 # looms are enabled:
                 lastrev = self.last_revision()
                 if lastrev is None:
-                    lastrev = bzrlib.revision.NULL_REVISION
+                    lastrev = EMPTY_REVISION
                 if dict(state.get_threads_dict())[self.nick][0] != lastrev:
                     self.record_thread(self.nick, lastrev)
         super(LoomBranch, self).unlock()

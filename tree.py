@@ -30,6 +30,9 @@ import bzrlib.errors
 import bzrlib.revision
 
 
+from branch import EMPTY_REVISION
+
+
 class LoomTreeDecorator(object):
     """Adapt any tree with a loomed branch to give it loom-aware methods.
 
@@ -78,6 +81,10 @@ class LoomTreeDecorator(object):
             return 0
         result = 0
         try:
+            if new_thread_rev == EMPTY_REVISION:
+                new_thread_rev = bzrlib.revision.NULL_REVISION
+            if old_thread_rev == EMPTY_REVISION:
+                old_thread_rev = bzrlib.revision.NULL_REVISION
             base_rev_id = bzrlib.revision.common_ancestor(
                 new_thread_rev,
                 old_thread_rev,
@@ -132,6 +139,10 @@ class LoomTreeDecorator(object):
             # done
             bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
             return 0
+        if new_thread_rev == EMPTY_REVISION:
+            new_thread_rev = bzrlib.revision.NULL_REVISION
+        if old_thread_rev == EMPTY_REVISION:
+            old_thread_rev = bzrlib.revision.NULL_REVISION
         basis_tree = self.tree.branch.repository.revision_tree(old_thread_rev)
         to_tree = self.tree.branch.repository.revision_tree(new_thread_rev)
         result = bzrlib.merge.merge_inner(self.tree.branch,
@@ -182,6 +193,10 @@ class LoomTreeDecorator(object):
             if last_rev == threads_dict[current_thread][0]:
                 return
             to_rev = threads_dict[current_thread]
+        if current_thread_rev == EMPTY_REVISION:
+            current_thread_rev = bzrlib.revision.NULL_REVISION
+        if to_rev == EMPTY_REVISION:
+            to_rev = bzrlib.revision.NULL_REVISION
         # the thread changed, do a merge to match.
         basis_tree = self.tree.branch.repository.revision_tree(current_thread_rev)
         to_tree = self.tree.branch.repository.revision_tree(to_rev)

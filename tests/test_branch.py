@@ -22,6 +22,7 @@
 
 import bzrlib
 import bzrlib.errors as errors
+from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
@@ -65,13 +66,13 @@ class TestLoom(TestCaseWithLoom):
         # have been current-loom only
         self.assertEqual([], branch.loom_parents())
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION, [])],
+            [('foo', EMPTY_REVISION, [])],
             branch.get_loom_state().get_threads())
         branch.new_thread('bar')
         self.assertEqual([], branch.loom_parents())
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION, []),
-             ('bar', bzrlib.revision.NULL_REVISION, [])],
+            [('foo', EMPTY_REVISION, []),
+             ('bar', EMPTY_REVISION, [])],
             branch.get_loom_state().get_threads())
 
     def test_new_thread_no_duplicate_names(self):
@@ -83,7 +84,7 @@ class TestLoom(TestCaseWithLoom):
         self.assertRaises(bzrlib.plugins.loom.branch.DuplicateThreadName, 
             branch.new_thread, 'foo')
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION, [])],
+            [('foo', EMPTY_REVISION, [])],
             branch.get_loom_state().get_threads())
 
     def get_tree_with_one_commit(self, path='.'):
@@ -283,7 +284,7 @@ class TestLoom(TestCaseWithLoom):
             bottom_rev1 = tree.commit('commit my arse')
             # regular commands should not record
             self.assertEqual(
-                [('bottom', bzrlib.revision.NULL_REVISION, [])],
+                [('bottom', EMPTY_REVISION, [])],
                 tree.branch.get_loom_state().get_threads())
         finally:
             tree.unlock()
@@ -334,7 +335,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.revert_loom()
         # the threads list should be restored
         self.assertEqual(
-            [(u'foo', u'null:', ['null:']),
+            [(u'foo', 'empty:', [EMPTY_REVISION]),
              (u'bar', last_rev, [last_rev])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(last_rev, tree.branch.last_revision())
@@ -361,8 +362,8 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.revert_loom()
         # the threads list should be restored
         self.assertEqual(
-            [(u'base', u'null:', ['null:']),
-             (u'top', last_rev, [last_rev])],
+            [('base', 'empty:', [EMPTY_REVISION]),
+             ('top', last_rev, [last_rev])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(last_rev, tree.branch.last_revision())
 
@@ -376,7 +377,7 @@ class TestLoom(TestCaseWithLoom):
         tree.commit('bar-ness', allow_pointless=True)
         tree.branch.revert_thread('bar')
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION, [])],
+            [('foo', EMPTY_REVISION, [])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(None, tree.branch.last_revision())
 
@@ -393,8 +394,8 @@ class TestLoom(TestCaseWithLoom):
         tree.commit('bar-ness', allow_pointless=True)
         tree.branch.revert_thread('bar')
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION, [bzrlib.revision.NULL_REVISION]),
-             ('bar', bzrlib.revision.NULL_REVISION, [bzrlib.revision.NULL_REVISION]),
+            [('foo', EMPTY_REVISION, [EMPTY_REVISION]),
+             ('bar', EMPTY_REVISION, [EMPTY_REVISION]),
             ],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(None, tree.branch.last_revision())
@@ -406,7 +407,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.nick = 'bar'
         tree.branch.remove_thread('foo')
         state = tree.branch.get_loom_state()
-        self.assertEqual([('bar', 'null:', [])], state.get_threads())
+        self.assertEqual([('bar', 'empty:', [])], state.get_threads())
 
     def test_get_threads_none(self):
         tree = self.get_tree_with_loom()

@@ -22,6 +22,7 @@
 import os
 
 import bzrlib
+from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 
@@ -62,7 +63,7 @@ class TestLoomify(TestCaseWithLoom):
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
-            [('base', bzrlib.revision.NULL_REVISION, [])], 
+            [('base', EMPTY_REVISION, [])], 
             threads)
 
     def test_loomify_path(self):
@@ -74,7 +75,7 @@ class TestLoomify(TestCaseWithLoom):
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
-            [('base', bzrlib.revision.NULL_REVISION, [])],
+            [('base', EMPTY_REVISION, [])],
             threads)
 
 

@@ -25,6 +25,7 @@ from cStringIO import StringIO
 import bzrlib
 import bzrlib.errors as errors
 import bzrlib.osutils
+from bzrlib.plugins.loom.branch import EMPTY_REVISION
 import bzrlib.plugins.loom.loom_io as loom_io
 import bzrlib.plugins.loom.loom_state as loom_state
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
@@ -53,18 +54,18 @@ class TestLoomIO(TestCase):
     def test_write_threads(self):
         self.assertWritesThreadsCorrectly(
             'Loom meta 1\n'
-            'null: baseline\n'
+            'empty: baseline\n'
             'asdasdasdxxxrr not the baseline\n',
-            [('baseline', bzrlib.revision.NULL_REVISION),
+            [('baseline', EMPTY_REVISION),
              ('not the baseline', 'asdasdasdxxxrr')],
             )
 
     def test_write_unicode_threads(self):
         self.assertWritesThreadsCorrectly(
             'Loom meta 1\n'
-            'null: base\xc3\x9eline\n'
+            'empty: base\xc3\x9eline\n'
             'asd\xc3\xadasdasdxxxrr not the baseline\n',
-            [(u'base\xdeline', bzrlib.revision.NULL_REVISION),
+            [(u'base\xdeline', EMPTY_REVISION),
              ('not the baseline', u'asd\xedasdasdxxxrr')],
             )
 

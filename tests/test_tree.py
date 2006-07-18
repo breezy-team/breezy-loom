@@ -21,6 +21,7 @@
 
 
 import bzrlib
+from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 import bzrlib.plugins.loom.tree
 import bzrlib.revision
@@ -86,7 +87,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         # the current loom should be reverted 
         # (we assume this means branch.revert_loom was called())
         self.assertEqual(
-            [('foo', bzrlib.revision.NULL_REVISION, [])],
+            [('foo', EMPTY_REVISION, [])],
             tree.branch.get_loom_state().get_threads())
         
     def test_revert_thread_different_thread(self):
