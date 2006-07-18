@@ -232,14 +232,15 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         :param rev_id: A specific loom revision to retrieve.
         :return: a list of threads. e.g. [('threadname', 'last_revision')]
         """
+        if rev_id is None:
+            return []
         content = self._loom_content(rev_id)
         return self._parse_loom(content)
 
-    def _loom_content(self, rev_id=None):
+    def _loom_content(self, rev_id):
         """Return the raw formatted content of a loom as a series of lines.
 
-        :param rev_id: A specific loom revision to retrieve. If not specified
-            the current loom revision is used.
+        :param rev_id: A specific loom revision to retrieve.
 
         Currently the disk format is:
         ----
@@ -248,11 +249,6 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         ----
         if revisionid is null:, this is a new, empty branch.
         """
-        if rev_id is None:
-            parents = self.loom_parents()
-            if not parents:
-                return []
-            rev_id = parents[0]
         tree = self.repository.revision_tree(rev_id)
         lines = tree.get_file('loom_meta_tree').read().split('\n')
         assert lines[0] == 'Loom meta 1'
