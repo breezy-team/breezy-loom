@@ -73,6 +73,7 @@ class LoomStateWriter(object):
                     line += "%s " % parent
                 else:
                     line += " "
+            line += ": "
             lines.append('%s%s %s\n' % (line, rev_id, thread))
         stream.write(''.join(lines).encode('utf8'))
 
@@ -126,14 +127,17 @@ class LoomStateReader(object):
         split_count = parent_count + 2
         # skip the format and parent lines, and the trailing \n line.
         for line in self._content[2:-1]:
-            line_elements = line.split(' ', split_count)
-            conflict_status = line_elements[0]
-            rev_id, name = line_elements[-2:]
+            conflict_status, line = line.split(' ', 1)
             parents = []
-            for parent in line_elements[1:parent_count + 1]:
-                if parent == '':
+            parent = ""
+            while True:
+                parent, line = line.split(' ', 1)
+                if parent == ':':
+                    break
+                elif parent == '':
                     parents.append(None)
                 else:
                     parents.append(parent)
+            rev_id, name = line.split(' ', 1)
             result.append((name, rev_id, parents))
         return result
