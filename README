@@ -18,6 +18,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 Loom is a bzr plugin which extends bzr with features to manage a loom of patches.
 
+
+Loom is similar in concept to the tools 'quilt', 'stacked git' and 'mercurial
+queues'. Its most significant difference is the ability to collaborate on the
+stack of patches, without needing to do conflict resolution, and managing of
+the list of patches via diff hunks. Instead you are able to develop the stack
+using the full power of a version control system - you can rollback, annotate,
+and push and pull the stack that is being built. We call the tool Loom because
+unlike the three tools mentioned above there are two dimensions to the loom:
+ - The up and down dimension, which is precisely equivalent to the quilt/
+   stacked git/ mercurial queues stack of patches, which you can go up and 
+   down in.
+ - The time dimension, where we record the stack of patches as it alters over
+   time. It is this new dimension that allows us to push, pull and merge the
+   loom between users, much like adding a time dimension to a normal source
+   tree allows easier sharing between developers.
+
+
 Loom adds the following new commands:
  * loomify: This converts a branch into a loom enabled branch. As a result
    of this, the branch format is converted and you need to have the loom
@@ -55,20 +72,9 @@ branch will pull into the current thread. This assymetry is a feature because
 it allows easy interoperation with developers not using looms.
 
 
-Loom is similar in concept to the tools 'quilt', 'stacked git' and 'mercurial
-queues'. Its most significant difference is the ability to collaborate on the
-stack of patches, without needing to do conflict resolution, and managing of
-the list of patches via diff hunks. Instead you are able to develop the stack
-using the full power of a version control system - you can rollback, annotate,
-and push and pull the stack that is being built. We call the tool Loom because
-unlike the three tools mentioned above there are two dimensions to the loom:
- - The up and down dimension, which is precisely equivalent to the quilt/
-   stacked git/ mercurial queues stack of patches, which you can go up and 
-   down in.
- - The time dimension, where we record the stack of patches as it alters over
-   time. It is this new dimension that allows us to push, pull and merge the
-   loom between users, much like adding a time dimension to a normal source
-   tree allows easier sharing between developers.
+Loom also adds a new revision specifier 'thread:'. You can use this to diff
+against threads in the current Loom. For instance, 'bzr diff -r thread:' will
+show you the different between the thread below yours, and your thread.
 
 
 Internals

@@ -48,6 +48,10 @@ Loom adds the following new commands:
    future will just turn the loom into a normal branch again. Use this command
    to remove a thread which has been merged into upstream. 
 
+
+Loom also adds a new revision specifier 'thread:'. You can use this to diff
+against threads in the current Loom. For instance, 'bzr diff -r thread:' will
+show you the different between the thread below yours, and your thread.
 """
 
 
@@ -55,6 +59,7 @@ import bzrlib.commands
 
 import branch
 import commands
+import revspec
 
 
 for command in [
