@@ -25,7 +25,7 @@ Loom adds the following new commands:
    the base thread in the loom.
 
  * create-thread: This adds a new thread to the loom with the supplied name
-   and positions the branch on the new thrad.
+   and positions the branch on the new thread.
 
  * record: Perform a commit of the loom - record the current stack of patches
    into history, allowing it to be pushed, pulled and merged.
