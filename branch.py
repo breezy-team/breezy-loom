@@ -31,6 +31,7 @@ import bzrlib.branch
 from bzrlib.decorators import needs_read_lock, needs_write_lock
 import bzrlib.errors
 import bzrlib.osutils
+import bzrlib.trace
 import bzrlib.ui
 
 import loom_io
@@ -223,9 +224,13 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 # no threads yet, be a normal branch.
                 destination.set_revision_history(new_history)
             destination._set_last_loom(state)
-            parent = self.get_parent()
-            if parent:
-                destination.set_parent(parent)
+            try:
+                parent = self.get_parent()
+            except bzrlib.errors.InaccessibleParent, e:
+                bzrlib.trace.mutter('parent was not accessible to copy: %s', e)
+            else:
+                if parent:
+                    destination.set_parent(parent)
             if threads:
                 destination.nick = threads[-1][0]
         finally:
@@ -419,6 +424,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         loom_sha1 = writer.write_threads(new_threads, loom_stream)
         loom_stream.seek(0)
         loom_tree = LoomMetaTree(loom_ie, loom_stream, loom_sha1)
+        if getattr(builder, 'record_root_entry', True):
+            root_ie = bzrlib.inventory.make_entry(
+                'directory', '', None, bzrlib.inventory.ROOT_ID)
+            builder.record_entry_contents(root_ie, [], '', loom_tree)
         builder.record_entry_contents(
             loom_ie, parents, 'loom', loom_tree)
         builder.finish_inventory()

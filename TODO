@@ -104,3 +104,5 @@ does note calls.
 - test revision spec with non loom branches, and at the bottom thread.
 - print a message 'pushing thread to branch' when doing a push/pull from a normal branch.
 - add a setup.py
+- combine-thread should de-dup penmding merges
+
