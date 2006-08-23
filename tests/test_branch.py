@@ -274,6 +274,46 @@ class TestLoom(TestCaseWithLoom):
         for rev_id in loom_rev_ids:
             self.assertTrue(target.repository.has_revision(rev_id))
         self.assertEqual(source.branch.loom_parents(), target.loom_parents())
+        
+    def test_pull_into_empty_loom(self):
+        """Doing a pull into a loom with no loom revisions works."""
+        source = self.get_tree_with_loom('source')
+        target = source.bzrdir.sprout('target').open_branch()
+        source.branch.new_thread('a thread')
+        source.branch.nick = 'a thread'
+        # put a commit in the thread for source.
+        bottom_rev1 = source.commit('commit a thread')
+        source.branch.record_loom('commit to loom')
+        target.pull(source.branch)
+        # check loom threads
+        threads = target.get_loom_state().get_threads()
+        self.assertEqual(
+            [('a thread', bottom_rev1, [bottom_rev1])],
+            threads)
+        # check loom tip was pulled
+        loom_rev_ids = source.branch.loom_parents()
+        for rev_id in loom_rev_ids:
+            self.assertTrue(target.repository.has_revision(rev_id))
+        self.assertEqual(source.branch.loom_parents(), target.loom_parents())
+
+    def test_pull_thread_at_null(self):
+        """Doing a pull when the source loom has a thread with no history."""
+        source = self.get_tree_with_loom('source')
+        target = source.bzrdir.sprout('target').open_branch()
+        source.branch.new_thread('a thread')
+        source.branch.nick = 'a thread'
+        source.branch.record_loom('commit to loom')
+        target.pull(source.branch)
+        # check loom threads
+        threads = target.get_loom_state().get_threads()
+        self.assertEqual(
+            [('a thread', 'empty:', ['empty:'])],
+            threads)
+        # check loom tip was pulled
+        loom_rev_ids = source.branch.loom_parents()
+        for rev_id in loom_rev_ids:
+            self.assertTrue(target.repository.has_revision(rev_id))
+        self.assertEqual(source.branch.loom_parents(), target.loom_parents())
 
     def test_implicit_record(self):
         tree = self.get_tree_with_loom('source')

@@ -103,6 +103,7 @@ does note calls.
 - remove thunks to NULL_REVISION to be EMPTY_REVISION once bzrlib supports that.
 - test revision spec with non loom branches, and at the bottom thread.
 - print a message 'pushing thread to branch' when doing a push/pull from a normal branch.
-- add a setup.py
+- fetch should examine *every* fetched loom revision and fetch the contents
+  therein as well, to support uncommit between record calls.
 - combine-thread should de-dup penmding merges
 

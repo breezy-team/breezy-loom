@@ -359,10 +359,11 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 source_loom_rev = source_state.get_parents()[0]
                 if not overwrite:
                     # is the loom compatible?
-                    source_ancestry = source.repository.get_ancestry(
-                        source_loom_rev)
-                    if my_state.get_parents()[0] not in source_ancestry:
-                        raise bzrlib.errors.DivergedBranches(self, source)
+                    if len(my_state.get_parents()) > 0:
+                        source_ancestry = source.repository.get_ancestry(
+                            source_loom_rev)
+                        if my_state.get_parents()[0] not in source_ancestry:
+                            raise bzrlib.errors.DivergedBranches(self, source)
                 # fetch the loom content
                 self.repository.fetch(source.repository,
                     revision_id=source_loom_rev)
@@ -376,9 +377,11 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
                 # the order is reversed because the common case is for the top
                 # thread to include all content.
                 for rev_id in reversed(revisions):
-                    # fetch the loom content for this revision
-                    self.repository.fetch(source.repository,
-                        revision_id=rev_id)
+                    if rev_id not in (EMPTY_REVISION,
+                        bzrlib.revision.NULL_REVISION):
+                        # fetch the loom content for this revision
+                        self.repository.fetch(source.repository,
+                            revision_id=rev_id)
                 # set our work threads to match (this is where we lose data if
                 # there are local mods)
                 my_state.set_threads(
@@ -424,7 +427,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         loom_sha1 = writer.write_threads(new_threads, loom_stream)
         loom_stream.seek(0)
         loom_tree = LoomMetaTree(loom_ie, loom_stream, loom_sha1)
-        if getattr(builder, 'record_root_entry', True):
+        if getattr(builder, 'record_root_entry', False):
             root_ie = bzrlib.inventory.make_entry(
                 'directory', '', None, bzrlib.inventory.ROOT_ID)
             builder.record_entry_contents(root_ie, [], '', loom_tree)

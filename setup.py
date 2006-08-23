@@ -7,5 +7,7 @@ setup(name="Loom",
       author_email="robert.collins@canonical.com",
       license = "TBD",
       url="https://launchpad.net/products/loom",
-      packages=['bzrlib.plugins.loom'],
+      packages=['bzrlib.plugins.loom',
+                'bzrlib.plugins.loom.tests',
+                ],
       package_dir={'bzrlib.plugins.loom': '.'})
