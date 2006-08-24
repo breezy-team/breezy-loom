@@ -47,6 +47,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
+        self.assertEqual([], tree.get_parent_ids())
 
     def test_up_to_no_commits(self):
         tree = self.get_tree_with_loom('tree')
@@ -57,6 +58,46 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
+        self.assertEqual([bottom_rev1], tree.get_parent_ids())
+
+    def test_up_already_merged(self):
+        """up-thread into a thread that already has this thread is a no-op."""
+        tree = self.get_tree_with_loom('tree')
+        tree.branch.new_thread('bottom')
+        tree.branch.nick = 'bottom'
+        bottom_rev1 = tree.commit('bottom_commit')
+        tree.branch.new_thread('top', 'bottom')
+        tree.branch.nick = 'top'
+        top_rev1 = tree.commit('top_commit', allow_pointless=True)
+        tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        tree_loom_tree.down_thread()
+        # check the test will be valid
+        self.assertEqual([None, bottom_rev1, top_rev1],
+            tree.branch.repository.get_ancestry([top_rev1]))
+        self.assertEqual([bottom_rev1], tree.get_parent_ids())
+        tree_loom_tree.up_thread()
+        self.assertEqual('top', tree.branch.nick)
+        self.assertEqual([top_rev1], tree.get_parent_ids())
+
+    def test_up_not_merged(self):
+        """up-thread from a thread with new work."""
+        tree = self.get_tree_with_loom('tree')
+        tree.branch.new_thread('bottom')
+        tree.branch.nick = 'bottom'
+        bottom_rev1 = tree.commit('bottom_commit')
+        tree.branch.new_thread('top', 'bottom')
+        tree.branch.nick = 'top'
+        top_rev1 = tree.commit('top_commit', allow_pointless=True)
+        tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        tree_loom_tree.down_thread()
+        # check the test will be valid
+        self.assertEqual([None, bottom_rev1, top_rev1],
+            tree.branch.repository.get_ancestry([top_rev1]))
+        self.assertEqual([bottom_rev1], tree.get_parent_ids())
+        bottom_rev2 = tree.commit('bottom_two', allow_pointless=True)
+        tree_loom_tree.up_thread()
+        self.assertEqual('top', tree.branch.nick)
+        self.assertEqual([top_rev1, bottom_rev2], tree.get_parent_ids())
 
     def test_revert_loom(self):
         tree = self.get_tree_with_loom(',')

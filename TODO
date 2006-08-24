@@ -26,8 +26,6 @@ possibly: override the nick property on the loom to do a push/pop etc as needed.
 
 teach up-thread to use '<<< THREADNAME' rather than '<<< MERGE-SOURCE'
 
-up-thread should not add a merge when the current thread is already merged.
-
 cut-warp ? eject - whatever - should refuse to eject the last one, or perhaps
 should unloom at that point.
 

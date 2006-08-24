@@ -69,7 +69,7 @@ class LoomTreeDecorator(object):
                 old_thread_rev = rev
                 break
             new_thread_name = thread
-            new_thread_rev = rev   
+            new_thread_rev = rev
         if new_thread_rev is None:
             raise bzrlib.errors.BzrCommandError(
                 'Cannot move up from the highest thread.')
@@ -95,10 +95,19 @@ class LoomTreeDecorator(object):
             base_rev_id = None
         # change the branch
         self.tree.branch.generate_revision_history(new_thread_rev)
-        # change the tree
+        # change the tree to the revision of the new thread.
         self.tree.set_last_revision(new_thread_rev)
-        # record the merge:
-        self.tree.add_pending_merge(old_thread_rev)
+        # record the merge if:
+        # the old thread is not NULL (we have something to record)
+        # and the new thread is either empty/null OR the old thread is
+        #    not merged into it.
+        if (old_thread_rev not in 
+                (EMPTY_REVISION, bzrlib.revision.NULL_REVISION)
+            and (new_thread_rev in 
+                    (EMPTY_REVISION, bzrlib.revision.NULL_REVISION)
+                or old_thread_rev not in
+                    self.tree.branch.repository.get_ancestry(new_thread_rev))):
+            self.tree.add_pending_merge(old_thread_rev)
         # now merge the tree up into the new patch:
         base_tree = self.tree.branch.repository.revision_tree(base_rev_id)
         other_tree = self.tree.branch.repository.revision_tree(new_thread_rev)
