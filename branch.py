@@ -183,9 +183,12 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             if revision_id is not None:
                 if threads:
                     # revision_id should be in the loom, or its an error 
-                    found_threads = [thread for thread, rev in threads 
+                    found_threads = [thread for thread, rev in threads
                         if rev == revision_id]
                     if not found_threads:
+                        # the thread we have been asked to set in the remote 
+                        # side has not been recorded yet, so its data is not
+                        # present at this point.
                         raise UnrecordedRevision(self, revision_id)
                 else:
                     # no threads yet, be a normal branch
