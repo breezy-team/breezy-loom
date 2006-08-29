@@ -16,6 +16,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
 
+The bzr loom plugin
++++++++++++++++++++
+
+Introduction
+============
+
 Loom is a bzr plugin which extends bzr with features to manage a loom of patches.
 
 
@@ -75,6 +81,12 @@ it allows easy interoperation with developers not using looms.
 Loom also adds a new revision specifier 'thread:'. You can use this to diff
 against threads in the current Loom. For instance, 'bzr diff -r thread:' will
 show you the different between the thread below yours, and your thread.
+
+
+Documentation
+=============
+
+The HOWTO provides a small but growing manual for the use of loom.
 
 
 Internals
