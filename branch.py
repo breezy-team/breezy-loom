@@ -362,7 +362,7 @@ class LoomSupport(object):
         current warp. If it is a loom branch, then the pull is done against the
         entire loom and the current thread set to the top thread.
         """
-        if not isinstance(source, LoomBranch):
+        if not isinstance(source, LoomSupport):
             return super(LoomSupport, self).pull(source,
                 overwrite=overwrite, stop_revision=stop_revision)
         # pull the loom, and position our
