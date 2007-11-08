@@ -38,5 +38,5 @@ class TestThreadRevSpec(TestCaseWithLoom):
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.up_thread()
         tree.commit('change top')
-        spec = RevisionSpec('thread:')
+        spec = RevisionSpec.from_string('thread:')
         self.assertEqual(rev_id, spec.in_branch(tree.branch)[1])

@@ -19,6 +19,8 @@
 
 """The current-loom state object."""
 
+from bzrlib.revision import NULL_REVISION
+
 
 class LoomState(object):
     """The LoomState represents the content of the current-loom branch file.
@@ -47,7 +49,7 @@ class LoomState(object):
         None is return if there is no basis revision.
         """
         if not self._parents:
-            return None
+            return NULL_REVISION
         else:
             return self._parents[0]
  

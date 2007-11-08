@@ -491,12 +491,12 @@ class TestLoom(TestCaseWithLoom):
         state = tree.branch.get_loom_state()
         self.assertEqual([('bar', 'empty:', [])], state.get_threads())
 
-    def test_get_threads_none(self):
+    def test_get_threads_null(self):
         tree = self.get_tree_with_loom()
         # with no commmits in the loom:
-        self.assertEqual([], tree.branch.get_threads(None))
+        self.assertEqual([], tree.branch.get_threads(NULL_REVISION))
         # and loom history should make no difference:
         tree.branch.new_thread('foo')
         tree.branch.nick = 'foo'
         tree.branch.record_loom('foo')
-        self.assertEqual([], tree.branch.get_threads(None))
+        self.assertEqual([], tree.branch.get_threads(NULL_REVISION))

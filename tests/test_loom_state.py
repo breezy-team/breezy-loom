@@ -28,7 +28,7 @@ import bzrlib.osutils
 import bzrlib.plugins.loom.loom_io as loom_io
 import bzrlib.plugins.loom.loom_state as loom_state
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
-import bzrlib.revision
+from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestCase
 
 
@@ -39,7 +39,7 @@ class TestLoomState(TestCase):
         # the default object must have no parents and no threads.
         self.assertEqual([], state.get_parents())
         self.assertEqual([], state.get_threads())
-        self.assertEqual(None, state.get_basis_revision_id())
+        self.assertEqual(NULL_REVISION, state.get_basis_revision_id())
         self.assertEqual({}, state.get_threads_dict())
 
     def test_reader_constructor(self):
@@ -66,7 +66,7 @@ class TestLoomState(TestCase):
         sample_threads = [('foo', 'bar', []), (u'g\xbe', 'bar', [])]
         state.set_threads(sample_threads)
         self.assertEqual([], state.get_parents())
-        self.assertEqual(None, state.get_basis_revision_id())
+        self.assertEqual(NULL_REVISION, state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
         # alter the sample threads we just set, to see that the stored copy is
         # separate
@@ -84,7 +84,7 @@ class TestLoomState(TestCase):
         # can set parents to nothing with no side effects
         state.set_parents([])
         self.assertEqual([], state.get_parents())
-        self.assertEqual(None, state.get_basis_revision_id())
+        self.assertEqual(NULL_REVISION, state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
         # can set a single parent with no threads
         state.set_parents(['foo'])
