@@ -324,7 +324,7 @@ class TestPush(TestsWithLooms):
         out, err = self.run_bzr(['push', '../target'])
         os.chdir('..')
         self.assertEqual('', out)
-        self.assertEqual('1 revision(s) pushed.\n', err)
+        self.assertEqual('Created new branch.\n', err)
         # lower level tests check behaviours, just check show-loom as a smoke
         # test.
         out, err = self.run_bzr(['show-loom', 'target'])
