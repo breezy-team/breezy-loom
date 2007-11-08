@@ -41,6 +41,22 @@ import loom_state
 EMPTY_REVISION = 'empty:'
 
 
+def loomify(branch):
+    """Convert branch to a loom.
+
+    If branch is a BzrBranch5 branch, it will become a LoomBranch.
+    """
+    try:
+        branch.lock_write()
+        if isinstance(branch._format, bzrlib.branch.BzrBranchFormat5):
+            format = BzrBranchLoomFormat1()
+            format.take_over(branch)
+        else:
+            raise UnsupportedBranchFormat(branch._format)
+    finally:
+        branch.unlock()
+
+
 class LoomThreadError(bzrlib.errors.BzrNewError):
     """Base class for Loom-Thread errors."""
 
@@ -57,6 +73,13 @@ class UnrecordedRevision(bzrlib.errors.BzrNewError):
         bzrlib.errors.BzrNewError.__init__(self)
         self.branch = branch
         self.revision_id = revision_id
+
+
+class UnsupportedBranchFormat(bzrlib.errors.BzrNewError):
+    """The branch format %(format)s is not supported by loomify."""
+
+    def __init__(self, format):
+        self.format = format
 
 
 class DuplicateThreadName(LoomThreadError):

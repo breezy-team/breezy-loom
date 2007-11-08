@@ -22,7 +22,11 @@
 
 import bzrlib
 import bzrlib.errors as errors
-from bzrlib.plugins.loom.branch import EMPTY_REVISION
+from bzrlib.plugins.loom.branch import (
+    EMPTY_REVISION,
+    loomify,
+    UnsupportedBranchFormat,
+    )
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
@@ -38,17 +42,44 @@ class TestFormat(TestCaseWithTransport):
         branch = format.initialize(bzrdir)
         self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
 
-    def test_take_over_branch(self):
-        branch = self.make_branch('.')
-        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
-        branch.lock_write()
-        try:
-            format.take_over(branch)
-        finally:
-            branch.unlock()
+
+class LockableStub(object):
+
+    def __init__(self):
+        self._calls = []
+        self._format = "Nothing to see."
+
+    def lock_write(self):
+        self._calls.append(("write",))
+
+    def unlock(self):
+        self._calls.append(("unlock",))
+
+
+class TestLoomify(TestCaseWithTransport):
+
+    def test_loomify_locks_branch(self):
+        # loomify should take out a lock even on a bogus format as someone
+        # might e.g. change the format if you don't hold the lock - its what we
+        # are about to do!
+        branch = LockableStub()
+        self.assertRaises(UnsupportedBranchFormat, loomify, branch)
+        self.assertEqual([("write",), ("unlock",)], branch._calls)
+
+    def test_loomify_unknown_format(self):
+        branch = self.make_branch('.', format='weave')
+        self.assertRaises(UnsupportedBranchFormat, loomify, branch)
+        self.assertFalse(branch.is_locked())
+
+    def test_loomify_branch_format_5(self):
+        branch = self.make_branch('.', format='dirstate')
+        loomify(branch)
+        self.assertFalse(branch.is_locked())
         # a loomed branch opens with a different format
         branch = bzrlib.branch.Branch.open('.')
         self.assertIsInstance(branch, bzrlib.plugins.loom.branch.LoomBranch)
+        self.assertIsInstance(branch._format,
+            bzrlib.plugins.loom.branch.BzrBranchLoomFormat1)
         # and it should have no recorded loom content so we can do
         self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
         self.assertEqual([], branch.loom_parents())
