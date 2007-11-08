@@ -60,19 +60,19 @@ class TestLoomify(TestCaseWithLoom):
         out, err = self.run_bzr('loomify')
         # a loomed branch opens with a unique format
         b = bzrlib.branch.Branch.open('.')
-        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
+        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomSupport)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
-            [('base', EMPTY_REVISION, [])], 
+            [('base', EMPTY_REVISION, [])],
             threads)
 
     def test_loomify_path(self):
         b = self.make_branch('foo')
         b.nick = 'base'
-        out, err = self.run_bzr('loomify', 'foo')
+        out, err = self.run_bzr(['loomify', 'foo'])
         # a loomed branch opens with a unique format
         b = bzrlib.branch.Branch.open('foo')
-        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomBranch)
+        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomSupport)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
             [('base', EMPTY_REVISION, [])],

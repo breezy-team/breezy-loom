@@ -58,6 +58,17 @@ class LockableStub(object):
 
 class TestLoomify(TestCaseWithTransport):
 
+    def assertConvertedBranchFormat(self, branch, branch_class, format):
+        """Assert that branch has been successfully converted to a loom."""
+        self.assertFalse(branch.is_locked())
+        # a loomed branch opens with a different format
+        branch = bzrlib.branch.Branch.open('.')
+        self.assertIsInstance(branch, branch_class)
+        self.assertIsInstance(branch._format, format)
+        # and it should have no recorded loom content so we can do
+        self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
+        self.assertEqual([], branch.loom_parents())
+
     def test_loomify_locks_branch(self):
         # loomify should take out a lock even on a bogus format as someone
         # might e.g. change the format if you don't hold the lock - its what we
@@ -74,15 +85,16 @@ class TestLoomify(TestCaseWithTransport):
     def test_loomify_branch_format_5(self):
         branch = self.make_branch('.', format='dirstate')
         loomify(branch)
-        self.assertFalse(branch.is_locked())
-        # a loomed branch opens with a different format
-        branch = bzrlib.branch.Branch.open('.')
-        self.assertIsInstance(branch, bzrlib.plugins.loom.branch.LoomBranch)
-        self.assertIsInstance(branch._format,
+        self.assertConvertedBranchFormat(branch,
+            bzrlib.plugins.loom.branch.LoomBranch,
             bzrlib.plugins.loom.branch.BzrBranchLoomFormat1)
-        # and it should have no recorded loom content so we can do
-        self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
-        self.assertEqual([], branch.loom_parents())
+
+    def test_loomify_branch_format_6(self):
+        branch = self.make_branch('.', format='dirstate-tags')
+        loomify(branch)
+        self.assertConvertedBranchFormat(branch,
+            bzrlib.plugins.loom.branch.LoomBranch6,
+            bzrlib.plugins.loom.branch.BzrBranchLoomFormat6)
 
 
 class TestLoom(TestCaseWithLoom):

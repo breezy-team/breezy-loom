@@ -31,8 +31,10 @@ import bzrlib.branch
 from bzrlib.decorators import needs_read_lock, needs_write_lock
 import bzrlib.errors
 import bzrlib.osutils
+from bzrlib import symbol_versioning
 import bzrlib.trace
 import bzrlib.ui
+from bzrlib.revision import is_null
 
 import loom_io
 import loom_state
@@ -48,8 +50,11 @@ def loomify(branch):
     """
     try:
         branch.lock_write()
-        if isinstance(branch._format, bzrlib.branch.BzrBranchFormat5):
+        if branch._format.__class__ == bzrlib.branch.BzrBranchFormat5:
             format = BzrBranchLoomFormat1()
+            format.take_over(branch)
+        elif branch._format.__class__ == bzrlib.branch.BzrBranchFormat6:
+            format = BzrBranchLoomFormat6()
             format.take_over(branch)
         else:
             raise UnsupportedBranchFormat(branch._format)
@@ -135,8 +140,8 @@ class LoomMetaTree(bzrlib.tree.Tree):
         return False
 
 
-class LoomBranch(bzrlib.branch.BzrBranch5):
-    """The Loom branch."""
+class LoomSupport(object):
+    """Loom specific logic called into from Branch."""
 
     def _adjust_nick_after_changing_threads(self, threads, current_index):
         """Adjust the branch nick when we may have removed a current thread.
@@ -187,6 +192,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         result = self._format.initialize(to_bzrdir)
         self.copy_content_into(result, revision_id=revision_id)
         return result
+
 
     @needs_read_lock
     def copy_content_into(self, destination, revision_id=None):
@@ -277,6 +283,10 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         :return: a list of threads. e.g. [('threadname', 'last_revision')]
         """
         if rev_id is None:
+            symbol_versioning.warn('NULL_REVISION should be used for the null'
+                ' revision instead of None, as of bzr 0.90.',
+                DeprecationWarning, stacklevel=2)
+        if is_null(rev_id):
             return []
         content = self._loom_content(rev_id)
         return self._parse_loom(content)
@@ -317,7 +327,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             revision_for_thread = self.last_revision()
         else:
             revision_for_thread = threads[insertion_point - 1][1]
-        if revision_for_thread is None:
+        if is_null(revision_for_thread):
             revision_for_thread = EMPTY_REVISION
         threads.insert(
             insertion_point,
@@ -354,7 +364,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         entire loom and the current thread set to the top thread.
         """
         if not isinstance(source, LoomBranch):
-            return super(LoomBranch, self).pull(source,
+            return super(LoomSupport, self).pull(source,
                 overwrite=overwrite, stop_revision=stop_revision)
         # pull the loom, and position our
         pb = bzrlib.ui.ui_factory.nested_progress_bar()
@@ -477,7 +487,7 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
         state = self.get_loom_state()
         threads = state.get_threads()
         assert thread_name in state.get_threads_dict()
-        if revision_id is None:
+        if is_null(revision_id):
             revision_id = EMPTY_REVISION
         for position, (name, rev, parents) in enumerate(threads):
             if name == thread_name:
@@ -563,36 +573,37 @@ class LoomBranch(bzrlib.branch.BzrBranch5):
             if len(threads):
                 # looms are enabled:
                 lastrev = self.last_revision()
-                if lastrev is None:
+                if is_null(lastrev):
                     lastrev = EMPTY_REVISION
                 if dict(state.get_threads_dict())[self.nick][0] != lastrev:
                     self.record_thread(self.nick, lastrev)
-        super(LoomBranch, self).unlock()
+        super(LoomSupport, self).unlock()
 
 
-class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
-    """Loom's first format.
-
-    This format is an extension to BzrBranchFormat5 with the following changes:
-     - a loom-revision file.
-
-     The loom-revision file has a revision id in it which points into the loom
-     data branch in the repository.
-
-    This format is new in the loom plugin.
+class LoomBranch(LoomSupport, bzrlib.branch.BzrBranch5):
+    """The Loom branch.
+    
+    A mixin is used as the easiest migration path to support branch6. A
+    delegated object may well be cleaner.
     """
 
-    def get_format_string(self):
-        """See BranchFormat.get_format_string()."""
-        return "Bazaar-NG Loom branch format 1\n"
 
-    def get_format_description(self):
-        """See BranchFormat.get_format_description()."""
-        return "Loom branch format 1"
-        
+class LoomBranch6(LoomSupport, bzrlib.branch.BzrBranch6):
+    """Branch6 Loom branch.
+
+    A mixin is used as the easiest migration path to support branch6. A
+    delegated object may well be cleaner.
+    """
+
+
+class LoomFormatMixin(object):
+    """Support code for Loom formats."""
+    # A mixin is not ideal because it is tricky to test, but it seems to be the
+    # best solution for now.
+
     def initialize(self, a_bzrdir):
         """Create a branch of this format in a_bzrdir."""
-        super(BzrBranchLoomFormat1, self).initialize(a_bzrdir)
+        super(LoomFormatMixin, self).initialize(a_bzrdir)
         branch_transport = a_bzrdir.get_branch_transport(self)
         files = []
         state = loom_state.LoomState()
@@ -623,13 +634,10 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         transport = a_bzrdir.get_branch_transport(None)
         control_files = bzrlib.lockable_files.LockableFiles(
             transport, 'lock', bzrlib.lockdir.LockDir)
-        return LoomBranch(_format=self,
+        return self._branch_class(_format=self,
                           _control_files=control_files,
                           a_bzrdir=a_bzrdir,
                           _repository=a_bzrdir.find_repository())
-
-    def __str__(self):
-        return "Bazaar-NG Loom format 1"
 
     def take_over(self, branch):
         """Take an existing bzrlib branch over into Loom format.
@@ -639,7 +647,7 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
 
         The conversion takes effect when the branch is next opened.
         """
-        assert branch._format.__class__ is bzrlib.branch.BzrBranchFormat5
+        assert branch._format.__class__ is self._parent_classs
         branch.control_files.put_utf8('format', self.get_format_string())
         state = loom_state.LoomState()
         writer = loom_io.LoomStateWriter(state)
@@ -649,4 +657,60 @@ class BzrBranchLoomFormat1(bzrlib.branch.BzrBranchFormat5):
         branch.control_files.put('last-loom', state_stream)
 
 
+
+class BzrBranchLoomFormat1(LoomFormatMixin, bzrlib.branch.BzrBranchFormat5):
+    """Loom's first format.
+
+    This format is an extension to BzrBranchFormat5 with the following changes:
+     - a loom-revision file.
+
+     The loom-revision file has a revision id in it which points into the loom
+     data branch in the repository.
+
+    This format is new in the loom plugin.
+    """
+
+    _branch_class = LoomBranch
+    _parent_classs = bzrlib.branch.BzrBranchFormat5
+
+    def get_format_string(self):
+        """See BranchFormat.get_format_string()."""
+        return "Bazaar-NG Loom branch format 1\n"
+
+    def get_format_description(self):
+        """See BranchFormat.get_format_description()."""
+        return "Loom branch format 1"
+        
+    def __str__(self):
+        return "Bazaar-NG Loom format 1"
+
+
+class BzrBranchLoomFormat6(LoomFormatMixin, bzrlib.branch.BzrBranchFormat6):
+    """Loom's second edition - based on bzr's Branch6.
+
+    This format is an extension to BzrBranchFormat6 with the following changes:
+     - a last-loom file.
+
+     The last-loom file has a revision id in it which points into the loom
+     data branch in the repository.
+
+    This format is new in the loom plugin.
+    """
+
+    _branch_class = LoomBranch6
+    _parent_classs = bzrlib.branch.BzrBranchFormat6
+
+    def get_format_string(self):
+        """See BranchFormat.get_format_string()."""
+        return "Bazaar-NG Loom branch format 6\n"
+
+    def get_format_description(self):
+        """See BranchFormat.get_format_description()."""
+        return "Loom branch format 6"
+        
+    def __str__(self):
+        return "bzr loom format 6 (based on bzr branch format 6)\n"
+
+
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat1())
+bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat6())

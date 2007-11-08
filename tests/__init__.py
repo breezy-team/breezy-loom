@@ -43,7 +43,6 @@ class TestCaseWithLoom(TestCaseWithTransport):
     def get_tree_with_loom(self, path="."):
         """Get a tree with no commits in loom format."""
         tree = self.make_branch_and_tree(path)
-        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
-        format.take_over(tree.branch)
+        bzrlib.plugins.loom.branch.loomify(tree.branch)
         return tree.bzrdir.open_workingtree()
 
