@@ -62,45 +62,52 @@ def loomify(branch):
         branch.unlock()
 
 
-class LoomThreadError(bzrlib.errors.BzrNewError):
-    """Base class for Loom-Thread errors."""
+class LoomThreadError(bzrlib.errors.BzrError):
+
+    _fmt = """Base class for Loom-Thread errors."""
 
     def __init__(self, branch, thread):
-        bzrlib.errors.BzrNewError.__init__(self)
+        bzrlib.errors.BzrError.__init__(self)
         self.branch = branch
         self.thread = thread
 
 
-class UnrecordedRevision(bzrlib.errors.BzrNewError):
-    """The revision %(revision_id)s is not recorded in the loom %(branch)s."""
+class UnrecordedRevision(bzrlib.errors.BzrError):
+
+    _fmt = """The revision %(revision_id)s is not recorded in the loom %(branch)s."""
 
     def __init__(self, branch, revision_id):
-        bzrlib.errors.BzrNewError.__init__(self)
+        bzrlib.errors.BzrError.__init__(self)
         self.branch = branch
         self.revision_id = revision_id
 
 
-class UnsupportedBranchFormat(bzrlib.errors.BzrNewError):
-    """The branch format %(format)s is not supported by loomify."""
+class UnsupportedBranchFormat(bzrlib.errors.BzrError):
+
+    _fmt = """The branch format %(format)s is not supported by loomify."""
 
     def __init__(self, format):
         self.format = format
 
 
 class DuplicateThreadName(LoomThreadError):
-    """The thread %(thread)s already exists in branch %(branch)s."""
+
+    _fmt = """The thread %(thread)s already exists in branch %(branch)s."""
 
 
 class UnchangedThreadRevision(LoomThreadError):
-    """No new commits to record on thread %(thread)s."""
+
+    _fmt = """No new commits to record on thread %(thread)s."""
 
 
 class NoSuchThread(LoomThreadError):
-    """No such thread '%(thread)s'."""
+
+    _fmt = """No such thread '%(thread)s'."""
 
 
-class CannotCombineOnLastThread(bzrlib.errors.BzrNewError):
-    """Cannot combine threads on the bottom thread."""
+class CannotCombineOnLastThread(bzrlib.errors.BzrError):
+
+    _fmt = """Cannot combine threads on the bottom thread."""
 
 
 class LoomMetaTree(bzrlib.tree.Tree):
