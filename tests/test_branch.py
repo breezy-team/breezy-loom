@@ -99,11 +99,12 @@ class TestLoomify(TestCaseWithTransport):
 
 class TestLoom(TestCaseWithLoom):
 
+    def make_loom(self, path):
+        bzrlib.plugins.loom.branch.loomify(self.make_branch(path))
+        return bzrlib.branch.Branch.open(path)
+
     def test_new_thread_empty_branch(self):
-        branch = self.make_branch('.')
-        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
-        format.take_over(branch)
-        branch = bzrlib.branch.Branch.open('.')
+        branch = self.make_loom('.')
         branch.new_thread('foo')
         # assert that no loom data is committed, this change should
         # have been current-loom only
@@ -119,10 +120,7 @@ class TestLoom(TestCaseWithLoom):
             branch.get_loom_state().get_threads())
 
     def test_new_thread_no_duplicate_names(self):
-        branch = self.make_branch('.')
-        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
-        format.take_over(branch)
-        branch = bzrlib.branch.Branch.open('.')
+        branch = self.make_loom('.')
         branch.new_thread('foo')
         self.assertRaises(bzrlib.plugins.loom.branch.DuplicateThreadName, 
             branch.new_thread, 'foo')
