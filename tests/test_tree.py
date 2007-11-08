@@ -24,7 +24,7 @@ import bzrlib
 from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 import bzrlib.plugins.loom.tree
-import bzrlib.revision
+from bzrlib.revision import NULL_REVISION
 
 
 class TestTreeDecorator(TestCaseWithLoom):
@@ -109,7 +109,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom()
         # the tree should be reverted
-        self.assertEqual(None, tree.last_revision())
+        self.assertEqual(NULL_REVISION, tree.last_revision())
         # the current loom should be reverted 
         # (we assume this means branch.revert_loom was called())
         self.assertEqual([], tree.branch.get_loom_state().get_threads())
@@ -124,7 +124,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom(thread='bar')
         # the tree should be reverted
-        self.assertEqual(None, tree.last_revision())
+        self.assertEqual(NULL_REVISION, tree.last_revision())
         # the current loom should be reverted 
         # (we assume this means branch.revert_loom was called())
         self.assertEqual(
@@ -141,7 +141,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom(thread='foo')
         # the tree should not be reverted
-        self.assertNotEqual(None, tree.last_revision())
+        self.assertNotEqual(NULL_REVISION, tree.last_revision())
         # the bottom thread should be reverted
         # (we assume this means branch.revert_thread was 
         # called())
