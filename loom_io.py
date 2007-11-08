@@ -113,7 +113,7 @@ class LoomStateReader(object):
         :return: a list of parent revision ids.
         """
         self._read()
-        return self._content[1].split()
+        return self._content[1].encode('utf8').split()
 
     def read_thread_details(self):
         """Read the details for the threads.
