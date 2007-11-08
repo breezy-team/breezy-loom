@@ -365,9 +365,9 @@ class TestPull(TestsWithLooms):
         finally:
             os.chdir('..')
         self.assertStartsWith(out, 'Using saved location:')
+        self.assertEndsWith(out, 'Now on revision 2.\n')
         self.assertEqual(
-            'All changes applied successfully.\n'
-            '1 revision(s) pulled.\n', 
+            'All changes applied successfully.\n',
             err)
         # lower level tests check behaviours, just check show-loom as a smoke
         # test.

@@ -362,7 +362,8 @@ class LoomSupport(object):
         return result
 
     @needs_write_lock
-    def pull(self, source, overwrite=False, stop_revision=None):
+    def pull(self, source, overwrite=False, stop_revision=None,
+        run_hooks=True, possible_transports=None):
         """Pull from a branch into this loom.
 
         If the remote branch is a non-loom branch, the pull is done against the
@@ -371,10 +372,17 @@ class LoomSupport(object):
         """
         if not isinstance(source, LoomSupport):
             return super(LoomSupport, self).pull(source,
-                overwrite=overwrite, stop_revision=stop_revision)
+                overwrite=overwrite, stop_revision=stop_revision,
+                possible_transports=possible_transports)
         # pull the loom, and position our
         pb = bzrlib.ui.ui_factory.nested_progress_bar()
+        result = bzrlib.branch.PullResult()
+        result.source_branch = source
+        result.target_branch = self
+        # cannot bind currently
+        result.local_branch = None
         try:
+            result.old_revno, result.old_revid = self.last_revision_info()
             source.lock_read()
             try:
                 source_state = source.get_loom_state()
@@ -436,12 +444,17 @@ class LoomSupport(object):
                 # set the branch nick.
                 self.nick = threads[-1][0]
                 # and position the branch on the top loom
-                old_count = len(self.revision_history())
                 new_rev = threads[-1][1]
                 if new_rev == EMPTY_REVISION:
                     new_rev = bzrlib.revision.NULL_REVISION
                 self.generate_revision_history(new_rev)
-                return len(self.revision_history()) - old_count
+                # get the final result object details
+                result.tag_conflicts = None
+                result.new_revno, result.new_revid = self.last_revision_info()
+                if run_hooks:
+                    for hook in bzrlib.branch.Branch.hooks['post_pull']:
+                        hook(result)
+                return result
             finally:
                 source.unlock()
         finally:

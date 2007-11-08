@@ -107,3 +107,4 @@ does note calls.
   therein as well, to support uncommit between record calls.
 - combine-thread should de-dup penmding merges
 - use the revspec api to offer help on thread:
+- support tags on push/pull in looms
