@@ -25,6 +25,7 @@ import bzrlib
 from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
+from bzrlib.revision import NULL_REVISION
 
 
 class TestsWithLooms(TestCaseWithLoom):
@@ -397,7 +398,7 @@ class TestRevert(TestsWithLooms):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('foo')
         last_rev = tree.last_revision()
-        self.assertNotEqual(None, last_rev)
+        self.assertNotEqual(NULL_REVISION, last_rev)
         out, err = self.run_bzr(['revert-loom', '--all'])
         self.assertEqual('', out)
         self.assertEqual(
@@ -405,7 +406,7 @@ class TestRevert(TestsWithLooms):
             'All threads reverted.\n',
             err)
         self.assertNotEqual(last_rev, tree.last_revision())
-        self.assertEqual(None, tree.last_revision())
+        self.assertEqual(NULL_REVISION, tree.last_revision())
         self.assertEqual([], tree.branch.get_loom_state().get_threads())
         
     def test_revert_thread(self):
@@ -421,7 +422,7 @@ class TestRevert(TestsWithLooms):
         tree.commit('after-vendor commit 2', allow_pointless=True)
         LoomTreeDecorator(tree).down_thread()
         last_rev = tree.last_revision()
-        self.assertNotEqual(None, last_rev)
+        self.assertNotEqual(NULL_REVISION, last_rev)
         out, err = self.run_bzr(['revert-loom', 'after-vendor'])
         self.assertEqual('', out)
         self.assertEqual("thread 'after-vendor' reverted.\n", err)
