@@ -30,6 +30,7 @@ from bzrlib.plugins.loom.branch import (
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
+from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestCaseWithTransport
 
 
@@ -460,7 +461,7 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual(
             [('foo', EMPTY_REVISION, [])],
             tree.branch.get_loom_state().get_threads())
-        self.assertEqual(None, tree.branch.last_revision())
+        self.assertEqual(NULL_REVISION, tree.branch.last_revision())
 
     def test_revert_thread_in_basis(self):
         tree = self.get_tree_with_loom()
@@ -479,7 +480,7 @@ class TestLoom(TestCaseWithLoom):
              ('bar', EMPTY_REVISION, [EMPTY_REVISION]),
             ],
             tree.branch.get_loom_state().get_threads())
-        self.assertEqual(None, tree.branch.last_revision())
+        self.assertTrue(NULL_REVISION, tree.branch.last_revision())
 
     def test_remove_thread(self):
         tree = self.get_tree_with_loom()
