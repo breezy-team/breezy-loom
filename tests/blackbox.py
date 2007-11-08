@@ -40,7 +40,7 @@ class TestsWithLooms(TestCaseWithLoom):
         tree = self.make_branch_and_tree(path)
         tree.branch.nick = 'vendor'
         tree.commit('first release')
-        self.run_bzr('loomify', path)
+        self.run_bzr(['loomify', path])
         return tree.bzrdir.open_workingtree()
     
 
@@ -48,7 +48,7 @@ class TestLoomify(TestCaseWithLoom):
 
     def test_loomify_new_branch(self):
         b = self.make_branch('.')
-        out, err = self.run_bzr('loomify', retcode=3)
+        out, err = self.run_bzr(['loomify'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
             'bzr: ERROR: You must have a branch nickname set to loomify a branch\n', 
@@ -57,7 +57,7 @@ class TestLoomify(TestCaseWithLoom):
     def test_loomify_new_branch_with_nick(self):
         b = self.make_branch('.')
         b.nick = 'base'
-        out, err = self.run_bzr('loomify')
+        out, err = self.run_bzr(['loomify'])
         # a loomed branch opens with a unique format
         b = bzrlib.branch.Branch.open('.')
         self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomSupport)
@@ -83,7 +83,7 @@ class TestCreate(TestsWithLooms):
     
     def test_create_no_changes(self):
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('create-thread', 'debian')
+        out, err = self.run_bzr(['create-thread', 'debian'])
         self.assertEqual('', out)
         self.assertEqual('', err)
         revid = tree.last_revision()
@@ -99,7 +99,7 @@ class TestCreate(TestsWithLooms):
         # now we are at vendor, with debian after, so if we add
         # feature-foo we should get:
         # vendor - feature-foo - debian
-        out, err = self.run_bzr('create-thread', 'feature-foo')
+        out, err = self.run_bzr(['create-thread', 'feature-foo'])
         self.assertEqual('', out)
         self.assertEqual('', err)
         revid = tree.last_revision()
@@ -134,9 +134,9 @@ class TestShow(TestsWithLooms):
     def assertShowLoom(self, threads, selected_thread, location=None):
         """Check expected show-loom output."""
         if location:
-            out, err = self.run_bzr('show-loom', location)
+            out, err = self.run_bzr(['show-loom', location])
         else:
-            out, err = self.run_bzr('show-loom')
+            out, err = self.run_bzr(['show-loom'])
         # threads are in oldest-last order.
         expected_out = ''
         for thread in reversed(threads):
@@ -155,7 +155,7 @@ class TestRecord(TestsWithLooms):
     def test_record_no_change(self):
         """If there are no changes record should error."""
         tree = self.get_tree_with_loom()
-        out, err = self.run_bzr('record', 'Try to commit.', retcode=3) 
+        out, err = self.run_bzr(['record', 'Try to commit.'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
             'bzr: ERROR: No changes to commit\n', err)
@@ -165,7 +165,7 @@ class TestRecord(TestsWithLooms):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('feature')
         tree.branch.nick = 'feature'
-        out, err = self.run_bzr('record', 'add feature branch.') 
+        out, err = self.run_bzr(['record', 'add feature branch.'])
         self.assertEqual('Loom recorded.\n', out)
         self.assertEqual('', err)
 
@@ -174,7 +174,7 @@ class TestDown(TestsWithLooms):
 
     def test_down_thread_from_bottom(self):
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('down-thread', retcode=3)
+        out, err = self.run_bzr(['down-thread'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual('bzr: ERROR: Cannot move down from the lowest thread.\n', err)
         
@@ -184,7 +184,7 @@ class TestDown(TestsWithLooms):
         tree.branch.new_thread('patch')
         tree.branch.nick = 'patch'
         rev = tree.last_revision()
-        out, err = self.run_bzr('down-thread')
+        out, err = self.run_bzr(['down-thread'])
         self.assertEqual('', out)
         self.assertEqual("Moved to thread 'vendor'.\n", err)
         self.assertEqual('vendor', tree.branch.nick)
@@ -198,7 +198,7 @@ class TestDown(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         tree.commit('add a file')
-        out, err = self.run_bzr('down-thread')
+        out, err = self.run_bzr(['down-thread'])
         self.assertEqual('', out)
         self.assertEqual(
             "All changes applied successfully.\n"
@@ -219,9 +219,9 @@ class TestDown(TestsWithLooms):
         # do a null change in vendor - a new release.
         vendor_release = tree.commit('new vendor release.', allow_pointless=True)
         # pop up, then down
-        self.run_bzr('up-thread')
-        self.run_bzr('revert')
-        out, err = self.run_bzr('down-thread')
+        self.run_bzr(['up-thread'])
+        self.run_bzr(['revert'])
+        out, err = self.run_bzr(['down-thread'])
         self.assertEqual('', out)
         self.assertEqual(
             'All changes applied successfully.\n'
@@ -233,7 +233,7 @@ class TestDown(TestsWithLooms):
         # the branch needs to be updated.
         self.assertEqual(vendor_release, tree.branch.last_revision())
         # diff should return 0 - no uncomitted changes.
-        self.run_bzr('diff')
+        self.run_bzr(['diff'])
         self.assertEqual([vendor_release], tree.get_parent_ids())
 
 
@@ -241,7 +241,7 @@ class TestUp(TestsWithLooms):
 
     def test_up_thread_from_top(self):
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('up-thread', retcode=3)
+        out, err = self.run_bzr(['up-thread'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
             'bzr: ERROR: Cannot move up from the highest thread.\n', err)
@@ -252,7 +252,7 @@ class TestUp(TestsWithLooms):
         tree.branch.new_thread('patch')
         tree.branch.nick = 'vendor'
         rev = tree.last_revision()
-        out, err = self.run_bzr('up-thread')
+        out, err = self.run_bzr(['up-thread'])
         self.assertEqual('', out)
         self.assertEqual('', err)
         self.assertEqual('patch', tree.branch.nick)
@@ -267,7 +267,7 @@ class TestUp(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
-        out, err = self.run_bzr('up-thread')
+        out, err = self.run_bzr(['up-thread'])
         self.assertEqual('', out)
         self.assertEqual(
             "All changes applied successfully.\n"
@@ -279,7 +279,7 @@ class TestUp(TestsWithLooms):
         self.assertEqual(patch_rev, tree.branch.last_revision())
         self.assertTrue(tree.has_filename('afile'))
         # diff should return 1 now as we have uncommitted changes.
-        self.run_bzr('diff', retcode=1)
+        self.run_bzr(['diff'], retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
 
     def test_up_thread_gets_conflicts(self):
@@ -292,12 +292,12 @@ class TestUp(TestsWithLooms):
         tree.add('afile')
         patch_rev = tree.commit('add afile as a patch')
         # add a change in vendor - a new release.
-        self.run_bzr('down-thread')
+        self.run_bzr(['down-thread'])
         self.build_tree(['afile'])
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
         # we want conflicts.
-        out, err = self.run_bzr('up-thread', retcode=1)
+        out, err = self.run_bzr(['up-thread'], retcode=1)
         self.assertEqual('', out)
         self.assertEqual(
             'Conflict adding file afile.  Moved existing file to afile.moved.\n'
@@ -310,7 +310,7 @@ class TestUp(TestsWithLooms):
         self.assertEqual(patch_rev, tree.branch.last_revision())
         self.assertTrue(tree.has_filename('afile'))
         # diff should return 1 now as we have uncommitted changes.
-        self.run_bzr('diff', retcode=1)
+        self.run_bzr(['diff'], retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
 
 
@@ -321,13 +321,13 @@ class TestPush(TestsWithLooms):
         tree = self.get_vendor_loom('source')
         tree.branch.record_loom('commit loom.')
         os.chdir('source')
-        out, err = self.run_bzr('push', '../target')
+        out, err = self.run_bzr(['push', '../target'])
         os.chdir('..')
         self.assertEqual('', out)
         self.assertEqual('1 revision(s) pushed.\n', err)
         # lower level tests check behaviours, just check show-loom as a smoke
         # test.
-        out, err = self.run_bzr('show-loom', 'target')
+        out, err = self.run_bzr(['show-loom', 'target'])
         self.assertEqual('=>vendor\n', out)
         self.assertEqual('', err)
 
@@ -338,12 +338,12 @@ class TestBranch(TestsWithLooms):
         """Integration smoke test for bzr branch of a loom."""
         tree = self.get_vendor_loom('source')
         tree.branch.record_loom('commit loom.')
-        out, err = self.run_bzr('branch', 'source', 'target')
+        out, err = self.run_bzr(['branch', 'source', 'target'])
         self.assertEqual('', out)
         self.assertEqual('Branched 1 revision(s).\n', err)
         # lower level tests check behaviours, just check show-loom as a smoke
         # test.
-        out, err = self.run_bzr('show-loom', 'target')
+        out, err = self.run_bzr(['show-loom', 'target'])
         self.assertEqual('=>vendor\n', out)
         self.assertEqual('', err)
 
@@ -361,7 +361,7 @@ class TestPull(TestsWithLooms):
         tree.branch.record_loom('commit loom again.')
         os.chdir('target')
         try:
-            out, err = self.run_bzr('pull')
+            out, err = self.run_bzr(['pull'])
         finally:
             os.chdir('..')
         self.assertStartsWith(out, 'Using saved location:')
@@ -371,7 +371,7 @@ class TestPull(TestsWithLooms):
             err)
         # lower level tests check behaviours, just check show-loom as a smoke
         # test.
-        out, err = self.run_bzr('show-loom', 'target')
+        out, err = self.run_bzr(['show-loom', 'target'])
         self.assertEqual('=>foo\n  vendor\n', out)
         self.assertEqual('', err)
 
@@ -381,14 +381,14 @@ class TestRevert(TestsWithLooms):
     def test_revert_loom(self):
         """bzr revert-loom should give help."""
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('revert-loom')
+        out, err = self.run_bzr(['revert-loom'])
         self.assertEqual('', out)
         self.assertEqual('Please see revert-loom -h.\n', err)
 
     def test_revert_loom_missing_thread(self):
         """bzr revert-loom missing-thread should give an error."""
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('revert-loom', 'unknown-thread', retcode=3)
+        out, err = self.run_bzr(['revert-loom', 'unknown-thread'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual("bzr: ERROR: No such thread 'unknown-thread'.\n", err)
 
@@ -398,7 +398,7 @@ class TestRevert(TestsWithLooms):
         tree.branch.new_thread('foo')
         last_rev = tree.last_revision()
         self.assertNotEqual(None, last_rev)
-        out, err = self.run_bzr('revert-loom', '--all')
+        out, err = self.run_bzr(['revert-loom', '--all'])
         self.assertEqual('', out)
         self.assertEqual(
             'All changes applied successfully.\n'
@@ -422,7 +422,7 @@ class TestRevert(TestsWithLooms):
         LoomTreeDecorator(tree).down_thread()
         last_rev = tree.last_revision()
         self.assertNotEqual(None, last_rev)
-        out, err = self.run_bzr('revert-loom', 'after-vendor')
+        out, err = self.run_bzr(['revert-loom', 'after-vendor'])
         self.assertEqual('', out)
         self.assertEqual("thread 'after-vendor' reverted.\n", err)
         self.assertEqual(last_rev, tree.last_revision())
@@ -435,7 +435,7 @@ class TestCombineThread(TestsWithLooms):
     def test_combine_last_thread(self):
         """Doing combine thread on the last thread is an error for now."""
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr('combine-thread', retcode=3)
+        out, err = self.run_bzr(['combine-thread'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual('bzr: ERROR: Cannot combine threads on the bottom thread.\n', err)
 
@@ -452,10 +452,10 @@ class TestCombineThread(TestsWithLooms):
         # thread has merged the upper.
         LoomTreeDecorator(tree).down_thread()
         # ugh, should make merge easier to use.
-        self.run_bzr('merge', '-r', 'revid:%s' % top_revid, '.')
+        self.run_bzr(['merge', '-r', 'revid:%s' % top_revid, '.'])
         vendor_revid = tree.commit('merge in the above-vendor work.')
         LoomTreeDecorator(tree).up_thread()
-        out, err = self.run_bzr('combine-thread')
+        out, err = self.run_bzr(['combine-thread'])
         self.assertEqual('', out)
         self.assertEqual(
             "Combining thread 'above-vendor' into 'vendor'\n"
