@@ -154,7 +154,7 @@ class TestLoomIO(TestCase):
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
             '1 2\xc3\xab\n')
         self.assertReadState(
-            ['1', u'2\xeb'],
+            ['1', '2\xc3\xab'],
             [],
             state_stream)
 
@@ -165,7 +165,7 @@ class TestLoomIO(TestCase):
             '   : baserev base \n'
             '   : \xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
         self.assertReadState(
-            ['1', u'2\xeb'],
+            ['1', '2\xc3\xab'],
             [('base ', 'baserev', [None, None]),
              (u'\xedtop', '\xc3\xa9toprev', [None, None]),
              ],
