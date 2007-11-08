@@ -1,3 +1,5 @@
+loom format2 - based on branch6
+
 commands to make:
  - l-commit: 'record' has been written as a primitive to record a new patch.
    ensures nick in loom, record tree into loom branch for nick, commit into the
@@ -104,4 +106,4 @@ does note calls.
 - fetch should examine *every* fetched loom revision and fetch the contents
   therein as well, to support uncommit between record calls.
 - combine-thread should de-dup penmding merges
-
+- use the revspec api to offer help on thread:
