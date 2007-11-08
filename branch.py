@@ -116,7 +116,7 @@ class LoomMetaTree(bzrlib.tree.Tree):
         self._loom_stream = loom_stream
         self._loom_sha1 = loom_sha1
     
-    def get_file(self, file_id):
+    def get_file(self, file_id, path):
         """Get the content of file_id from this tree.
 
         As usual this must be for the single existing file 'loom'.
@@ -192,7 +192,6 @@ class LoomSupport(object):
         result = self._format.initialize(to_bzrdir)
         self.copy_content_into(result, revision_id=revision_id)
         return result
-
 
     @needs_read_lock
     def copy_content_into(self, destination, revision_id=None):
@@ -466,9 +465,12 @@ class LoomSupport(object):
         if getattr(builder, 'record_root_entry', False):
             root_ie = bzrlib.inventory.make_entry(
                 'directory', '', None, bzrlib.inventory.ROOT_ID)
-            builder.record_entry_contents(root_ie, [], '', loom_tree)
+            builder.record_entry_contents(root_ie, [], '', loom_tree,
+                ('directory', None, None, None))
         builder.record_entry_contents(
-            loom_ie, parents, 'loom', loom_tree)
+            loom_ie, parents, 'loom', loom_tree,
+            # a fake contents so that the file is determined as changed.
+            ('file', 0, False, None))
         builder.finish_inventory()
         rev_id = builder.commit(commit_message)
         state.set_parents([rev_id])
