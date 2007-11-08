@@ -189,6 +189,15 @@ class LoomSupport(object):
                 new_rev = bzrlib.revision.NULL_REVISION
             self.generate_revision_history(new_rev)
 
+    def bind(self, other):
+        """Bind the local branch the other branch.
+
+        :param other: The branch to bind to
+        :type other: Branch
+        """
+        # Looms are not currently bindable.
+        raise bzrlib.errors.UpgradeRequired(self.base)
+
     @needs_read_lock
     def clone(self, to_bzrdir, revision_id=None):
         """Clone the branch into to_bzrdir.
@@ -274,6 +283,15 @@ class LoomSupport(object):
         finally:
             destination.unlock()
 
+    def _get_checkout_format(self):
+        """Checking out a Loom gets a regular branch for now.
+        
+        This is a short term measure to get to an all-tests passing status.
+        """
+        format = self.repository.bzrdir.checkout_metadir()
+        format.set_branch_format(bzrlib.branch.BzrBranchFormat6())
+        return format
+
     def get_loom_state(self):
         """Get the current loom state object."""
         # TODO: cache the loom state during the transaction lifetime.
@@ -282,6 +300,11 @@ class LoomSupport(object):
         state = loom_state.LoomState(reader)
         return state
     
+    def get_old_bound_location(self):
+        """Return the URL of the branch we used to be bound to."""
+        # No binding for looms yet.
+        raise bzrlib.errors.UpgradeRequired(self.base)
+
     def get_threads(self, rev_id):
         """Return the threads from a loom revision.
 
@@ -381,6 +404,7 @@ class LoomSupport(object):
         result.target_branch = self
         # cannot bind currently
         result.local_branch = None
+        result.master_branch = self
         try:
             result.old_revno, result.old_revid = self.last_revision_info()
             source.lock_read()
@@ -406,7 +430,13 @@ class LoomSupport(object):
                     if new_rev == EMPTY_REVISION:
                         new_rev = bzrlib.revision.NULL_REVISION
                     self.generate_revision_history(new_rev)
-                    return len(self.revision_history()) - old_count
+                    # get the final result object details
+                    result.tag_conflicts = None
+                    result.new_revno, result.new_revid = self.last_revision_info()
+                    if run_hooks:
+                        for hook in bzrlib.branch.Branch.hooks['post_pull']:
+                            hook(result)
+                    return result
                 # pulling a loom
                 # the first parent is the 'tip' revision.
                 my_state = self.get_loom_state()
