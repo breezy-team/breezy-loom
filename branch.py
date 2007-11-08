@@ -34,7 +34,7 @@ import bzrlib.osutils
 from bzrlib import symbol_versioning
 import bzrlib.trace
 import bzrlib.ui
-from bzrlib.revision import is_null
+from bzrlib.revision import is_null, NULL_REVISION
 
 import loom_io
 import loom_state
@@ -394,7 +394,11 @@ class LoomSupport(object):
                     if not overwrite:
                         new_rev_ancestry = source.repository.get_ancestry(
                             new_rev)
-                        if self.last_revision() not in new_rev_ancestry:
+                        last_rev = self.last_revision()
+                        # get_ancestry returns None for NULL_REVISION currently.
+                        if last_rev == NULL_REVISION:
+                            last_rev = None
+                        if last_rev not in new_rev_ancestry:
                             raise bzrlib.errors.DivergedBranches(self, source)
                     self.repository.fetch(source.repository,
                         revision_id=new_rev)
