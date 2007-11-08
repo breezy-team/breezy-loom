@@ -102,7 +102,7 @@ class TestLoomIO(TestCase):
         state = loom_state.LoomState()
         state.set_threads(
             [('base ', 'baserev', []),
-             (u'\xedtop', u'\xe9toprev', []),
+             (u'\xedtop', '\xc3\xa9toprev', []),
              ])
         self.assertWritesStateCorrectly(
             loom_io._CURRENT_LOOM_FORMAT_STRING + '\n'
@@ -115,7 +115,7 @@ class TestLoomIO(TestCase):
         state = loom_state.LoomState()
         state.set_threads(
             [('base ', 'baserev', [None, None]),
-             (u'\xedtop', u'\xe9toprev', [None, None]),
+             (u'\xedtop', '\xc3\xa9toprev', [None, None]),
              ])
         state.set_parents(['1', u'2\xeb'])
         self.assertWritesStateCorrectly(
@@ -142,9 +142,10 @@ class TestLoomIO(TestCase):
             ' : baserev base \n'
             ' : \xc3\xa9toprev \xc3\xadtop\n') # yes this is utf8
         self.assertReadState(
-            [], 
+            [],
             [('base ', 'baserev', []),
-             (u'\xedtop', u'\xe9toprev', []),
+             # name -> unicode, revid -> utf8
+             (u'\xedtop', '\xc3\xa9toprev', []),
              ],
             state_stream)
         
@@ -166,6 +167,6 @@ class TestLoomIO(TestCase):
         self.assertReadState(
             ['1', u'2\xeb'],
             [('base ', 'baserev', [None, None]),
-             (u'\xedtop', u'\xe9toprev', [None, None]),
+             (u'\xedtop', '\xc3\xa9toprev', [None, None]),
              ],
             state_stream)

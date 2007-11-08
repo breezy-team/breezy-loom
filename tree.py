@@ -139,7 +139,7 @@ class LoomTreeDecorator(object):
                 old_thread_rev = rev
                 break
             new_thread_name = thread
-            new_thread_rev = rev   
+            new_thread_rev = rev
         if new_thread_rev is None:
             raise bzrlib.errors.BzrCommandError(
                 'Cannot move down from the lowest thread.')

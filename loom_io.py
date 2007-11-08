@@ -64,17 +64,18 @@ class LoomStateWriter(object):
         """Write the state object to stream."""
         lines = [_CURRENT_LOOM_FORMAT_STRING + '\n']
         lines.append(' '.join(self._state.get_parents()) + '\n')
+        # Note that we could possibly optimise our unicode handling here.
         for thread, rev_id, parents in self._state.get_threads():
             assert len(parents) == len(self._state.get_parents())
             # leading space for conflict status
             line = " "
             for parent in parents:
                 if parent is not None:
-                    line += "%s " % parent
+                    line += "%s " % parent.decode('utf8')
                 else:
                     line += " "
             line += ": "
-            lines.append('%s%s %s\n' % (line, rev_id, thread))
+            lines.append('%s%s %s\n' % (line, rev_id.decode('utf8'), thread))
         stream.write(''.join(lines).encode('utf8'))
 
 
@@ -97,6 +98,8 @@ class LoomStateReader(object):
         are desirable.
         """
         if self._content is None:
+            # Names are unicode,revids are utf8 - it's arguable whether decode
+            # all and encode revids, or vice verca is better.
             self._content = self._stream.read().decode('utf8').split('\n')
             # this is where detection of different formats should go.
             # we probably want either a  factory for readers, or a strategy
@@ -137,7 +140,7 @@ class LoomStateReader(object):
                 elif parent == '':
                     parents.append(None)
                 else:
-                    parents.append(parent)
+                    parents.append(parent.encode('utf8'))
             rev_id, name = line.split(' ', 1)
-            result.append((name, rev_id, parents))
+            result.append((name, rev_id.encode('utf8'), parents))
         return result
