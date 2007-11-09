@@ -29,7 +29,6 @@ from bzrlib.decorators import needs_write_lock
 import bzrlib.errors
 import bzrlib.revision
 
-
 from branch import EMPTY_REVISION
 
 

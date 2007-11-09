@@ -35,6 +35,7 @@ from bzrlib import symbol_versioning
 import bzrlib.trace
 import bzrlib.ui
 from bzrlib.revision import is_null, NULL_REVISION
+import bzrlib.tree
 
 import loom_io
 import loom_state
