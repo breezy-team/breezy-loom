@@ -108,3 +108,4 @@ does note calls.
 - combine-thread should de-dup penmding merges
 - use the revspec api to offer help on thread:
 - support tags on push/pull in looms
+- bzr nick <name> should rename the current thread (by adding one with the new name and in current-thread deleted the active location - same as merging a delete.
