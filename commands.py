@@ -161,7 +161,7 @@ class cmd_revert_loom(bzrlib.commands.Command):
 
     takes_args = ['thread?']
     takes_options = [Option('all', 
-                        help='revert all threads'),
+                        help='Revert all threads.'),
                      ]
 
     def run(self, thread=None, all=None):
