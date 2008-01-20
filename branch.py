@@ -105,7 +105,12 @@ class NoSuchThread(LoomThreadError):
     _fmt = """No such thread '%(thread)s'."""
 
 
-class CannotCombineOnLastThread(bzrlib.errors.BzrError):
+class NoLowerThread(bzrlib.errors.BzrError):
+
+    _fmt = """No lower thread exists."""
+
+
+class CannotCombineOnLastThread(NoLowerThread):
 
     _fmt = """Cannot combine threads on the bottom thread."""
 

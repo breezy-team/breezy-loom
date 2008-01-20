@@ -18,26 +18,42 @@
 """Loom specific revision-specifiers."""
 
 
+from bzrlib.plugins.loom.branch import NoLowerThread
 from bzrlib.revisionspec import SPEC_TYPES, RevisionSpec, RevisionInfo
 
 
 class RevisionSpecThread(RevisionSpec):
-    """The thread: revision specifier.
+    """The thread: revision specifier."""
 
-    When used just as thread:, the next lower thread from the current thread
-    is selected.
+    help_txt = """Selects the tip of a revision from a loom.
+
+    Selects the tip of a thread in a loom.  
+
+    Examples::
+
+      thread:                   -> return the tip of the next lower thread.
+      thread:foo                -> return the tip of the thread named 'foo'
+
+    see also: loom
     """
 
     prefix = 'thread:'
 
     def _match_on(self, branch, revs):
+        # '' -> next lower
+        # foo -> named
         branch.lock_read()
         try:
             state = branch.get_loom_state()
             threads = state.get_threads()
-            current_thread = branch.nick
-            index = branch._thread_index(threads, current_thread)
-            return RevisionInfo(branch, None, threads[index - 1][1])
+            if len(self.spec):
+                index = branch._thread_index(threads, self.spec)
+            else:
+                current_thread = branch.nick
+                index = branch._thread_index(threads, current_thread) - 1
+                if index < 0:
+                    raise NoLowerThread()
+            return RevisionInfo(branch, None, threads[index][1])
         finally:
             branch.unlock()
 

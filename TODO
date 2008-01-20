@@ -76,7 +76,7 @@ does note calls.
 - want to be able to say 'here are some threads, write a loom'
 - want to be able to say 'here are some parents, write a current-loom'
 - want to be able to say 'here is a current-loom, want to update it.'
-- cache loom state objects in the transaction entity cache
+- cache loom state objects in the transaction entity cache [probably a bad idea RBC 20080120]
 - TODO: a merge of a no-change commit should be allowed?
 - disallow pull with a modified current loom, or do a merge during pull.
 - raise clear errors on corrupt loom-state.
@@ -90,7 +90,10 @@ does note calls.
 - nice errors for loom branch commands on non-loom branches.
 - better offset management for adjust_current_index.
 - nice 'split diff into branches' tool
-- diff -r thread: to diff against lower thread (using -ancestry logic)
+- diff -r thread: to diff against lower thread (using -ancestry logic) (-r
+  thread: seems best placed to report on the threads actual revision id; this
+  TODO either means changing 'diff's defaults, adding a flag to diff, or using
+  a different revspec prefix; or something like that.)
 - export-patch to export the diff from this thread to the lower thread (using -ancestry logic) to a file named as the warp is named. (what about / ?)
 - during up-thread, if we could pull or if there is no diff, then the thread has been merged, offer to remove it.
 - loom to have the same 'tree root id' as its branches, to allow nested looms by reference. EEK!.
@@ -105,8 +108,7 @@ does note calls.
 - print a message 'pushing thread to branch' when doing a push/pull from a normal branch.
 - fetch should examine *every* fetched loom revision and fetch the contents
   therein as well, to support uncommit between record calls.
-- combine-thread should de-dup penmding merges
-- use the revspec api to offer help on thread:
+- combine-thread should de-dup penmding merges (use case: up-thread finds a fully merged thread so there are pending merges but no diff between threads; this is when combine-thread is often called).
 - support tags on push/pull in looms
 - bzr nick <name> should rename the current thread (by adding one with the new name and in current-thread deleted the active location - same as merging a delete.
-- perhaps bzr send should send the whole loom ?
+- perhaps bzr send should send the whole loom ? (e.g. as a patch bomb - a series of patches?)
