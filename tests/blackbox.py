@@ -190,7 +190,7 @@ class TestDown(TestsWithLooms):
         self.assertEqual('vendor', tree.branch.nick)
         self.assertEqual(rev, tree.last_revision())
         
-    def test_down_thread_removes_changes(self):
+    def test_down_thread_removes_changes_between_threads(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
         tree.branch.nick = 'patch'
@@ -235,6 +235,38 @@ class TestDown(TestsWithLooms):
         # diff should return 0 - no uncomitted changes.
         self.run_bzr(['diff'])
         self.assertEqual([vendor_release], tree.get_parent_ids())
+
+    def _add_patch(self, tree, name):
+        """Add a patch to a new thread, returning the revid of te commit."""
+        tree.branch.new_thread(name)
+        tree.branch.nick = name
+        self.build_tree([name])
+        tree.add(name)
+        return tree.commit(name)
+
+    def test_down_thread_works_with_named_thread(self):
+        """Do a down thread when a thread name is given."""
+        tree = self.get_vendor_loom()
+        rev = tree.last_revision()
+        patch1_id = self._add_patch(tree, 'patch1')
+        patch2_id = self._add_patch(tree, 'patch2')
+        self.assertFalse(rev in [patch1_id, patch2_id])
+        out, err = self.run_bzr(['down-thread', 'vendor'])
+        self.assertEqual('', out)
+        self.assertEqual(
+            "All changes applied successfully.\n"
+            "Moved to thread 'vendor'.\n",
+            err)
+        self.assertEqual('vendor', tree.branch.nick)
+        # the tree needs to be updated.
+        self.assertEqual(rev, tree.last_revision())
+        # the branch needs to be updated.
+        self.assertEqual(rev, tree.branch.last_revision())
+        # Neither of the patch files should have been preserved
+        self.assertFalse(tree.has_filename('patch1'))
+        self.assertFalse(tree.has_filename('patch2'))
+        self.assertEqual(None, tree.path2id('patch1'))
+        self.assertEqual(None, tree.path2id('patch2'))
 
 
 class TestUp(TestsWithLooms):
@@ -446,13 +478,13 @@ class TestCombineThread(TestsWithLooms):
         LoomTreeDecorator(tree).up_thread()
         self.build_tree(['file-a'])
         tree.add('file-a')
-        top_revid = tree.commit('change the tree')
+        tree.commit('change the tree')
         # now we have a change between the threads, so merge this into the lower
         # thread to simulate real-world - different rev ids, and the lower
         # thread has merged the upper.
         LoomTreeDecorator(tree).down_thread()
         # ugh, should make merge easier to use.
-        self.run_bzr(['merge', '-r', 'revid:%s' % top_revid, '.'])
+        self.run_bzr(['merge', '-r', 'revid:above-vendor', '.'])
         vendor_revid = tree.commit('merge in the above-vendor work.')
         LoomTreeDecorator(tree).up_thread()
         out, err = self.run_bzr(['combine-thread'])

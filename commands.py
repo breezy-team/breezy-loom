@@ -185,10 +185,12 @@ class cmd_down_thread(bzrlib.commands.Command):
     and sets the branch to be the next thread down.
     """
 
-    def run(self):
+    takes_args = ['thread?']
+
+    def run(self, thread=None):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         tree = LoomTreeDecorator(tree)
-        return tree.down_thread()
+        return tree.down_thread(thread)
 
 
 class cmd_up_thread(bzrlib.commands.Command):

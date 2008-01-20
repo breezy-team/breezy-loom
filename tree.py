@@ -120,30 +120,33 @@ class LoomTreeDecorator(object):
             return 0
 
     @needs_write_lock
-    def down_thread(self):
-        """Move one thread down in the loom."""
+    def down_thread(self, name=None):
+        """Move to a thread down in the loom.
+        
+        :param name: If None, use the next lower thread; otherwise the nae of
+            the thread to move to.
+        """
         if self.tree.last_revision() != self.tree.branch.last_revision():
             raise BzrCommandError('cannot switch threads with an out of '
                 'date tree. Please run bzr update.')
         current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
         threads = self.tree.branch.get_loom_state().get_threads()
-        old_thread_rev = None
-        new_thread_name = None
-        new_thread_rev = None
-        for thread, rev, parents in threads:
-            if thread == threadname:
-                # found the current thread.
-                old_thread_rev = rev
-                break
-            new_thread_name = thread
-            new_thread_rev = rev
-        if new_thread_rev is None:
-            raise bzrlib.errors.BzrCommandError(
-                'Cannot move down from the lowest thread.')
+        old_thread_index = self.tree.branch._thread_index(threads, threadname)
+        old_thread_rev = threads[old_thread_index][1]
+        if name is None:
+            if old_thread_index == 0:
+                raise bzrlib.errors.BzrCommandError(
+                    'Cannot move down from the lowest thread.')
+            new_thread_name, new_thread_rev, _ = threads[old_thread_index - 1]
+        else:
+            new_thread_name = name
+            index = self.tree.branch._thread_index(threads, name)
+            new_thread_rev = threads[index][1]
+        assert new_thread_rev is not None
         self.tree.branch.nick = new_thread_name
         if new_thread_rev == old_thread_rev:
-            # done
+            # fast path no-op changes
             bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
             return 0
         if new_thread_rev == EMPTY_REVISION:

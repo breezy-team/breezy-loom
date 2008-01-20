@@ -38,6 +38,23 @@ class TestTreeDecorator(TestCaseWithLoom):
         loom_tree.down_thread()
         self.assertEqual('bottom', tree.branch.nick)
 
+    def _add_thread(self, tree, name):
+        """Create a new thread with a commit and return the commit id."""
+        tree.branch.new_thread(name)
+        tree.branch.nick = name
+        return tree.commit(name)
+
+    def test_down_named_thread(self):
+        tree = self.get_tree_with_loom('source')
+        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        bottom_id = self._add_thread(tree, 'bottom')
+        self._add_thread(tree, 'middle')
+        self._add_thread(tree, 'top')
+        self.assertNotEqual(bottom_id, tree.last_revision())
+        loom_tree.down_thread('bottom')
+        self.assertEqual('bottom', tree.branch.nick)
+        self.assertEqual([bottom_id], tree.get_parent_ids())
+
     def test_up_thread(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
