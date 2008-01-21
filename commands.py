@@ -139,6 +139,47 @@ class cmd_show_loom(bzrlib.commands.Command):
             loom.unlock()
 
 
+class cmd_switch(bzrlib.builtins.cmd_switch):
+    """Set the branch of a checkout and update.
+ 
+    For looms, this is equivalent to 'down-thread' when to_location is the name
+    of a thread in the loom.
+    For lightweight checkouts, this changes the branch being referenced.
+    For heavyweight checkouts, this checks that there are no local commits
+    versus the current bound branch, then it makes the local branch a mirror
+    of the new location and binds to it.
+    
+    In both cases, the working tree is updated and uncommitted changes
+    are merged. The user can commit or revert these as they desire.
+
+    Pending merges need to be committed or reverted before using switch.
+    """
+
+    _original_command = None
+
+    def run(self, to_location, force=False):
+        (tree, path) = workingtree.WorkingTree.open_containing('.')
+        tree = LoomTreeDecorator(tree)
+        try:
+            return tree.down_thread(to_location)
+        except (AttributeError, branch.NoSuchThread):
+            # When there is no thread its probably an external branch
+            # that we have been given.
+            raise bzrlib.errors.MustUseDecorated
+
+    def run_argv_aliases(self, argv, alias_argv=None):
+        """Parse command line and run.
+        
+        If the command requests it, run the decorated version.
+        """ 
+        try:
+            super(cmd_switch, self).run_argv_aliases(list(argv), alias_argv)
+        except (bzrlib.errors.MustUseDecorated, bzrlib.errors.BzrOptionError):
+            if self._original_command is None:
+                raise
+            self._original_command().run_argv_aliases(argv, alias_argv)
+
+
 class cmd_record(bzrlib.commands.Command):
     """Record the current last-revision of this tree into the current thread."""
 

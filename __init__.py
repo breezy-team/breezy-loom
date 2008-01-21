@@ -54,6 +54,7 @@ show you the different between the thread below yours, and your thread.
 """
 
 
+import bzrlib.builtins
 import bzrlib.commands
 
 import branch
@@ -71,8 +72,14 @@ for command in [
     'show_loom',
     'up_thread',
     ]:
-    bzrlib.commands.register_command(
-        getattr(commands, 'cmd_' + command))
+    bzrlib.commands.register_command(getattr(commands, 'cmd_' + command))
+
+if not hasattr(bzrlib.builtins, "cmd_switch"):
+    # provide a switch command (allows 
+    bzrlib.commands.register_command(getattr(commands, 'cmd_switch'))
+else:
+    commands.cmd_switch._original_command = bzrlib.commands.register_command(
+        getattr(commands, 'cmd_switch'), True)
 
 
 def test_suite():

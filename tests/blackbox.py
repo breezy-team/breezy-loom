@@ -30,6 +30,14 @@ from bzrlib.revision import NULL_REVISION
 class TestsWithLooms(TestCaseWithLoom):
     """A base class with useful helpers for loom blackbox tests."""
 
+    def _add_patch(self, tree, name):
+        """Add a patch to a new thread, returning the revid of te commit."""
+        tree.branch.new_thread(name)
+        tree.branch.nick = name
+        self.build_tree([name])
+        tree.add(name)
+        return tree.commit(name)
+
     def get_vendor_loom(self, path='.'):
         """Make a loom with a vendor thread.
         
@@ -150,6 +158,22 @@ class TestShow(TestsWithLooms):
         self.assertEqual('', err)
 
 
+class TestSwitch(TestsWithLooms):
+    
+    def test_switch_thread_up_does_not_merge(self):
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        rev_id = self._add_patch(tree, 'thread2')
+        loom_tree = LoomTreeDecorator(tree)
+        loom_tree.down_thread('vendor')
+        out, err = self.run_bzr(['switch', 'thread2'], retcode=0)
+        self.assertEqual('', out)
+        self.assertEqual(
+            "All changes applied successfully.\nMoved to thread 'thread2'.\n",
+            err)
+        self.assertEqual([rev_id], tree.get_parent_ids())
+
+
 class TestRecord(TestsWithLooms):
 
     def test_record_no_change(self):
@@ -235,14 +259,6 @@ class TestDown(TestsWithLooms):
         # diff should return 0 - no uncomitted changes.
         self.run_bzr(['diff'])
         self.assertEqual([vendor_release], tree.get_parent_ids())
-
-    def _add_patch(self, tree, name):
-        """Add a patch to a new thread, returning the revid of te commit."""
-        tree.branch.new_thread(name)
-        tree.branch.nick = name
-        self.build_tree([name])
-        tree.add(name)
-        return tree.commit(name)
 
     def test_down_thread_works_with_named_thread(self):
         """Do a down thread when a thread name is given."""
