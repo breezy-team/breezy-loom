@@ -21,71 +21,71 @@ The bzr loom plugin
 Introduction
 ============
 
-Loom is a bzr plugin which extends bzr with features to manage a loom of patches.
+Loom is a Bazaar plugin that helps you to manage and develop patches.
+
+It is similar to tools such as Quilt, Stacked Git and Mercurial Queues. However,
+it also gives you the full power of version control when managing your stack of 
+patches. This makes collaboration just as easy as if you were working with a
+normal Bazaar branch. Using Loom, you can roll back, annotate, push and pull the
+stack you're building.
+
+The name "Loom" is appropriate because the tool works in two dimensions:
+
+ * Up and down: similar to Quilt, Stacked Git and Mercurial Queues, allowing you
+   to manage a stack of patches.
+ * Time: Loom records the changes to your stack of patches over time, just like
+   the version history of a standard Bazaar branch. This lets you push, pull and
+   merge your stack with other developers.
+   
+That version history of each patch is a thread running through your loom.
 
 
-Loom is similar in concept to the tools 'quilt', 'stacked git' and 'mercurial
-queues'. Its most significant difference is the ability to collaborate on the
-stack of patches, without needing to do conflict resolution, and managing of
-the list of patches via diff hunks. Instead you are able to develop the stack
-using the full power of a version control system - you can rollback, annotate,
-and push and pull the stack that is being built. We call the tool Loom because
-unlike the three tools mentioned above there are two dimensions to the loom:
- - The up and down dimension, which is precisely equivalent to the quilt/
-   stacked git/ mercurial queues stack of patches, which you can go up and 
-   down in.
- - The time dimension, where we record the stack of patches as it alters over
-   time. It is this new dimension that allows us to push, pull and merge the
-   loom between users, much like adding a time dimension to a normal source
-   tree allows easier sharing between developers.
+Commands
+========
 
+ * loomify: prepares a standard Bazaar branch for use as a loom. It converts the
+   branch's format so you must have the Loom plugin to work on the branch.
+   
+ * create-thread: adds a new thread, with the supplied name, to the loom and
+   makes that the current thread.
+   
+ * record: similar to a standard bzr commit, this records the current stack of
+   patches into the loom's version history, allowing it to be pushed, pulled
+   and merged.
+   
+ * revert-loom: revert all changes in the current stack of patches to the last
+   recorded version.
+   
+ * show-loom: list the threads in the loom. In future, this will also show the
+   number of commits in each thread.
+   
+ * down-thread: start working on the next thread down so that commits and merges
+   affect the newly selected thread.
+ 
+ * up-thread: start working on the next thread up. Any changes in the current
+   thread will be merged, ready to commit.
+   
+ * combine-thread: combine the current thread with the thread below it. If the
+   current thread is the last one, this will produce an error message. In future,
+   it will turn the loom into a normal branch.
 
-Loom adds the following new commands:
- * loomify: This converts a branch into a loom enabled branch. As a result
-   of this, the branch format is converted and you need to have the loom
-   plugin installed to use it after that. The current branch nickname becomes
-   the base thread in the loom.
+The existing Bazaar command 'push' and 'branch' will create a new loom branch from
+an existing loom. 
 
- * create-thread: This adds a new thread to the loom with the supplied name
-   and positions the branch on the new thread.
-
- * record: Perform a commit of the loom - record the current stack of patches
-   into history, allowing it to be pushed, pulled and merged.
-
- * revert-loom: Revert all change in the current stack of patches to the last
-   recorded one.
-
- * show-loom: Shows the threads in the loom. It currently does not show the
-   # of commits in each thread, but it is planned to do that in the future.
-
- * down-thread: Move the branch down a thread. After doing this commits and 
-   merges in this branch will affect the newly selected thread.
-
- * up-thread: Move the branch up a thread. This will merge in all the changes
-   from the current thread that are not yet integrated into the new thread into
-   it and leave you ready to commit them.
-
- * combine-thread: Combine the current thread with the thread below it. If
-   It is the last thread, this will currently refuse to operate, but in the
-   future will just turn the loom into a normal branch again. Use this command
-   to remove a thread which has been merged into upstream. 
-
-The existing bzr commands 'push' and 'branch' will create a loom branch from
-existing looms. A push into an existing non-loom will not convert it however:
-it will push the current thread into that branch. likewise pull from a normal
-branch will pull into the current thread. This assymetry is a feature because
-it allows easy interoperation with developers not using looms.
-
+Pushing a loom into a standard branch will not convert it. Instead, it will push
+the current thread into the standard branch. Similarly, pulling from a standard
+branch will pull into the current thread of a loom. This assymetry makes it easy
+to work with developers who are not using looms.
 
 Loom also adds a new revision specifier 'thread:'. You can use this to diff
-against threads in the current Loom. For instance, 'bzr diff -r thread:' will
-show you the different between the thread below yours, and your thread.
+against threads in the current loom. For example: 'bzr diff -r thread:' will
+show you the difference between the current thread and the thread below it.
 
 
 Documentation
 =============
 
-The HOWTO provides a small but growing manual for the use of loom.
+The HOWTO provides a small but growing manual for Loom.
 
 
 Internals
