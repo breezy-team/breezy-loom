@@ -91,7 +91,7 @@ as makes sense. For instance, if you are a debian maintainer with the following 
    fix 64-bit compilation
    upstream
 
-And you have recieved a bug report with patch which corrects a typographical
+And you have received a bug report with patch which corrects a typographical
 error in the manual, you could put this in one of the existing threads - but
 none fit that well. You could put it above the debian thread, but it does not
 depend on the debian thread, and the debian thread *does* depend on it,
@@ -125,7 +125,7 @@ Updating to a new upstream version
 ----------------------------------
 
 When upstream makes a new release, you need to bring their changes into your
-baseline thead - the bottom thread, and then merge the changes up through your
+baseline thread - the bottom thread, and then merge the changes up through your
 loom to the top thread. 
 
 1. Firstly, use ``down-thread`` repeatedly to move down to the bottom thread
@@ -185,7 +185,7 @@ add in a call to ``diff -r thread:`` and you will see no changes.
     % bzr diff -r thread:
 
 Because there are no changes to the thread below, this thread has been fully
-merged, and unless you are planning further configure changes, you dont need
+merged, and unless you are planning further configure changes, you don't need
 it in your stack anymore. The way to remove it is to use ``combine-thread``.
 ``combine-thread`` is the reverse of ``create-thread`` - where
 ``create-thread`` makes a new thread above the current one, ``combine-thread``
