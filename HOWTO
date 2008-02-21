@@ -32,8 +32,8 @@ Loom is most easily installed by symlinking its source directory to
 ~/.bazaar/plugins/loom. Alternatively you can install it for the entire machine
 using setup.py --install.
 
-You can verify that loom is installed by running bzr plugins and look for
-loom in the output.
+You can verify that loom is installed by running`` bzr plugins`` and looking
+for loom in the output.
 
 
 Getting Started
