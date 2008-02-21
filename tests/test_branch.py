@@ -248,6 +248,8 @@ class TestLoom(TestCaseWithLoom):
         pulled, and that the tree state is correct.
         """
         # the loom pointer has a parent of the source looms tip
+        source_tree.lock_write()
+        self.addCleanup(source_tree.unlock)
         source_parents = source_tree.branch.loom_parents()
         self.assertEqual(
             source_parents[:1],
