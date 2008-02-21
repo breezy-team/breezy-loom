@@ -500,7 +500,7 @@ class TestCombineThread(TestsWithLooms):
         # thread has merged the upper.
         LoomTreeDecorator(tree).down_thread()
         # ugh, should make merge easier to use.
-        self.run_bzr(['merge', '-r', 'revid:above-vendor', '.'])
+        self.run_bzr(['merge', '-r', 'thread:above-vendor', '.'])
         vendor_revid = tree.commit('merge in the above-vendor work.')
         LoomTreeDecorator(tree).up_thread()
         out, err = self.run_bzr(['combine-thread'])

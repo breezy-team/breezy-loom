@@ -420,6 +420,8 @@ class LoomSupport(object):
                     # no thread commits ever
                     # just pull the main branch.
                     new_rev = source.last_revision()
+                    self.repository.fetch(source.repository,
+                        revision_id=new_rev)
                     if not overwrite:
                         new_rev_ancestry = source.repository.get_ancestry(
                             new_rev)
@@ -429,8 +431,6 @@ class LoomSupport(object):
                             last_rev = None
                         if last_rev not in new_rev_ancestry:
                             raise bzrlib.errors.DivergedBranches(self, source)
-                    self.repository.fetch(source.repository,
-                        revision_id=new_rev)
                     old_count = len(self.revision_history())
                     if new_rev == EMPTY_REVISION:
                         new_rev = bzrlib.revision.NULL_REVISION
