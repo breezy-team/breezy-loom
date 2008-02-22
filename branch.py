@@ -62,6 +62,18 @@ def loomify(branch):
         branch.unlock()
 
 
+def require_loom_branch(branch):
+    """Return None if branch is already loomified, or raise NotALoom."""
+    if not branch._format.__class__ in \
+	    (BzrBranchLoomFormat1, BzrBranchLoomFormat6):
+	    raise NotALoom(branch)
+
+
+class NotALoom(bzrlib.errors.BzrError):
+
+    _fmt = """This branch has not been loomified."""
+
+
 class LoomThreadError(bzrlib.errors.BzrError):
 
     _fmt = """Base class for Loom-Thread errors."""
