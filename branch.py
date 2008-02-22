@@ -64,7 +64,7 @@ def loomify(branch):
 
 def require_loom_branch(branch):
     """Return None if branch is already loomified, or raise NotALoom."""
-    if not isinstance(branch, LoomSupport)
+    if not isinstance(branch, LoomSupport):
 	    raise NotALoom(branch)
 
 
