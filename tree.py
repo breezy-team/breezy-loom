@@ -114,6 +114,9 @@ class LoomTreeDecorator(object):
             base_tree,
             this_tree=self.tree)
         bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
+        if result == 0 and self.tree.changes_from(base_tree).has_changed():
+            bzrlib.trace.info("This thread is now empty, you may wish to "
+                'run "bzr combine-thread" to remove it.')
         if result != 0:
             return 1
         else:
