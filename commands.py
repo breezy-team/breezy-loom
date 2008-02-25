@@ -211,6 +211,7 @@ class cmd_revert_loom(bzrlib.commands.Command):
             bzrlib.trace.note('Please see revert-loom -h.')
             return
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.command_requires_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         if all:
             tree.revert_loom()
@@ -245,5 +246,6 @@ class cmd_up_thread(bzrlib.commands.Command):
 
     def run(self):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.command_requires_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         return tree.up_thread()
