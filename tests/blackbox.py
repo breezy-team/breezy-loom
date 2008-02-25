@@ -51,6 +51,14 @@ class TestsWithLooms(TestCaseWithLoom):
         self.run_bzr(['loomify', path])
         return tree.bzrdir.open_workingtree()
     
+    def assert_exception_raised_on_non_loom_branch(self, command):
+        """Helper to check UserError gets raised when commands are run in a non-loomed branch."""
+        tree = self.make_branch_and_tree('.')
+        tree.branch.nick = 'somenick'
+        out, err = self.run_bzr([command], retcode=3)
+        self.assertEqual('', out)
+        self.assertEqual("bzr: ERROR: This branch is not a loom - you can use 'bzr loomify' to make it one.\n", err)
+
 
 class TestLoomify(TestCaseWithLoom):
 
@@ -515,9 +523,4 @@ class TestCombineThread(TestsWithLooms):
 
     def test_combine_thread_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
-        tree = self.make_branch_and_tree('.')
-        tree.branch.nick = 'somenick'
-        out, err = self.run_bzr(['combine-thread'], retcode=3)
-        self.assertEqual('', out)
-        self.assertEqual("bzr: ERROR: This branch is not a loom - you can use 'bzr loomify' to make it one.\n", err)
-
+        self.assert_exception_raised_on_non_loom_branch('combine-thread')
