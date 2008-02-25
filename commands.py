@@ -74,6 +74,7 @@ class cmd_combine_thread(bzrlib.commands.Command):
 
     def run(self):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.command_requires_loom_branch(tree.branch)
         tree.lock_write()
         try:
             current_thread = tree.branch.nick
