@@ -72,7 +72,7 @@ class TestRequireLoomBranch(TestCaseWithTransport):
 	branch = bzrlib.branch.Branch.open('.')
 	self.failUnless(require_loom_branch(branch) is None)
 
-    def test_on_non_loom(self):
+    def test_command_require_loom_branch_on_non_loom(self):
 	branch = self.make_branch('.')
 	self.assertRaises(bzrlib.errors.BzrCommandError, command_requires_loom_branch, branch)
 
