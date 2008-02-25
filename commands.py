@@ -235,6 +235,7 @@ class cmd_down_thread(bzrlib.commands.Command):
 
     def run(self, thread=None):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.command_requires_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         return tree.down_thread(thread)
 
