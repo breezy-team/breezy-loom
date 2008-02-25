@@ -512,3 +512,12 @@ class TestCombineThread(TestsWithLooms):
             err)
         self.assertEqual(vendor_revid, tree.last_revision())
         self.assertEqual('vendor', tree.branch.nick)
+
+    def test_combine_thread_on_non_loomed_branch(self):
+        """We should raise a user-friendly exception if the branch isn't loomed yet."""
+        tree = self.make_branch_and_tree('.')
+        tree.branch.nick = 'somenick'
+        out, err = self.run_bzr(['combine-thread'], retcode=3)
+        self.assertEqual('', out)
+        self.assertEqual("bzr: ERROR: This branch is not a loom - you can use 'bzr loomify' to make it one.\n", err)
+
