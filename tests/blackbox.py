@@ -126,6 +126,10 @@ class TestCreate(TestsWithLooms):
             tree.branch.get_loom_state().get_threads())
         self.assertEqual('feature-foo', tree.branch.nick)
 
+    def test_combine_thread_on_non_loomed_branch(self):
+        """We should raise a user-friendly exception if the branch isn't loomed yet."""
+        self.assert_exception_raised_on_non_loom_branch(['create-thread', 'some-thread'])
+
 
 class TestShow(TestsWithLooms):
     
@@ -165,6 +169,10 @@ class TestShow(TestsWithLooms):
         self.assertEqual(expected_out, out)
         self.assertEqual('', err)
 
+    def test_combine_thread_on_non_loomed_branch(self):
+        """We should raise a user-friendly exception if the branch isn't loomed yet."""
+        self.assert_exception_raised_on_non_loom_branch(['show-loom'])
+
 
 class TestSwitch(TestsWithLooms):
     
@@ -200,6 +208,10 @@ class TestRecord(TestsWithLooms):
         out, err = self.run_bzr(['record', 'add feature branch.'])
         self.assertEqual('Loom recorded.\n', out)
         self.assertEqual('', err)
+
+    def test_combine_thread_on_non_loomed_branch(self):
+        """We should raise a user-friendly exception if the branch isn't loomed yet."""
+        self.assert_exception_raised_on_non_loom_branch(['record', 'some message'])
 
 
 class TestDown(TestsWithLooms):
