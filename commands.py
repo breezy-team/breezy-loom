@@ -106,6 +106,7 @@ class cmd_create_thread(bzrlib.commands.Command):
 
     def run(self, thread):
         (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        branch.command_requires_loom_branch(loom)
         loom.lock_write()
         try:
             loom.new_thread(thread, loom.nick)
@@ -126,6 +127,7 @@ class cmd_show_loom(bzrlib.commands.Command):
 
     def run(self, location='.'):
         (loom, path) = bzrlib.branch.Branch.open_containing(location)
+        branch.command_requires_loom_branch(loom)
         loom.lock_read()
         try:
             threads = loom.get_loom_state().get_threads()
@@ -188,6 +190,7 @@ class cmd_record(bzrlib.commands.Command):
 
     def run(self, message):
         (abranch, path) = bzrlib.branch.Branch.open_containing('.')
+        branch.command_requires_loom_branch(abranch)
         abranch.record_loom(message)
         print "Loom recorded."
 
