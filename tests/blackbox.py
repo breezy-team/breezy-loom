@@ -126,7 +126,7 @@ class TestCreate(TestsWithLooms):
             tree.branch.get_loom_state().get_threads())
         self.assertEqual('feature-foo', tree.branch.nick)
 
-    def test_combine_thread_on_non_loomed_branch(self):
+    def test_create_thread_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['create-thread', 'some-thread'])
 
@@ -169,7 +169,7 @@ class TestShow(TestsWithLooms):
         self.assertEqual(expected_out, out)
         self.assertEqual('', err)
 
-    def test_combine_thread_on_non_loomed_branch(self):
+    def test_show_loom_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['show-loom'])
 
@@ -209,7 +209,7 @@ class TestRecord(TestsWithLooms):
         self.assertEqual('Loom recorded.\n', out)
         self.assertEqual('', err)
 
-    def test_combine_thread_on_non_loomed_branch(self):
+    def test_record_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['record', 'some message'])
 
@@ -385,7 +385,7 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['diff'], retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
 
-    def test_combine_thread_on_non_loomed_branch(self):
+    def test_up_thread_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['up-thread'])
 
@@ -504,7 +504,7 @@ class TestRevert(TestsWithLooms):
         self.assertEqual(last_rev, tree.last_revision())
         self.assertEqual(old_threads, tree.branch.get_loom_state().get_threads())
 
-    def test_combine_thread_on_non_loomed_branch(self):
+    def test_revert_loom_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['revert-loom', 'foobar'])
 
