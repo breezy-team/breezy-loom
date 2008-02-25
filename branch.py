@@ -70,9 +70,10 @@ def require_loom_branch(branch):
         raise NotALoom(branch)
 
 def command_requires_loom_branch(branch):
+    """predicate for commands that require a pre-loomed branch."""
     try:
         require_loom_branch(branch)
-    except NotALoom, e :
+    except NotALoom, e:
         raise bzrlib.errors.BzrCommandError(
             "This branch is not a loom - you can use 'bzr loomify' to make it one.")
 
