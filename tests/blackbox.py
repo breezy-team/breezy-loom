@@ -304,6 +304,10 @@ class TestDown(TestsWithLooms):
         self.assertEqual(None, tree.path2id('patch1'))
         self.assertEqual(None, tree.path2id('patch2'))
 
+    def test_down_thread_on_non_loomed_branch(self):
+        """We should raise a user-friendly exception if the branch isn't loomed yet."""
+        self.assert_exception_raised_on_non_loom_branch(['down-thread'])
+
 
 class TestUp(TestsWithLooms):
 
