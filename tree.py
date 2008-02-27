@@ -78,16 +78,14 @@ class LoomTreeDecorator(object):
             # done
             return 0
         result = 0
-        try:
-            if new_thread_rev == EMPTY_REVISION:
-                new_thread_rev = bzrlib.revision.NULL_REVISION
-            if old_thread_rev == EMPTY_REVISION:
-                old_thread_rev = bzrlib.revision.NULL_REVISION
-            base_rev_id = bzrlib.revision.common_ancestor(
-                new_thread_rev,
-                old_thread_rev,
-                self.tree.branch.repository)
-        except bzrlib.errors.NoCommonAncestor:
+        if new_thread_rev == EMPTY_REVISION:
+            new_thread_rev = bzrlib.revision.NULL_REVISION
+        if old_thread_rev == EMPTY_REVISION:
+            old_thread_rev = bzrlib.revision.NULL_REVISION
+        graph = self.tree.branch.repository.get_graph()
+        base_rev_id = graph.find_unique_lca(new_thread_rev,
+            old_thread_rev)
+        if base_rev_id == bzrlib.revision.NULL_REVISION:
             raise BzrCommandError('corrupt loom: thread %s has no common'
                 ' ancestor with thread %s' % (new_thread_name, threadname))
             base_rev_id = None
