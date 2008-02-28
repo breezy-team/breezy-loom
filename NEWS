@@ -18,6 +18,9 @@ IN DEVELOPMENT
     * Running loom command on non-loom branches will now give a clean error
       rather than a traceback. (Rob Weir)
 
+    * ``up-thread`` is now significantly faster by using more modern bzrlib
+      methods. (Aaron Bentley)
+
   BUGFIXES:
 
   API BREAKS:
