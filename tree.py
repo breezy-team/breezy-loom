@@ -51,8 +51,8 @@ class LoomTreeDecorator(object):
     def up_thread(self):
         """Move one thread up in the loom."""
         if self.tree.last_revision() != self.tree.branch.last_revision():
-            raise BzrCommandError('cannot switch threads with an out of '
-                'date tree. Please run bzr update.')
+            raise bzrlib.errors.BzrCommandError('cannot switch threads with an'
+            'out of date tree. Please run bzr update.')
         # set it up:
         current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
@@ -85,9 +85,11 @@ class LoomTreeDecorator(object):
         graph = self.tree.branch.repository.get_graph()
         base_rev_id = graph.find_unique_lca(new_thread_rev,
             old_thread_rev)
-        if base_rev_id == bzrlib.revision.NULL_REVISION:
-            raise BzrCommandError('corrupt loom: thread %s has no common'
-                ' ancestor with thread %s' % (new_thread_name, threadname))
+        if (base_rev_id == bzrlib.revision.NULL_REVISION and
+            new_thread_rev != bzrlib.revision.NULL_REVISION):
+            raise bzrlib.errors.BzrCommandError('corrupt loom: thread %s has'
+                ' no common ancestor with thread %s'
+                % (new_thread_name, threadname))
             base_rev_id = None
         # change the branch
         self.tree.branch.generate_revision_history(new_thread_rev)
@@ -125,8 +127,8 @@ class LoomTreeDecorator(object):
             the thread to move to.
         """
         if self.tree.last_revision() != self.tree.branch.last_revision():
-            raise BzrCommandError('cannot switch threads with an out of '
-                'date tree. Please run bzr update.')
+            raise bzrlib.errors.BzrCommandError('cannot switch threads with an'
+                ' out of date tree. Please run bzr update.')
         current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
         threads = self.tree.branch.get_loom_state().get_threads()
@@ -175,8 +177,8 @@ class LoomTreeDecorator(object):
         :param thread: Only revert a single thread.
         """
         if self.tree.last_revision() != self.tree.branch.last_revision():
-            raise BzrCommandError('cannot switch threads with an out of '
-                'date tree. Please run bzr update.')
+            raise bzrlib.errors.BzrCommandError('cannot switch threads with an'
+                ' out of date tree. Please run bzr update.')
         current_thread = self.branch.nick
         last_rev = self.tree.last_revision()
         state = self.branch.get_loom_state()
