@@ -1,0 +1,28 @@
+----------------------
+bzr-loom Release Notes
+----------------------
+
+.. contents::
+
+IN DEVELOPMENT
+--------------
+
+  NOTES WHEN UPGRADING:
+  
+  CHANGES:
+
+  FEATURES:
+
+  IMPROVEMENTS:
+
+    * Running loom command on non-loom branches will now give a clean error
+      rather than a traceback. (Rob Weir)
+
+  BUGFIXES:
+
+  API BREAKS:
+
+  TESTING:
+
+  INTERNALS:
+

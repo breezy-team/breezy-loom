@@ -74,6 +74,7 @@ class cmd_combine_thread(bzrlib.commands.Command):
 
     def run(self):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.require_loom_branch(tree.branch)
         tree.lock_write()
         try:
             current_thread = tree.branch.nick
@@ -105,6 +106,7 @@ class cmd_create_thread(bzrlib.commands.Command):
 
     def run(self, thread):
         (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        branch.require_loom_branch(loom)
         loom.lock_write()
         try:
             loom.new_thread(thread, loom.nick)
@@ -125,6 +127,7 @@ class cmd_show_loom(bzrlib.commands.Command):
 
     def run(self, location='.'):
         (loom, path) = bzrlib.branch.Branch.open_containing(location)
+        branch.require_loom_branch(loom)
         loom.lock_read()
         try:
             threads = loom.get_loom_state().get_threads()
@@ -187,6 +190,7 @@ class cmd_record(bzrlib.commands.Command):
 
     def run(self, message):
         (abranch, path) = bzrlib.branch.Branch.open_containing('.')
+        branch.require_loom_branch(abranch)
         abranch.record_loom(message)
         print "Loom recorded."
 
@@ -210,6 +214,7 @@ class cmd_revert_loom(bzrlib.commands.Command):
             bzrlib.trace.note('Please see revert-loom -h.')
             return
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         if all:
             tree.revert_loom()
@@ -230,6 +235,7 @@ class cmd_down_thread(bzrlib.commands.Command):
 
     def run(self, thread=None):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         return tree.down_thread(thread)
 
@@ -244,5 +250,6 @@ class cmd_up_thread(bzrlib.commands.Command):
 
     def run(self):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         return tree.up_thread()

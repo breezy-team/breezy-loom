@@ -24,6 +24,8 @@ import bzrlib.errors as errors
 from bzrlib.plugins.loom.branch import (
     EMPTY_REVISION,
     loomify,
+    require_loom_branch,
+    NotALoom,
     UnsupportedBranchFormat,
     )
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
@@ -54,6 +56,20 @@ class LockableStub(object):
 
     def unlock(self):
         self._calls.append(("unlock",))
+
+
+class TestRequireLoomBranch(TestCaseWithTransport):
+
+    def test_on_non_loom(self):
+        branch = self.make_branch('.')
+        self.assertRaises(NotALoom, require_loom_branch, branch)
+
+    def test_on_loom(self):
+        branch = self.make_branch('.')
+        loomify(branch)
+        # reopen it
+        branch = branch.bzrdir.open_branch()
+        self.assertEqual(None, require_loom_branch(branch))
 
 
 class TestLoomify(TestCaseWithTransport):
