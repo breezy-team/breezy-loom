@@ -27,6 +27,7 @@ loom branch.
 from StringIO import StringIO
 
 import bzrlib.branch
+from bzrlib import bzrdir
 from bzrlib.decorators import needs_read_lock, needs_write_lock
 import bzrlib.errors
 import bzrlib.osutils
@@ -343,6 +344,21 @@ class LoomSupport(object):
             return []
         content = self._loom_content(rev_id)
         return self._parse_loom(content)
+
+    def export_threads(self, root_transport=None):
+        if root_transport is None:
+            root_transport = self.bzrdir.root_transport
+        threads = self.get_loom_state().get_threads()
+        for thread_name, thread_revision, _parents in threads:
+            thread_transport = root_transport.clone(thread_name)
+            try:
+                branch = bzrlib.branch.Branch.open_from_transport(
+                    thread_transport)
+            except bzrlib.errors.NotBranchError:
+                branch = bzrdir.BzrDir.create_branch_convenience(
+                    thread_transport.base,
+                    possible_transports=[thread_transport])
+            branch.pull(self, stop_revision=thread_revision)
 
     def _loom_content(self, rev_id):
         """Return the raw formatted content of a loom as a series of lines.

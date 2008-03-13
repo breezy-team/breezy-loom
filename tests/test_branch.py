@@ -20,6 +20,7 @@
 
 
 import bzrlib
+from bzrlib.branch import Branch
 import bzrlib.errors as errors
 from bzrlib.plugins.loom.branch import (
     EMPTY_REVISION,
@@ -517,3 +518,44 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.nick = 'foo'
         tree.branch.record_loom('foo')
         self.assertEqual([], tree.branch.get_threads(NULL_REVISION))
+
+    def get_multi_threaded(self):
+        tree = self.get_tree_with_loom()
+        tree.branch.new_thread('thread1')
+        tree.branch.nick = 'thread1'
+        tree.commit('thread1', rev_id='thread1-id')
+        tree.branch.new_thread('thread2', 'thread1')
+        tree.branch.nick = 'thread2'
+        tree.commit('thread2', rev_id='thread2-id')
+        return tree
+
+    def test_export_loom_initial(self):
+        tree = self.get_multi_threaded()
+        tree.branch.export_threads()
+        root_transport = tree.branch.bzrdir.root_transport
+        thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
+        self.assertEqual('thread1-id', thread1.last_revision())
+        thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
+        self.assertEqual('thread2-id', thread2.last_revision())
+
+    def test_export_loom_update(self):
+        tree = self.get_multi_threaded()
+        tree.branch.export_threads()
+        tree.commit('thread2-2', rev_id='thread2-2-id')
+        tree.branch.export_threads()
+        root_transport = tree.branch.bzrdir.root_transport
+        thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
+        self.assertEqual('thread1-id', thread1.last_revision())
+        thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
+        self.assertEqual('thread2-2-id', thread2.last_revision())
+
+    def test_export_loom_root_transport(self):
+        tree = self.get_multi_threaded()
+        tree.branch.bzrdir.root_transport.mkdir('root')
+        root_transport = tree.branch.bzrdir.root_transport.clone('root')
+        tree.branch.export_threads(root_transport)
+        thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
+        thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
+        self.assertEqual('thread1-id', thread1.last_revision())
+        thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
+        self.assertEqual('thread2-id', thread2.last_revision())
