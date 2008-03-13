@@ -25,6 +25,7 @@ import bzrlib.merge
 from bzrlib.option import Option
 import bzrlib.revision
 import bzrlib.trace
+import bzrlib.transport
 
 import branch
 from tree import LoomTreeDecorator
@@ -253,3 +254,22 @@ class cmd_up_thread(bzrlib.commands.Command):
         branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         return tree.up_thread()
+
+
+class cmd_export_loom(bzrlib.commands.Command):
+    """Export loom threads as a full-fledged branches.
+
+    LOCATION specifies the location to export the threads under.  If it does
+    not exist, it will be created.  The default location is the branch root.
+    """
+
+    takes_args = ['location?']
+
+    def run(self, location=None):
+        root_transport = None
+        loom = bzrlib.branch.Branch.open_containing('.')[0]
+        if location is not None:
+            root_transport = bzrlib.transport.get_transport(location,
+                possible_transports=[loom.bzrdir.root_transport])
+            root_transport.ensure_base()
+        loom.export_threads(root_transport)

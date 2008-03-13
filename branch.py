@@ -36,6 +36,7 @@ import bzrlib.trace
 import bzrlib.ui
 from bzrlib.revision import is_null, NULL_REVISION
 import bzrlib.tree
+import bzrlib.urlutils
 
 import loom_io
 import loom_state
@@ -346,18 +347,28 @@ class LoomSupport(object):
         return self._parse_loom(content)
 
     def export_threads(self, root_transport=None):
+        """Export the threads in this loom as branches.
+
+        :param root_transport: Transport for the directory to place branches
+            under.  Defaults to branch root transport.
+        """
         if root_transport is None:
             root_transport = self.bzrdir.root_transport
         threads = self.get_loom_state().get_threads()
         for thread_name, thread_revision, _parents in threads:
             thread_transport = root_transport.clone(thread_name)
+            user_location = bzrlib.urlutils.unescape_for_display(
+                thread_transport.base, 'utf-8')
             try:
                 branch = bzrlib.branch.Branch.open_from_transport(
                     thread_transport)
             except bzrlib.errors.NotBranchError:
+                bzrlib.trace.note('Creating branch at %s' % user_location)
                 branch = bzrdir.BzrDir.create_branch_convenience(
                     thread_transport.base,
                     possible_transports=[thread_transport])
+            else:
+                bzrlib.trace.note('Updating branch at %s' % user_location)
             branch.pull(self, stop_revision=thread_revision)
 
     def _loom_content(self, rev_id):
