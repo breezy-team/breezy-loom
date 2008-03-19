@@ -99,7 +99,9 @@ class LoomTreeDecorator(object):
         finally:
             pb.finished()
         # change the tree to the revision of the new thread.
-        parent_trees = [(new_thread_rev, merge_controller.other_tree)]
+        parent_trees = []
+        if new_thread_rev != bzrlib.revision.NULL_REVISION:
+            parent_trees.append((new_thread_rev, merge_controller.other_tree))
         # record the merge if:
         # the old thread != new thread (we have something to record)
         # and the new thread is not a descendant of old thread
@@ -113,7 +115,8 @@ class LoomTreeDecorator(object):
         try:
             self.tree.set_parent_trees(parent_trees)
         finally:
-            basis_tree.unlock()
+            if basis_tree is not None:
+                basis_tree.unlock()
         # change the branch
         self.tree.branch.generate_revision_history(new_thread_rev)
         # update the branch nick.
