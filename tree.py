@@ -24,6 +24,7 @@ loom-aware functionality.
 __all__ = ['LoomTreeDecorator']
 
 
+from bzrlib import ui
 from bzrlib.decorators import needs_write_lock
 import bzrlib.errors
 import bzrlib.revision
@@ -48,7 +49,7 @@ class LoomTreeDecorator(object):
         self.branch = self.tree.branch
 
     @needs_write_lock
-    def up_thread(self):
+    def up_thread(self, merge_type=None):
         """Move one thread up in the loom."""
         if self.tree.last_revision() != self.tree.branch.last_revision():
             raise bzrlib.errors.BzrCommandError('cannot switch threads with an'
@@ -71,48 +72,52 @@ class LoomTreeDecorator(object):
         if new_thread_rev is None:
             raise bzrlib.errors.BzrCommandError(
                 'Cannot move up from the highest thread.')
-        # update the branch nick.
-        self.tree.branch.nick = new_thread_name
+        graph = self.tree.branch.repository.get_graph()
         # special case no-change condition.
         if new_thread_rev == old_thread_rev:
-            # done
+            self.tree.branch.nick = new_thread_name
             return 0
-        result = 0
         if new_thread_rev == EMPTY_REVISION:
             new_thread_rev = bzrlib.revision.NULL_REVISION
         if old_thread_rev == EMPTY_REVISION:
             old_thread_rev = bzrlib.revision.NULL_REVISION
-        graph = self.tree.branch.repository.get_graph()
-        base_rev_id = graph.find_unique_lca(new_thread_rev,
-            old_thread_rev)
-        if (base_rev_id == bzrlib.revision.NULL_REVISION and
-            new_thread_rev != bzrlib.revision.NULL_REVISION):
-            raise bzrlib.errors.BzrCommandError('corrupt loom: thread %s has'
-                ' no common ancestor with thread %s'
-                % (new_thread_name, threadname))
-            base_rev_id = None
+
+        # merge the tree up into the new patch:
+        if merge_type is None:
+            merge_type = bzrlib.merge.Merge3Merger
+        pb = ui.ui_factory.nested_progress_bar()
+        try:
+            try:
+                merge_controller = bzrlib.merge.Merger.from_revision_ids(
+                    pb, self.tree, new_thread_rev, revision_graph=graph)
+            except bzrlib.errors.UnrelatedBranches:
+                raise bzrlib.errors.BzrCommandError('corrupt loom: thread %s'
+                    ' has no common ancestor with thread %s'
+                    % (new_thread_name, threadname))
+            merge_controller.merge_type = merge_type
+            result = merge_controller.do_merge()
+        finally:
+            pb.finished()
+        # change the tree to the revision of the new thread.
+        parent_trees = [(new_thread_rev, merge_controller.other_tree)]
+        # record the merge if:
+        # the old thread != new thread (we have something to record)
+        # and the new thread is not a descendant of old thread
+        if (old_thread_rev != new_thread_rev and not
+            graph.is_ancestor(old_thread_rev, new_thread_rev)):
+            basis_tree = self.tree.basis_tree()
+            basis_tree.lock_read()
+            parent_trees.append((old_thread_rev, basis_tree))
+        else:
+            basis_tree = None
+        try:
+            self.tree.set_parent_trees(parent_trees)
+        finally:
+            basis_tree.unlock()
         # change the branch
         self.tree.branch.generate_revision_history(new_thread_rev)
-        # change the tree to the revision of the new thread.
-        self.tree.set_last_revision(new_thread_rev)
-        # record the merge if:
-        # the old thread is not NULL (we have something to record)
-        # and the new thread is either empty/null OR the old thread is
-        #    not merged into it.
-        if (old_thread_rev not in 
-                (EMPTY_REVISION, bzrlib.revision.NULL_REVISION)
-            and (new_thread_rev in 
-                    (EMPTY_REVISION, bzrlib.revision.NULL_REVISION)
-                or old_thread_rev not in
-                    self.tree.branch.repository.get_ancestry(new_thread_rev))):
-            self.tree.add_pending_merge(old_thread_rev)
-        # now merge the tree up into the new patch:
-        base_tree = self.tree.branch.repository.revision_tree(base_rev_id)
-        other_tree = self.tree.branch.repository.revision_tree(new_thread_rev)
-        result += bzrlib.merge.merge_inner(self.tree.branch,
-            other_tree,
-            base_tree,
-            this_tree=self.tree)
+        # update the branch nick.
+        self.tree.branch.nick = new_thread_name
         bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
         if result != 0:
             return 1

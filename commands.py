@@ -249,11 +249,13 @@ class cmd_up_thread(bzrlib.commands.Command):
     that thread.
     """
 
-    def run(self):
+    takes_options = ['merge-type']
+
+    def run(self, merge_type=None):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
-        return tree.up_thread()
+        return tree.up_thread(merge_type)
 
 
 class cmd_export_loom(bzrlib.commands.Command):
