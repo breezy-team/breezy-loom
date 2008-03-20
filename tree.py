@@ -117,6 +117,10 @@ class LoomTreeDecorator(object):
         finally:
             if basis_tree is not None:
                 basis_tree.unlock()
+        if len(parent_trees) == 0:
+            new_thread_rev = bzrlib.revision.NULL_REVISION
+        else:
+            new_thread_rev = parent_trees[0][0]
         # change the branch
         self.tree.branch.generate_revision_history(new_thread_rev)
         # update the branch nick.
