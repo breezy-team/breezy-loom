@@ -67,6 +67,7 @@ for command in [
     'combine_thread',
     'create_thread',
     'down_thread',
+    'export_loom',
     'loomify',
     'record',
     'revert_loom',

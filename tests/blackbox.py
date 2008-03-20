@@ -554,3 +554,20 @@ class TestCombineThread(TestsWithLooms):
     def test_combine_thread_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['combine-thread'])
+
+
+class TestExportLoom(TestsWithLooms):
+    """Tests for export-loom."""
+
+    def test_export_loom_no_args(self):
+        """Test exporting with no arguments"""
+        tree = self.get_vendor_loom()
+        err = self.run_bzr(['export-loom'], retcode=3)[1]
+        self.assertContainsRe(err, "command 'export-loom' requires argument"
+                              " LOCATION")
+
+    def test_export_loom_path(self):
+        """Test exporting with specified path"""
+        tree = self.get_vendor_loom()
+        self.run_bzr(['export-loom', 'export-path'])
+        branch = bzrlib.branch.Branch.open('export-path/vendor')
