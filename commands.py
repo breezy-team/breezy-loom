@@ -265,13 +265,12 @@ class cmd_export_loom(bzrlib.commands.Command):
     not exist, it will be created.  The default location is the branch root.
     """
 
-    takes_args = ['location?']
+    takes_args = ['location']
 
-    def run(self, location=None):
+    def run(self, location):
         root_transport = None
         loom = bzrlib.branch.Branch.open_containing('.')[0]
-        if location is not None:
-            root_transport = bzrlib.transport.get_transport(location,
-                possible_transports=[loom.bzrdir.root_transport])
-            root_transport.ensure_base()
+        root_transport = bzrlib.transport.get_transport(location,
+            possible_transports=[loom.bzrdir.root_transport])
+        root_transport.ensure_base()
         loom.export_threads(root_transport)

@@ -531,8 +531,8 @@ class TestLoom(TestCaseWithLoom):
 
     def test_export_loom_initial(self):
         tree = self.get_multi_threaded()
-        tree.branch.export_threads()
         root_transport = tree.branch.bzrdir.root_transport
+        tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
         self.assertEqual('thread1-id', thread1.last_revision())
         thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
@@ -540,10 +540,10 @@ class TestLoom(TestCaseWithLoom):
 
     def test_export_loom_update(self):
         tree = self.get_multi_threaded()
-        tree.branch.export_threads()
-        tree.commit('thread2-2', rev_id='thread2-2-id')
-        tree.branch.export_threads()
         root_transport = tree.branch.bzrdir.root_transport
+        tree.branch.export_threads(root_transport)
+        tree.commit('thread2-2', rev_id='thread2-2-id')
+        tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
         self.assertEqual('thread1-id', thread1.last_revision())
         thread2 = Branch.open_from_transport(root_transport.clone('thread2'))

@@ -559,12 +559,12 @@ class TestCombineThread(TestsWithLooms):
 class TestExportLoom(TestsWithLooms):
     """Tests for export-loom."""
 
-    def test_export_loom(self):
+    def test_export_loom_no_args(self):
         """Test exporting with no arguments"""
         tree = self.get_vendor_loom()
-        self.run_bzr(['export-loom'])
-        vendor_location = tree.bzrdir.root_transport.clone('vendor').base
-        branch = bzrlib.branch.Branch.open(vendor_location)
+        err = self.run_bzr(['export-loom'], retcode=3)[1]
+        self.assertContainsRe(err, "command 'export-loom' requires argument"
+                              " LOCATION")
 
     def test_export_loom_path(self):
         """Test exporting with specified path"""

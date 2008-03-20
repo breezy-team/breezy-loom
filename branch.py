@@ -346,14 +346,12 @@ class LoomSupport(object):
         content = self._loom_content(rev_id)
         return self._parse_loom(content)
 
-    def export_threads(self, root_transport=None):
+    def export_threads(self, root_transport):
         """Export the threads in this loom as branches.
 
         :param root_transport: Transport for the directory to place branches
             under.  Defaults to branch root transport.
         """
-        if root_transport is None:
-            root_transport = self.bzrdir.root_transport
         threads = self.get_loom_state().get_threads()
         for thread_name, thread_revision, _parents in threads:
             thread_transport = root_transport.clone(thread_name)
