@@ -20,6 +20,11 @@
 
 
 import bzrlib
+from bzrlib import (
+    errors,
+    merge as _mod_merge,
+)
+
 from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 import bzrlib.plugins.loom.tree
@@ -29,6 +34,13 @@ from bzrlib.revision import NULL_REVISION
 class TestTreeDecorator(TestCaseWithLoom):
     """Tests of the LoomTreeDecorator class."""
     
+    def get_loom_with_two_threads(self):
+        tree = self.get_tree_with_loom('source')
+        tree.branch.new_thread('bottom')
+        tree.branch.new_thread('top')
+        tree.branch.nick = 'bottom'
+        return bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+
     def test_down_thread(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
@@ -56,11 +68,8 @@ class TestTreeDecorator(TestCaseWithLoom):
         self.assertEqual([bottom_id], tree.get_parent_ids())
 
     def test_up_thread(self):
-        tree = self.get_tree_with_loom('source')
-        tree.branch.new_thread('bottom')
-        tree.branch.new_thread('top')
-        tree.branch.nick = 'bottom'
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = self.get_loom_with_two_threads()
+        tree = loom_tree.tree
         loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
         self.assertEqual([], tree.get_parent_ids())
@@ -114,6 +123,28 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
         self.assertEqual([top_rev1, bottom_rev2], tree.get_parent_ids())
+
+    def test_up_thread_at_top_with_lower_commit(self):
+        loom_tree = self.get_loom_with_two_threads()
+        self.build_tree_contents([('source/a', 'a')])
+        loom_tree.tree.commit('add a')
+        loom_tree.up_thread()
+        e = self.assertRaises(errors.BzrCommandError, loom_tree.up_thread)
+        self.assertEqual('Cannot move up from the highest thread.', str(e))
+
+    def test_up_thread_merge_type(self):
+        loom_tree = self.get_loom_with_two_threads()
+        self.build_tree_contents([('source/a', 'a')])
+        loom_tree.tree.add('a')
+        loom_tree.tree.commit('add a')
+        loom_tree.up_thread()
+        self.build_tree_contents([('source/a', 'b')])
+        loom_tree.tree.commit('content to b')
+        loom_tree.down_thread()
+        self.build_tree_contents([('source/a', 'c')])
+        loom_tree.tree.commit('content to c')
+        loom_tree.up_thread(_mod_merge.WeaveMerger)
+        self.failIfExists('source/a.BASE')
 
     def test_revert_loom(self):
         tree = self.get_tree_with_loom(',')

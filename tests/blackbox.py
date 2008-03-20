@@ -389,6 +389,12 @@ class TestUp(TestsWithLooms):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['up-thread'])
 
+    def test_up_thread_accepts_merge_type(self):
+        tree = self.get_vendor_loom()
+        self.run_bzr(['create-thread', 'top'])
+        self.run_bzr(['down-thread'])
+        self.run_bzr(['up-thread', '--lca'])
+
 
 class TestPush(TestsWithLooms):
 
