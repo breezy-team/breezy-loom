@@ -81,7 +81,6 @@ class LoomTreeDecorator(object):
             new_thread_rev = bzrlib.revision.NULL_REVISION
         if old_thread_rev == EMPTY_REVISION:
             old_thread_rev = bzrlib.revision.NULL_REVISION
-
         # merge the tree up into the new patch:
         if merge_type is None:
             merge_type = bzrlib.merge.Merge3Merger
