@@ -4,16 +4,13 @@ bzr-loom Release Notes
 
 .. contents::
 
-IN DEVELOPMENT
---------------
-
-  NOTES WHEN UPGRADING:
-  
-  CHANGES:
-
-  FEATURES:
+1.3
+---
 
   IMPROVEMENTS:
+
+    * New command ``export-loom`` allows exporting the loom threads to
+      individual branches. (Aaron Bentley)
 
     * Running loom command on non-loom branches will now give a clean error
       rather than a traceback. (Rob Weir)
@@ -21,11 +18,5 @@ IN DEVELOPMENT
     * ``up-thread`` is now significantly faster by using more modern bzrlib
       methods. (Aaron Bentley)
 
-  BUGFIXES:
-
-  API BREAKS:
-
-  TESTING:
-
-  INTERNALS:
-
+    * ``up-thread`` now accepts merge type parameters such as ``--lca``.
+      (Aaron Bentley)
