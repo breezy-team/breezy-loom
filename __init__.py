@@ -53,7 +53,7 @@ against threads in the current Loom. For instance, 'bzr diff -r thread:' will
 show you the different between the thread below yours, and your thread.
 """
 
-version_info = (1, 3, 0, 'final', 0)
+version_info = (1, 4, 0, 'dev', 0)
 
 import bzrlib.builtins
 import bzrlib.commands
