@@ -262,7 +262,10 @@ class cmd_export_loom(bzrlib.commands.Command):
     """Export loom threads as a full-fledged branches.
 
     LOCATION specifies the location to export the threads under.  If it does
-    not exist, it will be created.  The default location is the branch root.
+    not exist, it will be created.
+
+    In any of the standard config files, "export_loom_root" may be set to
+    provide a default location that will be used if no location is supplied.
     """
 
     takes_args = ['location?']
