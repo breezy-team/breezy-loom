@@ -269,6 +269,7 @@ class cmd_export_loom(bzrlib.commands.Command):
     """
 
     takes_args = ['location?']
+    _see_also = ['configuration']
 
     def run(self, location=None):
         root_transport = None
