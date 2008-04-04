@@ -563,8 +563,14 @@ class TestExportLoom(TestsWithLooms):
         """Test exporting with no arguments"""
         tree = self.get_vendor_loom()
         err = self.run_bzr(['export-loom'], retcode=3)[1]
-        self.assertContainsRe(err, "command 'export-loom' requires argument"
-                              " LOCATION")
+        self.assertContainsRe(err,
+            'bzr: ERROR: No export root known or specified.')
+
+    def test_export_loom_config(self):
+        tree = self.get_vendor_loom()
+        tree.branch.get_config().set_user_option('export_loom_root', 'foo')
+        err = self.run_bzr(['export-loom'])[1]
+        self.assertContainsRe(err, 'Creating branch at .*/work/foo/vendor/\n')
 
     def test_export_loom_path(self):
         """Test exporting with specified path"""
