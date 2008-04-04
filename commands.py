@@ -20,7 +20,7 @@
 from bzrlib import workingtree
 import bzrlib.commands
 import bzrlib.branch
-import bzrlib.errors
+from bzrlib import errors
 import bzrlib.merge
 from bzrlib.option import Option
 import bzrlib.revision
@@ -49,7 +49,7 @@ class cmd_loomify(bzrlib.commands.Command):
         target.lock_write()
         try:
             if not target.get_config().has_explicit_nickname():
-                raise bzrlib.errors.BzrCommandError(
+                raise errors.BzrCommandError(
                     'You must have a branch nickname set to loomify a branch')
             branch.loomify(target)
             loom = target.bzrdir.open_branch()
@@ -169,7 +169,7 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
         except (AttributeError, branch.NoSuchThread):
             # When there is no thread its probably an external branch
             # that we have been given.
-            raise bzrlib.errors.MustUseDecorated
+            raise errors.MustUseDecorated
 
     def run_argv_aliases(self, argv, alias_argv=None):
         """Parse command line and run.
@@ -178,7 +178,7 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
         """ 
         try:
             super(cmd_switch, self).run_argv_aliases(list(argv), alias_argv)
-        except (bzrlib.errors.MustUseDecorated, bzrlib.errors.BzrOptionError):
+        except (errors.MustUseDecorated, errors.BzrOptionError):
             if self._original_command is None:
                 raise
             self._original_command().run_argv_aliases(argv, alias_argv)
@@ -265,11 +265,15 @@ class cmd_export_loom(bzrlib.commands.Command):
     not exist, it will be created.  The default location is the branch root.
     """
 
-    takes_args = ['location']
+    takes_args = ['location?']
 
-    def run(self, location):
+    def run(self, location=None):
         root_transport = None
         loom = bzrlib.branch.Branch.open_containing('.')[0]
+        if location is None:
+            location = loom.get_config().get_user_option('export_loom_root')
+        if location is None:
+            raise errors.BzrCommandError('No export root known or specified.')
         root_transport = bzrlib.transport.get_transport(location,
             possible_transports=[loom.bzrdir.root_transport])
         root_transport.ensure_base()

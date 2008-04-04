@@ -366,7 +366,12 @@ class LoomSupport(object):
                     thread_transport.base,
                     possible_transports=[thread_transport])
             else:
-                bzrlib.trace.note('Updating branch at %s' % user_location)
+                if thread_revision == branch.last_revision():
+                    bzrlib.trace.note('Skipping up-to-date branch at %s'
+                                      % user_location)
+                    continue
+                else:
+                    bzrlib.trace.note('Updating branch at %s' % user_location)
             branch.pull(self, stop_revision=thread_revision)
 
     def _loom_content(self, rev_id):
