@@ -548,6 +548,13 @@ class LoomSupport(object):
         finally:
             pb.finished()
 
+    @needs_read_lock
+    def push(self, target, overwrite=False, stop_revision=None,
+        _override_hook_source_branch=None):
+        # Not ideal, but see the issues raised on bazaar@lists.canonical.com
+        # about the push api needing work.
+        return target.pull(self, overwrite=overwrite, stop_revision=stop_revision)
+
     @needs_write_lock
     def record_loom(self, commit_message):
         """Perform a 'commit' to the loom branch.
