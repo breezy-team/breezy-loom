@@ -40,6 +40,9 @@ class RevisionSpecThread(RevisionSpec):
     prefix = 'thread:'
 
     def _match_on(self, branch, revs):
+         return RevisionInfo(branch, None, self._as_revision_id(branch))
+
+    def _as_revision_id(self, branch):
         # '' -> next lower
         # foo -> named
         branch.lock_read()
@@ -53,7 +56,7 @@ class RevisionSpecThread(RevisionSpec):
                 index = state.thread_index(current_thread) - 1
                 if index < 0:
                     raise NoLowerThread()
-            return RevisionInfo(branch, None, threads[index][1])
+            return threads[index][1]
         finally:
             branch.unlock()
 

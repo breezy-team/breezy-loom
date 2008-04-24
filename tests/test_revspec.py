@@ -63,3 +63,9 @@ class TestThreadRevSpec(TestCaseWithLoom):
         loom_tree.down_thread()
         spec = RevisionSpec.from_string('thread:top')
         self.assertEqual(rev_id, spec.in_branch(tree.branch)[1])
+
+    def test_thread_colon_name_gets_named_thread_revision_id(self):
+        tree, loom_tree, _, rev_id = self.get_two_thread_loom()
+        loom_tree.down_thread()
+        spec = RevisionSpec.from_string('thread:top')
+        self.assertEqual(rev_id, spec.as_revision_id(tree.branch))
