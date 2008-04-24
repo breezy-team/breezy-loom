@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006 - 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -101,12 +101,31 @@ class TestLoomState(TestCase):
         self.assertEqual('bar', state.get_basis_revision_id())
         self.assertEqual(sample_threads, state.get_threads())
 
-    def test_get_threads_dict(self):
+    def get_sample_state(self):
         state = loom_state.LoomState()
         sample_threads = [('foo', 'bar', []), (u'g\xbe', 'bar', [])]
         state.set_threads(sample_threads)
+        return state
+
+    def test_get_threads_dict(self):
+        state = self.get_sample_state()
         self.assertEqual(
             {'foo':('bar', []),
              u'g\xbe':('bar', []),
              },
             state.get_threads_dict())
+
+    def test_thread_index(self):
+        state = self.get_sample_state()
+        self.assertEqual(0, state.thread_index('foo'))
+        self.assertEqual(1, state.thread_index(u'g\xbe'))
+
+    def test_new_thread_after_deleting(self):
+        state = self.get_sample_state()
+        self.assertEqual(u'g\xbe', state.get_new_thread_after_deleting('foo'))
+        self.assertEqual('foo', state.get_new_thread_after_deleting(u'g\xbe'))
+
+    def test_new_thread_after_deleting_one_thread(self):
+        state = loom_state.LoomState()
+        state.set_threads([('foo', 'bar', [])])
+        self.assertIs(None, state.get_new_thread_after_deleting('foo'))

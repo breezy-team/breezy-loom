@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006, 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -21,6 +21,7 @@
 import os
 
 import bzrlib
+from bzrlib import workingtree
 from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
@@ -525,22 +526,27 @@ class TestCombineThread(TestsWithLooms):
         self.assertEqual('', out)
         self.assertEqual('bzr: ERROR: Cannot combine threads on the bottom thread.\n', err)
 
-    def test_combine_last_two_threads(self):
-        """Doing a combine on two threads gives you just the bottom one."""
+    def get_two_thread_loom(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('above-vendor')
-        LoomTreeDecorator(tree).up_thread()
+        loom_tree = LoomTreeDecorator(tree)
+        loom_tree.up_thread()
         self.build_tree(['file-a'])
         tree.add('file-a')
-        tree.commit('change the tree')
+        tree.commit('change the tree', rev_id='above-vendor-1')
+        loom_tree.down_thread()
+        return tree, loom_tree
+
+    def test_combine_last_two_threads(self):
+        """Doing a combine on two threads gives you just the bottom one."""
+        tree, loom_tree = self.get_two_thread_loom()
         # now we have a change between the threads, so merge this into the lower
         # thread to simulate real-world - different rev ids, and the lower
         # thread has merged the upper.
-        LoomTreeDecorator(tree).down_thread()
         # ugh, should make merge easier to use.
         self.run_bzr(['merge', '-r', 'thread:above-vendor', '.'])
         vendor_revid = tree.commit('merge in the above-vendor work.')
-        LoomTreeDecorator(tree).up_thread()
+        loom_tree.up_thread()
         out, err = self.run_bzr(['combine-thread'])
         self.assertEqual('', out)
         self.assertEqual(
@@ -550,6 +556,14 @@ class TestCombineThread(TestsWithLooms):
             err)
         self.assertEqual(vendor_revid, tree.last_revision())
         self.assertEqual('vendor', tree.branch.nick)
+
+    def test_combine_lowest_thread(self):
+        """Doing a combine on two threads gives you just the bottom one."""
+        tree, loom_tree = self.get_two_thread_loom()
+        self.run_bzr('combine-thread')
+        tree = workingtree.WorkingTree.open('.')
+        self.assertEqual('above-vendor', tree.branch.nick)
+        self.assertEqual('above-vendor-1', tree.last_revision())
 
     def test_combine_thread_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""

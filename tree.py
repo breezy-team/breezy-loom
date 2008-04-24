@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006, 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published

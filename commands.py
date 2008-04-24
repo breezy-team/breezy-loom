@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006, 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -81,12 +81,12 @@ class cmd_combine_thread(bzrlib.commands.Command):
             current_thread = tree.branch.nick
             state = tree.branch.get_loom_state()
             threads = state.get_threads()
-            new_thread = state.get_previous_thread(current_thread)
+            new_thread = state.get_new_thread_after_deleting(current_thread)
             if new_thread is None:
                 raise branch.CannotCombineOnLastThread
             bzrlib.trace.note("Combining thread '%s' into '%s'",
                 current_thread, new_thread)
-            LoomTreeDecorator(tree).down_thread()
+            LoomTreeDecorator(tree).down_thread(new_thread)
             tree.branch.remove_thread(current_thread)
         finally:
             tree.unlock()
