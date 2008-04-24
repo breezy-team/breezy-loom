@@ -143,8 +143,9 @@ class LoomTreeDecorator(object):
         self._check_switch()
         current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
-        threads = self.tree.branch.get_loom_state().get_threads()
-        old_thread_index = self.tree.branch._thread_index(threads, threadname)
+        state = self.tree.branch.get_loom_state()
+        threads = state.get_threads()
+        old_thread_index = state.thread_index(threadname)
         old_thread_rev = threads[old_thread_index][1]
         if name is None:
             if old_thread_index == 0:
@@ -153,7 +154,7 @@ class LoomTreeDecorator(object):
             new_thread_name, new_thread_rev, _ = threads[old_thread_index - 1]
         else:
             new_thread_name = name
-            index = self.tree.branch._thread_index(threads, name)
+            index = state.thread_index(name)
             new_thread_rev = threads[index][1]
         assert new_thread_rev is not None
         self.tree.branch.nick = new_thread_name

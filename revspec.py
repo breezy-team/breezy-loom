@@ -47,10 +47,10 @@ class RevisionSpecThread(RevisionSpec):
             state = branch.get_loom_state()
             threads = state.get_threads()
             if len(self.spec):
-                index = branch._thread_index(threads, self.spec)
+                index = state.thread_index(self.spec)
             else:
                 current_thread = branch.nick
-                index = branch._thread_index(threads, current_thread) - 1
+                index = state.thread_index(current_thread) - 1
                 if index < 0:
                     raise NoLowerThread()
             return RevisionInfo(branch, None, threads[index][1])

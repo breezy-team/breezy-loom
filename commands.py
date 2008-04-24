@@ -81,10 +81,9 @@ class cmd_combine_thread(bzrlib.commands.Command):
             current_thread = tree.branch.nick
             state = tree.branch.get_loom_state()
             threads = state.get_threads()
-            if len(threads) < 2 or threads[0][0] == current_thread:
+            new_thread = state.get_previous_thread(current_thread)
+            if new_thread is None:
                 raise branch.CannotCombineOnLastThread
-            current_index = tree.branch._thread_index(threads, current_thread)
-            new_thread = threads[current_index - 1][0]
             bzrlib.trace.note("Combining thread '%s' into '%s'",
                 current_thread, new_thread)
             LoomTreeDecorator(tree).down_thread()

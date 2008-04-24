@@ -68,6 +68,22 @@ class LoomState(object):
         """
         return dict((thread[0], thread[1:]) for thread in self._threads)
 
+    def thread_index(self, thread):
+        """Find the index of thread in threads."""
+        # Avoid circular import
+        from bzrlib.plugins.loom.branch import NoSuchThread
+        thread_names = [name for name, rev, parents in self._threads]
+        try:
+            return thread_names.index(thread)
+        except ValueError:
+            raise NoSuchThread(self, thread)
+
+    def get_previous_thread(self, current_thread):
+        current_index = self.thread_index(current_thread)
+        if current_index == 0:
+            return None
+        return self._threads[current_index - 1][0]
+
     def set_parents(self, parent_list):
         """Set the parents of this state to parent_list.
 
