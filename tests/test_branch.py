@@ -375,6 +375,42 @@ class TestLoom(TestCaseWithLoom):
             self.assertTrue(target.repository.has_revision(rev_id))
         self.assertEqual(source.branch.loom_parents(), target.loom_parents())
 
+    def test_push_loom_loom(self):
+        """Pushing a loom to a loom copies the current loom state."""
+        source = self.get_tree_with_loom('source')
+        source.branch.new_thread('bottom')
+        source.branch.new_thread('top')
+        source.branch.nick = 'bottom'
+        source.branch.record_loom('commit to loom')
+        target = source.bzrdir.sprout('target').open_branch()
+        target.nick = 'top'
+        # put a commit in the bottom and top of this loom
+        bottom_rev1 = source.commit('commit bottom')
+        source_loom_tree = LoomTreeDecorator(source)
+        source_loom_tree.up_thread()
+        top_rev1 = source.commit('integrate bottom changes.')
+        source_loom_tree.down_thread()
+        # and now another commit at the bottom
+        bottom_rev2 = source.commit('bottom 2', allow_pointless=True)
+        source.branch.record_loom('commit to loom again')
+        # we now have two commits in the bottom warp, one in the top, and
+        # all three should be pulled. We are pushing into a loom which has
+        # a different current thread too : that should not affect us.
+        source.branch.push(target)
+        for rev in (bottom_rev1, bottom_rev2, top_rev1):
+            self.assertTrue(target.repository.has_revision(rev))
+        # check loom threads
+        threads = target.get_loom_state().get_threads()
+        self.assertEqual(
+            [('bottom', bottom_rev2, [bottom_rev2]),
+             ('top', top_rev1, [top_rev1])],
+            threads)
+        # check loom tip was pulled
+        loom_rev_ids = source.branch.loom_parents()
+        for rev_id in loom_rev_ids:
+            self.assertTrue(target.repository.has_revision(rev_id))
+        self.assertEqual(source.branch.loom_parents(), target.loom_parents())
+
     def test_implicit_record(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
