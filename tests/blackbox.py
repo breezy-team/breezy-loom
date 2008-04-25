@@ -68,9 +68,9 @@ class TestLoomify(TestCaseWithLoom):
         out, err = self.run_bzr(['loomify'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
-            'bzr: ERROR: You must have a branch nickname set to loomify a branch\n', 
-            err)
-        
+            'bzr: ERROR: You must specify --base or have a branch nickname set'
+            ' to loomify a branch\n', err)
+
     def test_loomify_new_branch_with_nick(self):
         b = self.make_branch('.')
         b.nick = 'base'
@@ -94,6 +94,12 @@ class TestLoomify(TestCaseWithLoom):
         self.assertEqual(
             [('base', EMPTY_REVISION, [])],
             threads)
+
+    def test_loomify_base_option(self):
+        b = self.make_branch('foo')
+        self.run_bzr(['loomify', 'foo', '--base', 'bar'])
+        b = bzrlib.branch.Branch.open('foo')
+        self.assertEqual('bar', b.nick)
 
 
 class TestCreate(TestsWithLooms):

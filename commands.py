@@ -39,18 +39,24 @@ class cmd_loomify(bzrlib.commands.Command):
     in parallel.
 
     You must have a branch nickname explicitly set to use this command, as the
-    branch nickname becomes the 'base branch' of the loom.
+    branch nickname becomes the 'base thread' of the loom.  You can specify
+    the branch nick with the --base option.
     """
 
     takes_args = ['location?']
+    takes_options = [Option('base', type=str,
+                            help='The name to use for the base thread.')]
 
-    def run(self, location='.'):
+    def run(self, location='.', base=None):
         (target, path) = bzrlib.branch.Branch.open_containing(location)
         target.lock_write()
         try:
-            if not target.get_config().has_explicit_nickname():
+            if base is not None:
+                target.nick = base
+            elif not target.get_config().has_explicit_nickname():
                 raise errors.BzrCommandError(
-                    'You must have a branch nickname set to loomify a branch')
+                    'You must specify --base or have a branch nickname set to'
+                    ' loomify a branch')
             branch.loomify(target)
             loom = target.bzrdir.open_branch()
         finally:
