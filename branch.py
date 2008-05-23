@@ -321,7 +321,7 @@ class LoomSupport(object):
     def get_loom_state(self):
         """Get the current loom state object."""
         # TODO: cache the loom state during the transaction lifetime.
-        current_content = self.control_files.get('last-loom')
+        current_content = self._transport.get('last-loom')
         reader = loom_io.LoomStateReader(current_content)
         state = loom_state.LoomState(reader)
         return state
@@ -666,7 +666,7 @@ class LoomSupport(object):
         writer = loom_io.LoomStateWriter(state)
         writer.write(stream)
         stream.seek(0)
-        self.control_files.put('last-loom', stream)
+        self._transport.put_file('last-loom', stream)
 
     def unlock(self):
         """Unlock the loom after a lock.
@@ -726,7 +726,7 @@ class LoomFormatMixin(object):
         control_files.lock_write()
         try:
             for name, stream in files:
-                control_files.put(name, stream)
+                branch_transport.put_file(name, stream)
         finally:
             control_files.unlock()
         return self.open(a_bzrdir, _found=True, )
@@ -757,13 +757,13 @@ class LoomFormatMixin(object):
         The conversion takes effect when the branch is next opened.
         """
         assert branch._format.__class__ is self._parent_classs
-        branch.control_files.put_utf8('format', self.get_format_string())
+        branch._transport.put_bytes('format', self.get_format_string())
         state = loom_state.LoomState()
         writer = loom_io.LoomStateWriter(state)
         state_stream = StringIO()
         writer.write(state_stream)
         state_stream.seek(0)
-        branch.control_files.put('last-loom', state_stream)
+        branch._transport.put_file('last-loom', state_stream)
 
 
 
