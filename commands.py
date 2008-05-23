@@ -144,6 +144,7 @@ class cmd_show_loom(bzrlib.commands.Command):
 
 
 class cmd_status(bzrlib.builtins.cmd_status):
+    """Show the status of the working tree, including the current thread."""
 
     _original_command = None
 
