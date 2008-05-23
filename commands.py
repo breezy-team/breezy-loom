@@ -150,7 +150,11 @@ class cmd_status(bzrlib.builtins.cmd_status):
 
     def run(self, show_ids=False, file_list=None, revision=None, short=False,
             versioned=False, no_pending=False):
-        (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        if file_list is None:
+            directory = '.'
+        else:
+            directory = file_list[0]
+        (loom, path) = bzrlib.branch.Branch.open_containing(directory)
         branch.require_loom_branch(loom)
         loom.lock_read()
         try:
