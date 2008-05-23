@@ -174,6 +174,17 @@ class TestShow(TestsWithLooms):
         self.assert_exception_raised_on_non_loom_branch(['show-loom'])
 
 
+class TestStatus(TestsWithLooms):
+
+    def test_status_shows_current_thread(self):
+        # 'bzr status' shows the current thread before all other output.
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        out, err = self.run_bzr(['status'], retcode=0)
+        self.assertEqual('', err)
+        self.assertEqual('Current thread: thread1\n', out)
+
+
 class TestSwitch(TestsWithLooms):
     
     def test_switch_thread_up_does_not_merge(self):

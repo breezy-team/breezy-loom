@@ -84,6 +84,10 @@ else:
         getattr(commands, 'cmd_switch'), True)
 
 
+commands.cmd_status._original_command = bzrlib.commands.register_command(
+    commands.cmd_status, True)
+
+
 def test_suite():
     import bzrlib.plugins.loom.tests
     return bzrlib.plugins.loom.tests.test_suite()

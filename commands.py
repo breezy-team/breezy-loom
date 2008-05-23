@@ -143,6 +143,28 @@ class cmd_show_loom(bzrlib.commands.Command):
             loom.unlock()
 
 
+class cmd_status(bzrlib.builtins.cmd_status):
+
+    _original_command = None
+
+    def run(self, show_ids=False, file_list=None, revision=None, short=False,
+            versioned=False, no_pending=False):
+        (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        branch.require_loom_branch(loom)
+        loom.lock_read()
+        try:
+            print 'Current thread: %s' % loom.nick
+        finally:
+            loom.unlock()
+
+    def run_argv_aliases(self, argv, alias_argv=None):
+        try:
+            super(cmd_status, self).run_argv_aliases(list(argv), alias_argv)
+        except branch.NotALoom:
+            pass
+        self._original_command().run_argv_aliases(argv, alias_argv)
+
+
 class cmd_switch(bzrlib.builtins.cmd_switch):
     """Set the branch of a checkout and update.
  
