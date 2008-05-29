@@ -83,7 +83,6 @@ else:
     commands.cmd_switch._original_command = bzrlib.commands.register_command(
         getattr(commands, 'cmd_switch'), True)
 
-
 commands.cmd_status._original_command = bzrlib.commands.register_command(
     commands.cmd_status, True)
 
