@@ -150,10 +150,10 @@ class cmd_status(bzrlib.builtins.cmd_status):
 
     def run(self, file_list=None):
         if file_list is None:
-            directory = '.'
+            path = '.'
         else:
-            directory = file_list[0]
-        (loom, path) = bzrlib.branch.Branch.open_containing(directory)
+            path = file_list[0]
+        (loom, _) = bzrlib.branch.Branch.open_containing(path)
         branch.require_loom_branch(loom)
         loom.lock_read()
         try:
@@ -162,6 +162,7 @@ class cmd_status(bzrlib.builtins.cmd_status):
             loom.unlock()
 
     def run_argv_aliases(self, argv, alias_argv=None):
+        """Decorate bzr's cmd_status to show status for looms as well."""
         try:
             super(cmd_status, self).run_argv_aliases(list(argv), alias_argv)
         except branch.NotALoom:
