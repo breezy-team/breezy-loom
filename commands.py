@@ -148,8 +148,7 @@ class cmd_status(bzrlib.builtins.cmd_status):
 
     _original_command = None
 
-    def run(self, show_ids=False, file_list=None, revision=None, short=False,
-            versioned=False, no_pending=False):
+    def run(self, file_list=None):
         if file_list is None:
             directory = '.'
         else:
