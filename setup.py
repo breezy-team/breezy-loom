@@ -10,6 +10,7 @@ bzr_commands = [
     'record',
     'revert-loom',
     'show-loom',
+    'status',
     'up-thread',
     ]
 
