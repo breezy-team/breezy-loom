@@ -163,11 +163,11 @@ class cmd_status(bzrlib.builtins.cmd_status):
 
     def run_argv_aliases(self, argv, alias_argv=None):
         """Decorate bzr's cmd_status to show status for looms as well."""
+        self._original_command().run_argv_aliases(argv, alias_argv)
         try:
             super(cmd_status, self).run_argv_aliases(list(argv), alias_argv)
         except branch.NotALoom:
             pass
-        self._original_command().run_argv_aliases(argv, alias_argv)
 
 
 class cmd_switch(bzrlib.builtins.cmd_switch):
