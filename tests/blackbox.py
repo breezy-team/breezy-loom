@@ -174,6 +174,50 @@ class TestShow(TestsWithLooms):
         self.assert_exception_raised_on_non_loom_branch(['show-loom'])
 
 
+class TestStatus(TestsWithLooms):
+
+    def test_status_shows_current_thread(self):
+        # 'bzr status' shows the current thread.
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        out, err = self.run_bzr(['status'], retcode=0)
+        self.assertEqual('', err)
+        self.assertEqual('Current thread: thread1\n', out)
+
+    def test_status_shows_current_thread_after_status(self):
+        # 'bzr status' shows the current thread after the rest of the status
+        # output.
+        self.build_tree(['hello.c'])
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        out, err = self.run_bzr(['status'], retcode=0)
+        self.assertEqual('', err)
+        self.assertEqual(
+            'unknown:\n  hello.c\nCurrent thread: thread1\n', out)
+
+    def test_status_on_non_loom_doesnt_error(self):
+        # 'bzr status' on a non-loom doesn't error, despite the decoration
+        # we've added.
+        tree = self.make_branch_and_tree('.')
+        out, err = self.run_bzr(['status'], retcode=0)
+        self.assertEqual('', out)
+        self.assertEqual('', err)
+
+    def test_thread_in_status_is_up_to_date(self):
+        # The current thread shown in 'bzr status' is updated when we change
+        # threads.
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        self._add_patch(tree, 'thread2')
+        out, err = self.run_bzr(['status'], retcode=0)
+        self.assertEqual('', err)
+        self.assertEqual('Current thread: thread2\n', out)
+        self.run_bzr(['switch', 'thread1'], retcode=0)
+        out, err = self.run_bzr(['status'], retcode=0)
+        self.assertEqual('', err)
+        self.assertEqual('Current thread: thread1\n', out)
+
+
 class TestSwitch(TestsWithLooms):
     
     def test_switch_thread_up_does_not_merge(self):
