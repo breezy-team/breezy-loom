@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006, 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -40,6 +40,9 @@ class RevisionSpecThread(RevisionSpec):
     prefix = 'thread:'
 
     def _match_on(self, branch, revs):
+         return RevisionInfo(branch, None, self._as_revision_id(branch))
+
+    def _as_revision_id(self, branch):
         # '' -> next lower
         # foo -> named
         branch.lock_read()
@@ -47,13 +50,13 @@ class RevisionSpecThread(RevisionSpec):
             state = branch.get_loom_state()
             threads = state.get_threads()
             if len(self.spec):
-                index = branch._thread_index(threads, self.spec)
+                index = state.thread_index(self.spec)
             else:
                 current_thread = branch.nick
-                index = branch._thread_index(threads, current_thread) - 1
+                index = state.thread_index(current_thread) - 1
                 if index < 0:
                     raise NoLowerThread()
-            return RevisionInfo(branch, None, threads[index][1])
+            return threads[index][1]
         finally:
             branch.unlock()
 

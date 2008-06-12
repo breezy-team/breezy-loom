@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006, 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -67,6 +67,26 @@ class LoomState(object):
         a given thread.
         """
         return dict((thread[0], thread[1:]) for thread in self._threads)
+
+    def thread_index(self, thread):
+        """Find the index of thread in threads."""
+        # Avoid circular import
+        from bzrlib.plugins.loom.branch import NoSuchThread
+        thread_names = [name for name, rev, parents in self._threads]
+        try:
+            return thread_names.index(thread)
+        except ValueError:
+            raise NoSuchThread(self, thread)
+
+    def get_new_thread_after_deleting(self, current_thread):
+        if len(self._threads) == 1:
+            return None
+        current_index = self.thread_index(current_thread)
+        if current_index == 0:
+            new_index = 1
+        else:
+            new_index = current_index - 1
+        return self._threads[new_index][0]
 
     def set_parents(self, parent_list):
         """Set the parents of this state to parent_list.

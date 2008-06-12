@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006 - 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -321,7 +321,7 @@ class LoomSupport(object):
     def get_loom_state(self):
         """Get the current loom state object."""
         # TODO: cache the loom state during the transaction lifetime.
-        current_content = self.control_files.get('last-loom')
+        current_content = self._transport.get('last-loom')
         reader = loom_io.LoomStateReader(current_content)
         state = loom_state.LoomState(reader)
         return state
@@ -405,7 +405,7 @@ class LoomSupport(object):
         if after_thread is None:
             insertion_point = len(threads)
         else:
-            insertion_point = self._thread_index(threads, after_thread) + 1
+            insertion_point = state.thread_index(after_thread) + 1
         if insertion_point == 0:
             revision_for_thread = self.last_revision()
         else:
@@ -421,14 +421,6 @@ class LoomSupport(object):
             )
         state.set_threads(threads)
         self._set_last_loom(state)
-
-    def _thread_index(self, threads, after_thread):
-        """Find the index of after_thread in threads."""
-        thread_names = [name for name, rev, parents in threads]
-        try:
-            return thread_names.index(after_thread)
-        except ValueError:
-            raise NoSuchThread(self, after_thread)
 
     def _parse_loom(self, content):
         """Parse the body of a loom file."""
@@ -622,7 +614,7 @@ class LoomSupport(object):
         """
         state = self.get_loom_state()
         threads = state.get_threads()
-        current_index = self._thread_index(threads, thread_name)
+        current_index = state.thread_index(thread_name)
         del threads[current_index]
         state.set_threads(threads)
         self._set_last_loom(state)
@@ -632,7 +624,7 @@ class LoomSupport(object):
         """Revert the loom to be the same as the basis loom."""
         state = self.get_loom_state()
         # get the current position
-        position = self._thread_index(state.get_threads(), self.nick)
+        position = state.thread_index(self.nick)
         # reset the current threads
         basis_threads = self.get_threads(state.get_basis_revision_id())
         state.set_threads(
@@ -656,7 +648,7 @@ class LoomSupport(object):
         state = self.get_loom_state()
         parents = state.get_parents()
         threads = state.get_threads()
-        position = self._thread_index(threads, thread)
+        position = state.thread_index(thread)
         basis_threads = self.get_threads(state.get_basis_revision_id())
         if thread in dict(basis_threads):
             basis_rev = dict(basis_threads)[thread]
@@ -674,7 +666,7 @@ class LoomSupport(object):
         writer = loom_io.LoomStateWriter(state)
         writer.write(stream)
         stream.seek(0)
-        self.control_files.put('last-loom', stream)
+        self._transport.put_file('last-loom', stream)
 
     def unlock(self):
         """Unlock the loom after a lock.
@@ -734,7 +726,7 @@ class LoomFormatMixin(object):
         control_files.lock_write()
         try:
             for name, stream in files:
-                control_files.put(name, stream)
+                branch_transport.put_file(name, stream)
         finally:
             control_files.unlock()
         return self.open(a_bzrdir, _found=True, )
@@ -765,13 +757,13 @@ class LoomFormatMixin(object):
         The conversion takes effect when the branch is next opened.
         """
         assert branch._format.__class__ is self._parent_classs
-        branch.control_files.put_utf8('format', self.get_format_string())
+        branch._transport.put_bytes('format', self.get_format_string())
         state = loom_state.LoomState()
         writer = loom_io.LoomStateWriter(state)
         state_stream = StringIO()
         writer.write(state_stream)
         state_stream.seek(0)
-        branch.control_files.put('last-loom', state_stream)
+        branch._transport.put_file('last-loom', state_stream)
 
 
 

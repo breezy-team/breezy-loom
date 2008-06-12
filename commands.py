@@ -1,5 +1,5 @@
 # Loom, a plugin for bzr to assist in developing focused patches.
-# Copyright (C) 2006 Canonical Limited.
+# Copyright (C) 2006, 2008 Canonical Limited.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -39,18 +39,24 @@ class cmd_loomify(bzrlib.commands.Command):
     in parallel.
 
     You must have a branch nickname explicitly set to use this command, as the
-    branch nickname becomes the 'base branch' of the loom.
+    branch nickname becomes the 'base thread' of the loom.  You can specify
+    the branch nick with the --base option.
     """
 
     takes_args = ['location?']
+    takes_options = [Option('base', type=str,
+                            help='The name to use for the base thread.')]
 
-    def run(self, location='.'):
+    def run(self, location='.', base=None):
         (target, path) = bzrlib.branch.Branch.open_containing(location)
         target.lock_write()
         try:
-            if not target.get_config().has_explicit_nickname():
+            if base is not None:
+                target.nick = base
+            elif not target.get_config().has_explicit_nickname():
                 raise errors.BzrCommandError(
-                    'You must have a branch nickname set to loomify a branch')
+                    'You must specify --base or have a branch nickname set to'
+                    ' loomify a branch')
             branch.loomify(target)
             loom = target.bzrdir.open_branch()
         finally:
@@ -81,13 +87,12 @@ class cmd_combine_thread(bzrlib.commands.Command):
             current_thread = tree.branch.nick
             state = tree.branch.get_loom_state()
             threads = state.get_threads()
-            if len(threads) < 2 or threads[0][0] == current_thread:
+            new_thread = state.get_new_thread_after_deleting(current_thread)
+            if new_thread is None:
                 raise branch.CannotCombineOnLastThread
-            current_index = tree.branch._thread_index(threads, current_thread)
-            new_thread = threads[current_index - 1][0]
             bzrlib.trace.note("Combining thread '%s' into '%s'",
                 current_thread, new_thread)
-            LoomTreeDecorator(tree).down_thread()
+            LoomTreeDecorator(tree).down_thread(new_thread)
             tree.branch.remove_thread(current_thread)
         finally:
             tree.unlock()
