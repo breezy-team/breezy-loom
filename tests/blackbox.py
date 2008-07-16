@@ -233,6 +233,31 @@ class TestSwitch(TestsWithLooms):
             err)
         self.assertEqual([rev_id], tree.get_parent_ids())
 
+    def test_switch_bottom(self):
+        # 'bzr switch bottom:' switches to the bottom thread.
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        self._add_patch(tree, 'thread2')
+        self.assertEqual(tree.branch.nick, 'thread2')
+        out, err = self.run_bzr(['switch', 'bottom:'], retcode=0)
+        self.assertEqual('', out)
+        self.assertEqual(
+            "All changes applied successfully.\nMoved to thread 'vendor'.\n",
+            err)
+
+    def test_switch_top(self):
+        # 'bzr switch top:' switches to the top thread.
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread1')
+        self._add_patch(tree, 'thread2')
+        LoomTreeDecorator(tree).down_thread('vendor')
+        self.assertEqual(tree.branch.nick, 'vendor')
+        out, err = self.run_bzr(['switch', 'top:'], retcode=0)
+        self.assertEqual('', out)
+        self.assertEqual(
+            "All changes applied successfully.\nMoved to thread 'thread2'.\n",
+            err)
+
 
 class TestRecord(TestsWithLooms):
 

@@ -189,11 +189,26 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
 
     _original_command = None
 
+    def _get_thread_name(self, loom, to_location):
+        """Return the name of the thread pointed to by 'to_location'.
+
+        Most of the time this will be the name of the thread, but if
+        'to_location' is 'bottom:' it will be the name of the bottom thread.
+        If 'to_location' is 'top:', then it'll be the name of the top thread.
+        """
+        aliases = {'bottom:': 0, 'top:': -1}
+        if to_location in aliases:
+            threads = loom.get_loom_state().get_threads()
+            thread = threads[aliases[to_location]]
+            return thread[0]
+        return to_location
+
     def run(self, to_location, force=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         tree = LoomTreeDecorator(tree)
         try:
-            return tree.down_thread(to_location)
+            thread_name = self._get_thread_name(tree.branch, to_location)
+            return tree.down_thread(thread_name)
         except (AttributeError, branch.NoSuchThread):
             # When there is no thread its probably an external branch
             # that we have been given.
