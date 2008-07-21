@@ -245,7 +245,7 @@ class cmd_record(bzrlib.commands.Command):
 
 
 class cmd_revert_loom(bzrlib.commands.Command):
-    """Revert part of all of a loom.
+    """Revert part or all of a loom.
     
     This will update the current loom to be the same as the basis when --all
     is supplied. If no parameters or options are supplied then nothing will
