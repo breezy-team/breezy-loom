@@ -15,6 +15,9 @@ IN DEVELOPMENT
 
   IMPROVEMENTS:
 
+    * ``bzr status`` now shows the current thread of the loom. (Jonathan
+      Lange, #232465)
+
     * ``bzr switch`` now accepts ``top:`` and ``bottom:`` to jump to the top
       and bottom thread respectively. (Jonathan Lange)
 
