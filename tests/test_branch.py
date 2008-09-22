@@ -34,6 +34,8 @@ from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
 from bzrlib.revision import NULL_REVISION
 from bzrlib.tests import TestCaseWithTransport
+from bzrlib.transport import get_transport
+from bzrlib.workingtree import WorkingTree
 
 
 class TestFormat(TestCaseWithTransport):
@@ -595,3 +597,25 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual('thread1-id', thread1.last_revision())
         thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
         self.assertEqual('thread2-id', thread2.last_revision())
+
+    def test_export_loom_as_tree(self):
+        tree = self.get_multi_threaded()
+        tree.branch.bzrdir.root_transport.mkdir('root')
+        root_transport = tree.branch.bzrdir.root_transport.clone('root')
+        tree.branch.export_threads(root_transport)
+        export_tree = WorkingTree.open(root_transport.local_abspath('thread1'))
+        self.assertEqual('thread1-id', export_tree.last_revision())
+
+    def test_export_loom_as_branch(self):
+        tree = self.get_multi_threaded()
+        tree.branch.bzrdir.root_transport.mkdir('root')
+        root_path = tree.branch.bzrdir.root_transport.local_abspath('root')
+        repo = self.make_repository('root', shared=True)
+        repo.set_make_working_trees(False)
+        root_transport = get_transport('root')
+        tree.branch.export_threads(root_transport)
+        self.assertRaises(errors.NoWorkingTree, WorkingTree.open,
+                          root_transport.local_abspath('thread1'))
+        export_branch = Branch.open_from_transport(
+            root_transport.clone('thread1'))
+        self.assertEqual('thread1-id', export_branch.last_revision())

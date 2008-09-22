@@ -358,13 +358,16 @@ class LoomSupport(object):
             user_location = bzrlib.urlutils.unescape_for_display(
                 thread_transport.base, 'utf-8')
             try:
-                branch = bzrlib.branch.Branch.open_from_transport(
-                    thread_transport)
+                control_dir = bzrdir.BzrDir.open(thread_transport.base,
+                                                 [thread_transport])
+                tree, branch = control_dir._get_tree_branch()
             except bzrlib.errors.NotBranchError:
                 bzrlib.trace.note('Creating branch at %s' % user_location)
                 branch = bzrdir.BzrDir.create_branch_convenience(
                     thread_transport.base,
                     possible_transports=[thread_transport])
+                tree, branch = branch.bzrdir.open_tree_or_branch(
+                    thread_transport.base)
             else:
                 if thread_revision == branch.last_revision():
                     bzrlib.trace.note('Skipping up-to-date branch at %s'
@@ -372,7 +375,10 @@ class LoomSupport(object):
                     continue
                 else:
                     bzrlib.trace.note('Updating branch at %s' % user_location)
-            branch.pull(self, stop_revision=thread_revision)
+            if tree is not None:
+                tree.pull(self, stop_revision=thread_revision)
+            else:
+                branch.pull(self, stop_revision=thread_revision)
 
     def _loom_content(self, rev_id):
         """Return the raw formatted content of a loom as a series of lines.
