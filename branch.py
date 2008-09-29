@@ -438,7 +438,7 @@ class LoomSupport(object):
 
     @needs_write_lock
     def pull(self, source, overwrite=False, stop_revision=None,
-        run_hooks=True, possible_transports=None):
+        run_hooks=True, possible_transports=None, _override_hook_target=None):
         """Pull from a branch into this loom.
 
         If the remote branch is a non-loom branch, the pull is done against the
@@ -448,12 +448,15 @@ class LoomSupport(object):
         if not isinstance(source, LoomSupport):
             return super(LoomSupport, self).pull(source,
                 overwrite=overwrite, stop_revision=stop_revision,
-                possible_transports=possible_transports)
+                possible_transports=possible_transports,
+                _override_hook_target=_override_hook_target)
         # pull the loom, and position our
         pb = bzrlib.ui.ui_factory.nested_progress_bar()
         result = bzrlib.branch.PullResult()
         result.source_branch = source
-        result.target_branch = self
+        result.target_branch = _override_hook_target
+        if result.target_branch is None:
+            result.target_branch = self
         # cannot bind currently
         result.local_branch = None
         result.master_branch = self
