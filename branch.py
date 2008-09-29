@@ -262,12 +262,18 @@ class LoomSupport(object):
                         raise UnrecordedRevision(self, revision_id)
                 else:
                     # no threads yet, be a normal branch
-                    try:
-                        new_history = new_history[:new_history.index(revision_id) + 1]
-                    except ValueError:
-                        rev = self.repository.get_revision(revision_id)
-                        new_history = rev.get_history(self.repository)[1:]
-                    
+                    if revision_id == NULL_REVISION:
+                        new_history = []
+                    else:
+                        try:
+                            position = new_history.index(revision_id)
+                        except ValueError:
+                            rev = self.repository.get_revision(revision_id)
+                            new_history = rev.get_history(self.repository)[1:]
+                        else:
+                            new_history = new_history[:position + 1]
+
+
                 # pull in the warp, which was skipped during the initial pull
                 # because the front end does not know what to pull.
                 # nb: this is mega huge hacky. THINK. RBC 2006062
