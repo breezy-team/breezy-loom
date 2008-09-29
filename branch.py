@@ -290,19 +290,23 @@ class LoomSupport(object):
                 finally:
                     nested.finished()
             state = loom_state.LoomState()
-            if threads:
-                last_rev = threads[-1][1]
-                if last_rev == EMPTY_REVISION:
-                    last_rev = bzrlib.revision.NULL_REVISION
-                destination.generate_revision_history(last_rev)
-                state.set_parents([loom_tip])
-                state.set_threads(
-                    (thread + ([thread[1]],) for thread in threads)
-                    )
-            else:
-                # no threads yet, be a normal branch.
+            try:
+                require_loom_branch(destination)
+                if threads:
+                    last_rev = threads[-1][1]
+                    if last_rev == EMPTY_REVISION:
+                        last_rev = bzrlib.revision.NULL_REVISION
+                    destination.generate_revision_history(last_rev)
+                    state.set_parents([loom_tip])
+                    state.set_threads(
+                        (thread + ([thread[1]],) for thread in threads)
+                        )
+                else:
+                    # no threads yet, be a normal branch.
+                    destination.set_revision_history(new_history)
+                destination._set_last_loom(state)
+            except NotALoom:
                 destination.set_revision_history(new_history)
-            destination._set_last_loom(state)
             try:
                 parent = self.get_parent()
             except bzrlib.errors.InaccessibleParent, e:
