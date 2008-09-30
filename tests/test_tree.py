@@ -98,7 +98,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree.down_thread()
         # check the test will be valid
         self.assertEqual([None, bottom_rev1, top_rev1],
-            tree.branch.repository.get_ancestry([top_rev1]))
+            tree.branch.repository.get_ancestry(top_rev1))
         self.assertEqual([bottom_rev1], tree.get_parent_ids())
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
@@ -117,7 +117,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree.down_thread()
         # check the test will be valid
         self.assertEqual([None, bottom_rev1, top_rev1],
-            tree.branch.repository.get_ancestry([top_rev1]))
+            tree.branch.repository.get_ancestry(top_rev1))
         self.assertEqual([bottom_rev1], tree.get_parent_ids())
         bottom_rev2 = tree.commit('bottom_two', allow_pointless=True)
         tree_loom_tree.up_thread()

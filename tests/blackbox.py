@@ -533,7 +533,7 @@ class TestPull(TestsWithLooms):
             out, err = self.run_bzr(['pull'])
         finally:
             os.chdir('..')
-        self.assertStartsWith(out, 'Using saved location:')
+        self.assertStartsWith(out, 'Using saved parent location:')
         self.assertEndsWith(out, 'Now on revision 2.\n')
         self.assertEqual(
             'All changes applied successfully.\n',
