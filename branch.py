@@ -155,7 +155,10 @@ class LoomMetaTree(bzrlib.tree.Tree):
         As usual this must be for the single existing file 'loom'.
         """
         return self._loom_stream
-    
+
+    def get_file_with_stat(self, file_id, path=None):
+        return (self.get_file(file_id, path), None)
+
     def get_file_sha1(self, file_id, path):
         """Get the sha1 for a file. 
 
