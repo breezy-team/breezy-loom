@@ -253,7 +253,7 @@ class LoomSupport(object):
                 loom_tip = None
             threads = self.get_threads(state.get_basis_revision_id())
             new_history = self.revision_history()
-            if revision_id is not None:
+            if revision_id not in (None, NULL_REVISION):
                 if threads:
                     # revision_id should be in the loom, or its an error 
                     found_threads = [thread for thread, rev in threads
