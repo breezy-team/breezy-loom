@@ -754,7 +754,7 @@ class _Pusher(_Puller):
 
     @staticmethod
     def make_result():
-        return bzrlib.branch.PushResult
+        return bzrlib.branch.PushResult()
 
     @staticmethod
     def post_hooks():
