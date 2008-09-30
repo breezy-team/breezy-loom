@@ -460,111 +460,19 @@ class LoomSupport(object):
                 overwrite=overwrite, stop_revision=stop_revision,
                 possible_transports=possible_transports,
                 _override_hook_target=_override_hook_target)
-        # pull the loom, and position our
-        pb = bzrlib.ui.ui_factory.nested_progress_bar()
-        result = bzrlib.branch.PullResult()
-        result.source_branch = source
-        result.target_branch = _override_hook_target
-        if result.target_branch is None:
-            result.target_branch = self
-        # cannot bind currently
-        result.local_branch = None
-        result.master_branch = self
-        try:
-            result.old_revno, result.old_revid = self.last_revision_info()
-            source.lock_read()
-            try:
-                source_state = source.get_loom_state()
-                source_parents = source_state.get_parents()
-                if not source_parents:
-                    # no thread commits ever
-                    # just pull the main branch.
-                    new_rev = source.last_revision()
-                    self.repository.fetch(source.repository,
-                        revision_id=new_rev)
-                    if not overwrite:
-                        new_rev_ancestry = source.repository.get_ancestry(
-                            new_rev)
-                        last_rev = self.last_revision()
-                        # get_ancestry returns None for NULL_REVISION currently.
-                        if last_rev == NULL_REVISION:
-                            last_rev = None
-                        if last_rev not in new_rev_ancestry:
-                            raise bzrlib.errors.DivergedBranches(self, source)
-                    old_count = len(self.revision_history())
-                    if new_rev == EMPTY_REVISION:
-                        new_rev = bzrlib.revision.NULL_REVISION
-                    self.generate_revision_history(new_rev)
-                    # get the final result object details
-                    result.tag_conflicts = None
-                    result.new_revno, result.new_revid = self.last_revision_info()
-                    if run_hooks:
-                        for hook in bzrlib.branch.Branch.hooks['post_pull']:
-                            hook(result)
-                    return result
-                # pulling a loom
-                # the first parent is the 'tip' revision.
-                my_state = self.get_loom_state()
-                source_loom_rev = source_state.get_parents()[0]
-                if not overwrite:
-                    # is the loom compatible?
-                    if len(my_state.get_parents()) > 0:
-                        source_ancestry = source.repository.get_ancestry(
-                            source_loom_rev)
-                        if my_state.get_parents()[0] not in source_ancestry:
-                            raise bzrlib.errors.DivergedBranches(self, source)
-                # fetch the loom content
-                self.repository.fetch(source.repository,
-                    revision_id=source_loom_rev)
-                # get the threads for the new basis
-                threads = self.get_threads(source_state.get_basis_revision_id())
-                # stopping at from our repository.
-                revisions = [rev for name,rev in threads]
-                # for each thread from top to bottom, retrieve its referenced
-                # content. XXX FIXME: a revision_ids parameter to fetch would be
-                # nice here.
-                # the order is reversed because the common case is for the top
-                # thread to include all content.
-                for rev_id in reversed(revisions):
-                    if rev_id not in (EMPTY_REVISION,
-                        bzrlib.revision.NULL_REVISION):
-                        # fetch the loom content for this revision
-                        self.repository.fetch(source.repository,
-                            revision_id=rev_id)
-                # set our work threads to match (this is where we lose data if
-                # there are local mods)
-                my_state.set_threads(
-                    (thread + ([thread[1]],) for thread in threads)
-                    )
-                # and the new parent data
-                my_state.set_parents([source_loom_rev])
-                # and save the state.
-                self._set_last_loom(my_state)
-                # set the branch nick.
-                self.nick = threads[-1][0]
-                # and position the branch on the top loom
-                new_rev = threads[-1][1]
-                if new_rev == EMPTY_REVISION:
-                    new_rev = bzrlib.revision.NULL_REVISION
-                self.generate_revision_history(new_rev)
-                # get the final result object details
-                result.tag_conflicts = None
-                result.new_revno, result.new_revid = self.last_revision_info()
-                if run_hooks:
-                    for hook in bzrlib.branch.Branch.hooks['post_pull']:
-                        hook(result)
-                return result
-            finally:
-                source.unlock()
-        finally:
-            pb.finished()
+        return _Puller(source, self).transfer(overwrite, stop_revision,
+            run_hooks, possible_transports, _override_hook_target)
 
     @needs_read_lock
     def push(self, target, overwrite=False, stop_revision=None,
         _override_hook_source_branch=None):
         # Not ideal, but see the issues raised on bazaar@lists.canonical.com
         # about the push api needing work.
-        return target.pull(self, overwrite=overwrite, stop_revision=stop_revision)
+        if not isinstance(target, LoomSupport):
+            return super(LoomSupport, self).push(target, overwrite,
+                stop_revision, _override_hook_source_branch=None)
+        return _Pusher(self, target).transfer(overwrite, stop_revision,
+                                              run_hooks=True)
 
     @needs_write_lock
     def record_loom(self, commit_message):
@@ -706,6 +614,151 @@ class LoomSupport(object):
                 if dict(state.get_threads_dict())[self.nick][0] != lastrev:
                     self.record_thread(self.nick, lastrev)
         super(LoomSupport, self).unlock()
+
+
+class _Puller(object):
+
+    def __init__(self, source, target):
+        self.target = target
+        self.source = source
+
+    def prepare_result(self, _override_hook_target):
+        result = self.make_result()
+        result.source_branch = self.source
+        result.target_branch = _override_hook_target
+        if result.target_branch is None:
+            result.target_branch = self.target
+        # cannot bind currently
+        result.local_branch = None
+        result.master_branch = self.target
+        result.old_revno, result.old_revid = self.target.last_revision_info()
+        return result
+
+    def finish_result(self, result):
+        result.tag_conflicts = None
+        result.new_revno, result.new_revid = self.target.last_revision_info()
+
+    def do_hooks(self, result, run_hooks):
+        self.finish_result(result)
+        # get the final result object details
+        if run_hooks:
+            for hook in self.post_hooks():
+                hook(result)
+        return result
+
+    @staticmethod
+    def make_result():
+        return bzrlib.branch.PullResult()
+
+    @staticmethod
+    def post_hooks():
+        return bzrlib.branch.Branch.hooks['post_pull']
+
+    def plain_transfer(self, result, run_hooks, stop_revision, overwrite):
+        # no thread commits ever
+        # just pull the main branch.
+        new_rev = stop_revision
+        if new_rev is None:
+            new_rev = self.source.last_revision()
+        if new_rev == EMPTY_REVISION:
+            new_rev = bzrlib.revision.NULL_REVISION
+        self.target.repository.fetch(self.source.repository,
+            revision_id=new_rev)
+        if not overwrite:
+            new_rev_ancestry = self.source.repository.get_ancestry(
+                new_rev)
+            last_rev = self.target.last_revision()
+            # get_ancestry returns None for NULL_REVISION currently.
+            if last_rev == NULL_REVISION:
+                last_rev = None
+            if last_rev not in new_rev_ancestry:
+                raise bzrlib.errors.DivergedBranches(
+                    self.target, self.source)
+        self.target.generate_revision_history(new_rev)
+        # get the final result object details
+        self.do_hooks(result, run_hooks)
+        return result
+
+    def transfer(self, overwrite, stop_revision, run_hooks=True,
+                 possible_transports=None, _override_hook_target=None):
+        """Implementation of push and pull"""
+        # pull the loom, and position our
+        pb = bzrlib.ui.ui_factory.nested_progress_bar()
+        try:
+            result = self.prepare_result(_override_hook_target)
+            self.target.lock_write()
+            self.source.lock_read()
+            try:
+                source_state = self.source.get_loom_state()
+                source_parents = source_state.get_parents()
+                if not source_parents:
+                    return self.plain_transfer(result, run_hooks,
+                                               stop_revision, overwrite)
+                # pulling a loom
+                # the first parent is the 'tip' revision.
+                my_state = self.target.get_loom_state()
+                source_loom_rev = source_state.get_parents()[0]
+                if not overwrite:
+                    # is the loom compatible?
+                    if len(my_state.get_parents()) > 0:
+                        source_ancestry = self.source.repository.get_ancestry(
+                            source_loom_rev)
+                        if my_state.get_parents()[0] not in source_ancestry:
+                            raise bzrlib.errors.DivergedBranches(
+                                self.target, self.source)
+                # fetch the loom content
+                self.target.repository.fetch(self.source.repository,
+                    revision_id=source_loom_rev)
+                # get the threads for the new basis
+                threads = self.target.get_threads(
+                    source_state.get_basis_revision_id())
+                # stopping at from our repository.
+                revisions = [rev for name,rev in threads]
+                # for each thread from top to bottom, retrieve its referenced
+                # content. XXX FIXME: a revision_ids parameter to fetch would be
+                # nice here.
+                # the order is reversed because the common case is for the top
+                # thread to include all content.
+                for rev_id in reversed(revisions):
+                    if rev_id not in (EMPTY_REVISION,
+                        bzrlib.revision.NULL_REVISION):
+                        # fetch the loom content for this revision
+                        self.target.repository.fetch(self.source.repository,
+                            revision_id=rev_id)
+                # set our work threads to match (this is where we lose data if
+                # there are local mods)
+                my_state.set_threads(
+                    (thread + ([thread[1]],) for thread in threads)
+                    )
+                # and the new parent data
+                my_state.set_parents([source_loom_rev])
+                # and save the state.
+                self.target._set_last_loom(my_state)
+                # set the branch nick.
+                self.target.nick = threads[-1][0]
+                # and position the branch on the top loom
+                new_rev = threads[-1][1]
+                if new_rev == EMPTY_REVISION:
+                    new_rev = bzrlib.revision.NULL_REVISION
+                self.target.generate_revision_history(new_rev)
+                self.do_hooks(result, run_hooks)
+                return result
+            finally:
+                self.source.unlock()
+                self.target.unlock()
+        finally:
+            pb.finished()
+
+
+class _Pusher(_Puller):
+
+    @staticmethod
+    def make_result():
+        return bzrlib.branch.PushResult
+
+    @staticmethod
+    def post_hooks():
+        return bzrlib.branch.Branch.hooks['post_push']
 
 
 class LoomBranch(LoomSupport, bzrlib.branch.BzrBranch5):
