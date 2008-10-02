@@ -133,6 +133,17 @@ class LoomTreeDecorator(object):
         else:
             return 0
 
+    def up_many(self, merge_type=None):
+        threads = self.branch.get_loom_state().get_threads()
+        top_thread_name = threads[-1][0]
+        while self.branch.nick != top_thread_name:
+            old_nick = self.branch.nick
+            if self.up_thread(merge_type) != 0:
+                break
+            if len(self.tree.get_parent_ids()) > 1:
+                self.tree.commit('Merge %s into %s' % (old_nick,
+                                                       self.branch.nick))
+
     @needs_write_lock
     def down_thread(self, name=None):
         """Move to a thread down in the loom.

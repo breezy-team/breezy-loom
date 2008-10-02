@@ -323,19 +323,8 @@ class cmd_up_thread(bzrlib.commands.Command):
         if not auto:
             return tree.up_thread(merge_type)
         else:
-            return self.up_many(tree, merge_type)
+            return tree.up_many(merge_type)
 
-    @staticmethod
-    def up_many(tree, merge_type):
-        threads = tree.branch.get_loom_state().get_threads()
-        top_thread_name = threads[-1][0]
-        while tree.branch.nick != top_thread_name:
-            old_nick = tree.branch.nick
-            if tree.up_thread(merge_type) != 0:
-                break
-            if len(tree.tree.get_parent_ids()) > 1:
-                tree.tree.commit('Merge %s into %s' % (old_nick,
-                                                       tree.branch.nick))
 
 class cmd_export_loom(bzrlib.commands.Command):
     """Export loom threads as a full-fledged branches.

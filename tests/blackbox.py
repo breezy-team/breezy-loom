@@ -21,6 +21,7 @@
 import os
 
 import bzrlib
+from bzrlib import branch as _mod_branch
 from bzrlib import workingtree
 from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
@@ -481,6 +482,14 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['create-thread', 'top'])
         self.run_bzr(['down-thread'])
         self.run_bzr(['up-thread', '--lca'])
+
+    def test_up_thread_auto(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('middle')
+        tree.branch.new_thread('top')
+        self.run_bzr('up-thread --auto')
+        branch = _mod_branch.Branch.open('.')
+        self.assertEqual('top', branch.nick)
 
 
 class TestPush(TestsWithLooms):
