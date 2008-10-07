@@ -371,7 +371,7 @@ class LoomSupport(object):
                 thread_transport.base, 'utf-8')
             try:
                 control_dir = bzrdir.BzrDir.open(thread_transport.base,
-                                                 [thread_transport])
+                    possible_transports=[thread_transport])
                 tree, branch = control_dir._get_tree_branch()
             except bzrlib.errors.NotBranchError:
                 bzrlib.trace.note('Creating branch at %s' % user_location)
