@@ -115,6 +115,12 @@ class TestLoomify(TestCaseWithTransport):
             bzrlib.plugins.loom.branch.LoomBranch6,
             bzrlib.plugins.loom.branch.BzrBranchLoomFormat6)
 
+    def test_loomify_branch_format_7(self):
+        branch = self.make_branch('.', format='1.6')
+        loomify(branch)
+        self.assertConvertedBranchFormat(branch,
+            bzrlib.plugins.loom.branch.LoomBranch7,
+            bzrlib.plugins.loom.branch.BzrBranchLoomFormat7)
 
 class TestLoom(TestCaseWithLoom):
 

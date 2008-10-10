@@ -52,14 +52,15 @@ def loomify(branch):
     """
     try:
         branch.lock_write()
-        if branch._format.__class__ == bzrlib.branch.BzrBranchFormat5:
-            format = BzrBranchLoomFormat1()
-            format.take_over(branch)
-        elif branch._format.__class__ == bzrlib.branch.BzrBranchFormat6:
-            format = BzrBranchLoomFormat6()
-            format.take_over(branch)
-        else:
+        try:
+            format = {
+                bzrlib.branch.BzrBranchFormat5: BzrBranchLoomFormat1,
+                bzrlib.branch.BzrBranchFormat6: BzrBranchLoomFormat6,
+                bzrlib.branch.BzrBranchFormat7: BzrBranchLoomFormat7,
+            }[branch._format.__class__]()
+        except KeyError:
             raise UnsupportedBranchFormat(branch._format)
+        format.take_over(branch)
     finally:
         branch.unlock()
 
@@ -779,6 +780,15 @@ class LoomBranch6(LoomSupport, bzrlib.branch.BzrBranch6):
     """
 
 
+class LoomBranch7(LoomSupport, bzrlib.branch.BzrBranch7):
+    """Branch6 Loom branch.
+
+    A mixin is used as the easiest migration path to support branch7.
+    A rewrite would be preferable, but a stackable loom format is needed
+    quickly.
+    """
+
+
 class LoomFormatMixin(object):
     """Support code for Loom formats."""
     # A mixin is not ideal because it is tricky to test, but it seems to be the
@@ -895,5 +905,33 @@ class BzrBranchLoomFormat6(LoomFormatMixin, bzrlib.branch.BzrBranchFormat6):
         return "bzr loom format 6 (based on bzr branch format 6)\n"
 
 
+class BzrBranchLoomFormat7(LoomFormatMixin, bzrlib.branch.BzrBranchFormat7):
+    """Loom's second edition - based on bzr's Branch7.
+
+    This format is an extension to BzrBranchFormat7 with the following changes:
+     - a last-loom file.
+
+     The last-loom file has a revision id in it which points into the loom
+     data branch in the repository.
+
+    This format is new in the loom plugin.
+    """
+
+    _branch_class = LoomBranch7
+    _parent_classs = bzrlib.branch.BzrBranchFormat7
+
+    def get_format_string(self):
+        """See BranchFormat.get_format_string()."""
+        return "Bazaar-NG Loom branch format 7\n"
+
+    def get_format_description(self):
+        """See BranchFormat.get_format_description()."""
+        return "Loom branch format 7"
+
+    def __str__(self):
+        return "bzr loom format 7 (based on bzr branch format 7)\n"
+
+
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat1())
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat6())
+bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat7())
