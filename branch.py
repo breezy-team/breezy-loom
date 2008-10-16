@@ -67,10 +67,7 @@ def loomify(branch):
 
 def require_loom_branch(branch):
     """Return None if branch is already loomified, or raise NotALoom."""
-    if not branch._format.__class__ in (
-        BzrBranchLoomFormat1,
-        BzrBranchLoomFormat6,
-        ):
+    if not branch._format.__class__ in LOOM_FORMATS:
         raise NotALoom(branch)
 
 
@@ -935,3 +932,10 @@ class BzrBranchLoomFormat7(LoomFormatMixin, bzrlib.branch.BzrBranchFormat7):
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat1())
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat6())
 bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat7())
+
+
+LOOM_FORMATS = [
+    BzrBranchLoomFormat1,
+    BzrBranchLoomFormat6,
+    BzrBranchLoomFormat7,
+]

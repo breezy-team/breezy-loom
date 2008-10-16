@@ -67,12 +67,22 @@ class TestRequireLoomBranch(TestCaseWithTransport):
         branch = self.make_branch('.')
         self.assertRaises(NotALoom, require_loom_branch, branch)
 
-    def test_on_loom(self):
-        branch = self.make_branch('.')
+
+    def works_on_loom(self, format):
+        branch = self.make_branch('.', format)
         loomify(branch)
         # reopen it
         branch = branch.bzrdir.open_branch()
         self.assertEqual(None, require_loom_branch(branch))
+
+    def test_works_on_loom1(self):
+        self.works_on_loom('knit')
+
+    def test_works_on_loom6(self):
+        self.works_on_loom('pack-0.92')
+
+    def test_works_on_loom7(self):
+        self.works_on_loom('1.6')
 
 
 class TestLoomify(TestCaseWithTransport):
