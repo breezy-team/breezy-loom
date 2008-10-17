@@ -250,10 +250,6 @@ class LoomSupport(object):
             else:
                 loom_tip = None
             threads = self.get_threads(state.get_basis_revision_id())
-            if revision_id == NULL_REVISION:
-                new_history = []
-            else:
-                new_history = self.revision_history()
             if revision_id not in (None, NULL_REVISION):
                 if threads:
                     # revision_id should be in the loom, or its an error 
@@ -264,15 +260,6 @@ class LoomSupport(object):
                         # side has not been recorded yet, so its data is not
                         # present at this point.
                         raise UnrecordedRevision(self, revision_id)
-                else:
-                    try:
-                        position = new_history.index(revision_id)
-                    except ValueError:
-                        rev = self.repository.get_revision(revision_id)
-                        new_history = rev.get_history(self.repository)[1:]
-                    else:
-                        new_history = new_history[:position + 1]
-
 
                 # pull in the warp, which was skipped during the initial pull
                 # because the front end does not know what to pull.
@@ -303,10 +290,10 @@ class LoomSupport(object):
                         )
                 else:
                     # no threads yet, be a normal branch.
-                    destination.set_revision_history(new_history)
+                    self._synchronize_history(destination, revision_id)
                 destination._set_last_loom(state)
             except NotALoom:
-                destination.set_revision_history(new_history)
+                self._synchronize_history(destination, revision_id)
             try:
                 parent = self.get_parent()
             except bzrlib.errors.InaccessibleParent, e:
