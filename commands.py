@@ -151,7 +151,7 @@ class cmd_show_loom(bzrlib.commands.Command):
 class cmd_status(bzrlib.builtins.cmd_status):
     """Show status of a loom."""
 
-    _original_command = None
+    _original_command = bzrlib.builtins.cmd_status
 
     def run(self, show_ids=False, file_list=None, revision=None, short=False,
             versioned=False, no_pending=False):
@@ -192,7 +192,7 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
     Pending merges need to be committed or reverted before using switch.
     """
 
-    _original_command = None
+    _original_command = bzrlib.builtins.cmd_switch
 
     def _get_thread_name(self, loom, to_location):
         """Return the name of the thread pointed to by 'to_location'.

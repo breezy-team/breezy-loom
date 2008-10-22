@@ -55,11 +55,9 @@ show you the different between the thread below yours, and your thread.
 
 version_info = (1, 4, 0, 'dev', 0)
 
-import bzrlib.builtins
-import bzrlib.commands
+from bzrlib import commands
 
 import branch
-import commands
 import revspec
 
 
@@ -72,20 +70,12 @@ for command in [
     'record',
     'revert_loom',
     'show_loom',
+    'status',
+    'switch',
     'up_thread',
     ]:
-    bzrlib.commands.register_command(getattr(commands, 'cmd_' + command))
-
-if not hasattr(bzrlib.builtins, "cmd_switch"):
-    # provide a switch command (allows 
-    bzrlib.commands.register_command(getattr(commands, 'cmd_switch'))
-else:
-    commands.cmd_switch._original_command = bzrlib.commands.register_command(
-        getattr(commands, 'cmd_switch'), True)
-
-commands.cmd_status._original_command = bzrlib.commands.register_command(
-    commands.cmd_status, True)
-
+    commands.plugin_cmds.register_lazy('cmd_' + command, [],
+        'bzrlib.plugins.loom.commands')
 
 def test_suite():
     import bzrlib.plugins.loom.tests
