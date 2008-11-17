@@ -21,6 +21,7 @@
 import os
 
 import bzrlib
+from bzrlib import branch as _mod_branch
 from bzrlib import workingtree
 from bzrlib.plugins.loom.branch import EMPTY_REVISION
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
@@ -384,6 +385,17 @@ class TestDown(TestsWithLooms):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
         self.assert_exception_raised_on_non_loom_branch(['down-thread'])
 
+    def test_down_thread_with_changes(self):
+        """Trying to down-thread with changes causes an error."""
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('upper-thread')
+        tree.branch.nick = 'upper-thread'
+        self.build_tree(['new-file'])
+        tree.add('new-file')
+        out, err = self.run_bzr('down-thread', retcode=3)
+        self.assertEqual('bzr: ERROR: Working tree has uncommitted changes.\n',
+                         err)
+
 
 class TestUp(TestsWithLooms):
 
@@ -471,6 +483,14 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['down-thread'])
         self.run_bzr(['up-thread', '--lca'])
 
+    def test_up_thread_auto(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('middle')
+        tree.branch.new_thread('top')
+        self.run_bzr('up-thread --auto')
+        branch = _mod_branch.Branch.open('.')
+        self.assertEqual('top', branch.nick)
+
 
 class TestPush(TestsWithLooms):
 
@@ -522,7 +542,7 @@ class TestPull(TestsWithLooms):
             out, err = self.run_bzr(['pull'])
         finally:
             os.chdir('..')
-        self.assertStartsWith(out, 'Using saved location:')
+        self.assertStartsWith(out, 'Using saved parent location:')
         self.assertEndsWith(out, 'Now on revision 2.\n')
         self.assertEqual(
             'All changes applied successfully.\n',

@@ -98,7 +98,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree.down_thread()
         # check the test will be valid
         self.assertEqual([None, bottom_rev1, top_rev1],
-            tree.branch.repository.get_ancestry([top_rev1]))
+            tree.branch.repository.get_ancestry(top_rev1))
         self.assertEqual([bottom_rev1], tree.get_parent_ids())
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
@@ -117,7 +117,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree.down_thread()
         # check the test will be valid
         self.assertEqual([None, bottom_rev1, top_rev1],
-            tree.branch.repository.get_ancestry([top_rev1]))
+            tree.branch.repository.get_ancestry(top_rev1))
         self.assertEqual([bottom_rev1], tree.get_parent_ids())
         bottom_rev2 = tree.commit('bottom_two', allow_pointless=True)
         tree_loom_tree.up_thread()
@@ -145,6 +145,51 @@ class TestTreeDecorator(TestCaseWithLoom):
         loom_tree.tree.commit('content to c')
         loom_tree.up_thread(_mod_merge.WeaveMerger)
         self.failIfExists('source/a.BASE')
+
+    def get_loom_with_three_threads(self):
+        tree = self.get_tree_with_loom('source')
+        tree.branch.new_thread('bottom')
+        tree.branch.new_thread('middle')
+        tree.branch.new_thread('top')
+        tree.branch.nick = 'bottom'
+        return bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+
+    def test_up_many(self):
+        loom_tree = self.get_loom_with_three_threads()
+        loom_tree.up_many()
+        self.assertEqual('top', loom_tree.tree.branch.nick)
+        self.assertEqual([], loom_tree.tree.get_parent_ids())
+
+    def test_up_many_commits(self):
+        loom_tree = self.get_loom_with_two_threads()
+        loom_tree.tree.commit('bottom', rev_id='bottom-1')
+        loom_tree.up_thread()
+        loom_tree.tree.commit('top', rev_id='top-1')
+        loom_tree.down_thread()
+        loom_tree.tree.commit('bottom', rev_id='bottom-2')
+        loom_tree.up_many()
+        last_revision = loom_tree.tree.last_revision()
+        self.assertNotEqual(last_revision, 'top-1')
+        rev = loom_tree.tree.branch.repository.get_revision(last_revision)
+        self.assertEqual(['top-1', 'bottom-2'], rev.parent_ids)
+        self.assertEqual('Merge bottom into top', rev.message)
+
+    def test_up_many_halts_on_conflicts(self):
+        loom_tree = self.get_loom_with_three_threads()
+        tree = loom_tree.tree
+        self.build_tree_contents([('source/file', 'contents-a')])
+        tree.add('file')
+        tree.commit('bottom', rev_id='bottom-1')
+        loom_tree.up_thread()
+        self.build_tree_contents([('source/file', 'contents-b')])
+        tree.commit('middle', rev_id='middle-1')
+        loom_tree.down_thread()
+        self.build_tree_contents([('source/file', 'contents-c')])
+        tree.commit('bottom', rev_id='bottom-2')
+        loom_tree.up_many()
+        self.assertEqual('middle', tree.branch.nick)
+        self.assertEqual(['middle-1', 'bottom-2'], tree.get_parent_ids())
+        self.assertEqual(1, len(tree.conflicts()))
 
     def test_revert_loom(self):
         tree = self.get_tree_with_loom(',')

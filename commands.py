@@ -275,18 +275,34 @@ class cmd_revert_loom(bzrlib.commands.Command):
 
 class cmd_down_thread(bzrlib.commands.Command):
     """Move the branch down a thread in the loom.
-    
+
     This removes the changes introduced by the current thread from the branch
     and sets the branch to be the next thread down.
+
+    Down-thread refuses to operate if there are uncommitted changes, since
+    this is typically a mistake.  Switch can be used for this purpose, instead.
     """
 
     takes_args = ['thread?']
+    _see_also = ['switch']
 
     def run(self, thread=None):
-        (tree, path) = workingtree.WorkingTree.open_containing('.')
-        branch.require_loom_branch(tree.branch)
-        tree = LoomTreeDecorator(tree)
-        return tree.down_thread(thread)
+        (wt, path) = workingtree.WorkingTree.open_containing('.')
+        branch.require_loom_branch(wt.branch)
+        tree = LoomTreeDecorator(wt)
+        tree.lock_write()
+        try:
+            basis = wt.basis_tree()
+            basis.lock_read()
+            try:
+                for change in wt.iter_changes(basis):
+                    raise errors.BzrCommandError(
+                        'Working tree has uncommitted changes.')
+            finally:
+                basis.unlock()
+            return tree.down_thread(thread)
+        finally:
+            tree.unlock()
 
 
 class cmd_up_thread(bzrlib.commands.Command):
@@ -297,13 +313,17 @@ class cmd_up_thread(bzrlib.commands.Command):
     that thread.
     """
 
-    takes_options = ['merge-type']
+    takes_options = ['merge-type', Option('auto',
+        help='Automatically commit and merge repeatedly.')]
 
-    def run(self, merge_type=None):
+    def run(self, merge_type=None, auto=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
-        return tree.up_thread(merge_type)
+        if not auto:
+            return tree.up_thread(merge_type)
+        else:
+            return tree.up_many(merge_type)
 
 
 class cmd_export_loom(bzrlib.commands.Command):
