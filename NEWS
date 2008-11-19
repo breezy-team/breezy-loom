@@ -24,6 +24,9 @@ IN DEVELOPMENT
     * ``bzr push`` now pushes the last-loom rather than creating an empty loom.
       (Robert Collins, #201613)
 
+    * ``up`` and ``down`` are now aliases for ``up-thread`` and
+      ``down-thread`` respectively.
+
   BUGFIXES:
 
   API BREAKS:
