@@ -284,7 +284,8 @@ class cmd_down_thread(bzrlib.commands.Command):
     """
 
     takes_args = ['thread?']
-    _see_also = ['switch']
+    aliases = ['down']
+    _see_also = ['switch', 'up-thread']
 
     def run(self, thread=None):
         (wt, path) = workingtree.WorkingTree.open_containing('.')
@@ -315,6 +316,9 @@ class cmd_up_thread(bzrlib.commands.Command):
 
     takes_options = ['merge-type', Option('auto',
         help='Automatically commit and merge repeatedly.')]
+
+    aliases = ['up']
+    _see_also = ['down-thread', 'switch']
 
     def run(self, merge_type=None, auto=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
