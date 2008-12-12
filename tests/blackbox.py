@@ -442,6 +442,13 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['diff'], retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
 
+    def test_up_thread_manual_rejects_specified_thread(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        out, err = self.run_bzr('up-thread --manual patch', retcode=3)
+        self.assertContainsRe(err, 'Specifying a thread does not work with'
+                              ' --manual.')
+
     def test_up_thread_gets_conflicts(self):
         """Do a change in both the baseline and the next patch up."""
         tree = self.get_vendor_loom()

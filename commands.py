@@ -324,6 +324,9 @@ class cmd_up_thread(bzrlib.commands.Command):
         branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         if manual:
+            if thread is not None:
+                raise errors.BzrCommandError('Specifying a thread does not'
+                                             ' work with --manual.')
             return tree.up_thread(merge_type)
         else:
             return tree.up_many(merge_type, thread)
