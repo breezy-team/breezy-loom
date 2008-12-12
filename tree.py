@@ -177,22 +177,30 @@ class LoomTreeDecorator(object):
             new_thread_rev = bzrlib.revision.NULL_REVISION
         if old_thread_rev == EMPTY_REVISION:
             old_thread_rev = bzrlib.revision.NULL_REVISION
-        basis_tree = self.tree.branch.repository.revision_tree(old_thread_rev)
-        to_tree = self.tree.branch.repository.revision_tree(new_thread_rev)
+        repository = self.tree.branch.repository
+        try:
+            basis_tree = self.tree.revision_tree(old_thread_rev)
+        except bzrlib.errors.NoSuchRevisionInTree:
+            basis_tree = repository.revision_tree(old_thread_rev)
+        to_tree = repository.revision_tree(new_thread_rev)
         result = bzrlib.merge.merge_inner(self.tree.branch,
             to_tree,
             basis_tree,
             this_tree=self.tree)
-        graph = self.tree.branch.repository.get_graph()
         branch_revno, branch_revision = self.tree.branch.last_revision_info()
+        graph = repository.get_graph()
         new_thread_revno = graph.find_distance_to_null(new_thread_rev,
             [(branch_revision, branch_revno)])
         self.tree.branch.set_last_revision_info(new_thread_revno,
                                                 new_thread_rev)
-        self.tree.set_last_revision(new_thread_rev)
+        if new_thread_rev == bzrlib.revision.NULL_REVISION:
+            parent_list = []
+        else:
+            parent_list = [(new_thread_rev, to_tree)]
+        self.tree.set_parent_trees(parent_list)
         bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
         return result
-        
+
     def lock_write(self):
         self.tree.lock_write()
 
