@@ -147,12 +147,11 @@ class LoomTreeDecorator(object):
     @needs_write_lock
     def down_thread(self, name=None):
         """Move to a thread down in the loom.
-        
+
         :param name: If None, use the next lower thread; otherwise the nae of
             the thread to move to.
         """
         self._check_switch()
-        current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
         state = self.tree.branch.get_loom_state()
         threads = state.get_threads()
