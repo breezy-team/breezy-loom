@@ -183,7 +183,12 @@ class LoomTreeDecorator(object):
             to_tree,
             basis_tree,
             this_tree=self.tree)
-        self.tree.branch.generate_revision_history(new_thread_rev)
+        graph = self.tree.branch.repository.get_graph()
+        branch_revno, branch_revision = self.tree.branch.last_revision_info()
+        new_thread_revno = graph.find_distance_to_null(new_thread_rev,
+            [(branch_revision, branch_revno)])
+        self.tree.branch.set_last_revision_info(new_thread_revno,
+                                                new_thread_rev)
         self.tree.set_last_revision(new_thread_rev)
         bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
         return result
