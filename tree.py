@@ -138,6 +138,9 @@ class LoomTreeDecorator(object):
         threads = loom_state.get_threads()
         if target_thread is None:
             target_thread = threads[-1][0]
+            if self.branch.nick == target_thread:
+                raise bzrlib.errors.BzrCommandError(
+                    'Cannot move up from the highest thread.')
         else:
             upper_thread_i = loom_state.thread_index(target_thread)
             lower_thread_i = loom_state.thread_index(self.branch.nick)
@@ -146,8 +149,9 @@ class LoomTreeDecorator(object):
                     "Cannot up-thread to lower thread.")
         while self.branch.nick != target_thread:
             old_nick = self.branch.nick
-            if self.up_thread(merge_type) != 0:
-                break
+            result = self.up_thread(merge_type)
+            if result != 0:
+                return result
             if len(self.tree.get_parent_ids()) > 1:
                 self.tree.commit('Merge %s into %s' % (old_nick,
                                                        self.branch.nick))

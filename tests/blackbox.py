@@ -401,11 +401,11 @@ class TestUp(TestsWithLooms):
 
     def test_up_thread_from_top(self):
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr(['up-thread', '--manual'], retcode=3)
+        out, err = self.run_bzr(['up-thread'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
             'bzr: ERROR: Cannot move up from the highest thread.\n', err)
-        
+
     def test_up_thread_same_revision(self):
         """moving up when the revision is unchanged should work."""
         tree = self.get_vendor_loom()
@@ -457,7 +457,7 @@ class TestUp(TestsWithLooms):
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
         # we want conflicts.
-        out, err = self.run_bzr(['up-thread', '--manual'], retcode=1)
+        out, err = self.run_bzr(['up-thread'], retcode=1)
         self.assertEqual('', out)
         self.assertEqual(
             'Conflict adding file afile.  Moved existing file to afile.moved.\n'
