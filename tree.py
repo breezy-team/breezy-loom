@@ -133,10 +133,18 @@ class LoomTreeDecorator(object):
         else:
             return 0
 
-    def up_many(self, merge_type=None):
-        threads = self.branch.get_loom_state().get_threads()
-        top_thread_name = threads[-1][0]
-        while self.branch.nick != top_thread_name:
+    def up_many(self, merge_type=None, target_thread=None):
+        loom_state = self.branch.get_loom_state()
+        threads = loom_state.get_threads()
+        if target_thread is None:
+            target_thread = threads[-1][0]
+        else:
+            upper_thread_i = loom_state.thread_index(target_thread)
+            lower_thread_i = loom_state.thread_index(self.branch.nick)
+            if lower_thread_i > upper_thread_i:
+                raise bzrlib.errors.BzrCommandError(
+                    "Cannot up-thread to lower thread.")
+        while self.branch.nick != target_thread:
             old_nick = self.branch.nick
             if self.up_thread(merge_type) != 0:
                 break

@@ -401,7 +401,7 @@ class TestUp(TestsWithLooms):
 
     def test_up_thread_from_top(self):
         tree = self.get_vendor_loom()
-        out, err = self.run_bzr(['up-thread'], retcode=3)
+        out, err = self.run_bzr(['up-thread', '--manual'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
             'bzr: ERROR: Cannot move up from the highest thread.\n', err)
@@ -417,8 +417,8 @@ class TestUp(TestsWithLooms):
         self.assertEqual('', err)
         self.assertEqual('patch', tree.branch.nick)
         self.assertEqual(rev, tree.last_revision())
-        
-    def test_up_thread_preserves_changes(self):
+
+    def test_up_thread_manual_preserves_changes(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
         tree.branch.nick = 'vendor'
@@ -427,7 +427,7 @@ class TestUp(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
-        out, err = self.run_bzr(['up-thread'])
+        out, err = self.run_bzr(['up-thread', '--manual'])
         self.assertEqual('', out)
         self.assertEqual(
             "All changes applied successfully.\n"
@@ -457,7 +457,7 @@ class TestUp(TestsWithLooms):
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
         # we want conflicts.
-        out, err = self.run_bzr(['up-thread'], retcode=1)
+        out, err = self.run_bzr(['up-thread', '--manual'], retcode=1)
         self.assertEqual('', out)
         self.assertEqual(
             'Conflict adding file afile.  Moved existing file to afile.moved.\n'
@@ -483,13 +483,22 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['down-thread'])
         self.run_bzr(['up-thread', '--lca'])
 
-    def test_up_thread_auto(self):
+    def test_up_thread_no_manual(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('middle')
         tree.branch.new_thread('top')
-        self.run_bzr('up-thread --auto')
+        self.run_bzr('up-thread')
         branch = _mod_branch.Branch.open('.')
         self.assertEqual('top', branch.nick)
+
+    def test_up_thread_accepts_thread(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('lower-middle')
+        tree.branch.new_thread('upper-middle')
+        tree.branch.new_thread('top')
+        self.run_bzr('up-thread upper-middle')
+        branch = _mod_branch.Branch.open('.')
+        self.assertEqual('upper-middle', branch.nick)
 
 
 class TestPush(TestsWithLooms):
