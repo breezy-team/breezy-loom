@@ -120,7 +120,7 @@ class cmd_create_thread(bzrlib.commands.Command):
         finally:
             loom.unlock()
 
-            
+
 class cmd_show_loom(bzrlib.commands.Command):
     """Show the threads in this loom.
 
@@ -223,7 +223,7 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
         """Parse command line and run.
         
         If the command requests it, run the decorated version.
-        """ 
+        """
         try:
             super(cmd_switch, self).run_argv_aliases(list(argv), alias_argv)
         except (errors.MustUseDecorated, errors.BzrOptionError):
@@ -254,7 +254,7 @@ class cmd_revert_loom(bzrlib.commands.Command):
     """
 
     takes_args = ['thread?']
-    takes_options = [Option('all', 
+    takes_options = [Option('all',
                         help='Revert all threads.'),
                      ]
 
@@ -317,7 +317,6 @@ class cmd_up_thread(bzrlib.commands.Command):
     takes_options = ['merge-type', Option('auto',
         help='Automatically commit and merge repeatedly.')]
 
-    aliases = ['up']
     _see_also = ['down-thread', 'switch']
 
     def run(self, merge_type=None, auto=False):
