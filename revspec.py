@@ -62,8 +62,8 @@ class RevisionSpecThread(RevisionSpec):
             branch.unlock()
 
 
-revspec_register = getattr(revisionspec, '_register_revspec', None)
-if revspec_register is not None:
-    revspec_register(RevisionSpecThread)
+revspec_registry = getattr(revisionspec, 'revspec_registry', None)
+if revspec_registry is not None:
+    revspec_registry.register('thread:', RevisionSpecThread)
 else:
     revisionspec.SPEC_TYPES.append(RevisionSpecThread)
