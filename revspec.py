@@ -18,8 +18,9 @@
 """Loom specific revision-specifiers."""
 
 
+from bzrlib import revisionspec
 from bzrlib.plugins.loom.branch import NoLowerThread
-from bzrlib.revisionspec import SPEC_TYPES, RevisionSpec, RevisionInfo
+from bzrlib.revisionspec import RevisionSpec, RevisionInfo
 
 
 class RevisionSpecThread(RevisionSpec):
@@ -61,4 +62,8 @@ class RevisionSpecThread(RevisionSpec):
             branch.unlock()
 
 
-SPEC_TYPES.append(RevisionSpecThread)
+revspec_register = getattr(revisionspec, '_register_revspec', None)
+if revspec_register is not None:
+    revspec_register(RevisionSpecThread)
+else:
+    revisionspec.SPEC_TYPES.append(RevisionSpecThread)
