@@ -154,7 +154,7 @@ class cmd_status(bzrlib.builtins.cmd_status):
     _original_command = bzrlib.builtins.cmd_status
 
     def run(self, show_ids=False, file_list=None, revision=None, short=False,
-            versioned=False, no_pending=False):
+            versioned=False, no_pending=False, verbose=None):
         if file_list is None:
             path = '.'
         else:
