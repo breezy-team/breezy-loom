@@ -57,10 +57,10 @@ version_info = (1, 4, 0, 'dev', 0)
 
 import bzrlib.builtins
 import bzrlib.commands
+import bzrlib.revisionspec
 
 import branch
 import commands
-import revspec
 
 
 for command in [
@@ -86,6 +86,13 @@ else:
 commands.cmd_status._original_command = bzrlib.commands.register_command(
     commands.cmd_status, True)
 
+revspec_registry = getattr(bzrlib.revisionspec, 'revspec_registry', None)
+if revspec_registry is not None:
+    revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom', 
+                                   'RevisionSpecThread')
+else:
+    import revspec
+    bzrlib.revisionspec.SPEC_TYPES.append(revspec.RevisionSpecThread)
 
 def test_suite():
     import bzrlib.plugins.loom.tests
