@@ -226,13 +226,15 @@ class LoomSupport(object):
         raise bzrlib.errors.UpgradeRequired(self.base)
 
     @needs_read_lock
-    def clone(self, to_bzrdir, revision_id=None):
+    def clone(self, to_bzrdir, revision_id=None, repository_policy=None):
         """Clone the branch into to_bzrdir.
         
         This differs from the base clone by cloning the loom and 
         setting the current nick to the top of the loom.
         """
         result = self._format.initialize(to_bzrdir)
+        if repository_policy is not None:
+            repository_policy.configure_branch(result)
         self.copy_content_into(result, revision_id=revision_id)
         return result
 
