@@ -801,7 +801,7 @@ class LoomFormatMixin(object):
             control_files.unlock()
         return self.open(a_bzrdir, _found=True, )
 
-    def open(self, a_bzrdir, _found=False):
+    def open(self, a_bzrdir, _found=False, ignore_fallbacks=False):
         """Return the branch object for a_bzrdir
 
         _found is a private parameter, do not use it. It is used to indicate
@@ -816,7 +816,8 @@ class LoomFormatMixin(object):
         return self._branch_class(_format=self,
                           _control_files=control_files,
                           a_bzrdir=a_bzrdir,
-                          _repository=a_bzrdir.find_repository())
+                          _repository=a_bzrdir.find_repository(),
+                          ignore_fallbacks=ignore_fallbacks)
 
     def take_over(self, branch):
         """Take an existing bzrlib branch over into Loom format.
