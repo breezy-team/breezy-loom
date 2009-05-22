@@ -437,7 +437,8 @@ class LoomSupport(object):
 
     @needs_write_lock
     def pull(self, source, overwrite=False, stop_revision=None,
-        run_hooks=True, possible_transports=None, _override_hook_target=None):
+        run_hooks=True, possible_transports=None, _override_hook_target=None,
+        local=False):
         """Pull from a branch into this loom.
 
         If the remote branch is a non-loom branch, the pull is done against the
