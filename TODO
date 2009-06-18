@@ -95,7 +95,7 @@ does note calls.
   TODO either means changing 'diff's defaults, adding a flag to diff, or using
   a different revspec prefix; or something like that.)
 - export-patch to export the diff from this thread to the lower thread (using -ancestry logic) to a file named as the warp is named. (what about / ?)
-- during up-thread, if we could pull or if there is no diff, then the thread has been merged, offer to remove it.
+- during up-thread, if we could pull or if there is no diff, then the thread has been merged, offer to remove it. (Currently suggests to remove it).
 - loom to have the same 'tree root id' as its branches, to allow nested looms by reference. EEK!.
 - show-loom to allow -r -1.
 - combine-thread to warn if the thread being combined has changes not present in the one below it. I.e. by ancestry, or by doing a merge and recording differences. For bonus points, do the merge, but record the lower thread as the last-revision in the tree still, and set no pending-merges. This preserves the difference whilst still combining the threads.

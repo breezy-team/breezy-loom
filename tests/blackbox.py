@@ -431,7 +431,9 @@ class TestUp(TestsWithLooms):
         self.assertEqual('', out)
         self.assertEqual(
             "All changes applied successfully.\n"
-            "Moved to thread 'patch'.\n", err)
+            "Moved to thread 'patch'.\n"
+            'This thread is now empty, you may wish to run "bzr '
+            'combine-thread" to remove it.\n', err)
         self.assertEqual('patch', tree.branch.nick)
         # the tree needs to be updated.
         self.assertEqual(patch_rev, tree.last_revision())
@@ -490,6 +492,55 @@ class TestUp(TestsWithLooms):
         self.run_bzr('up-thread --auto')
         branch = _mod_branch.Branch.open('.')
         self.assertEqual('top', branch.nick)
+
+    def test_up_with_clean_merge_leaving_thread_empty(self):
+        """This tests what happens when a thread becomes empty.
+        
+        A thread becomes empty when all its changes are included in
+        a lower thread, and so its diff to the thread below contains
+        nothing.
+        
+        The user should be warned when this happens.
+        """
+        tree = self.get_vendor_loom()
+        self.build_tree(['afile'])
+        tree.add('afile')
+        patch_rev = tree.commit('add afile in base')
+        tree.branch.new_thread('patch')
+        tree.branch.nick = 'patch'
+        # make a change to afile in patch.
+        f = open('afile', 'wb')
+        try:
+            f.write('new contents of afile\n')
+        finally:
+            f.close()
+        patch_rev = tree.commit('make a change to afile')
+        # make the same change in vendor.
+        self.run_bzr(['down-thread'])
+        f = open('afile', 'wb')
+        try:
+            f.write('new contents of afile\n')
+        finally:
+            f.close()
+        vendor_release = tree.commit('make the same change to afile')
+        # check that the trees no longer differ after the up merge,
+        # and that we are 
+        out, err = self.run_bzr(['up-thread'])
+        self.assertEqual('', out)
+        self.assertEqual("All changes applied successfully.\n"
+            "Moved to thread 'patch'.\n"
+            'This thread is now empty, you may wish to run "bzr '
+            'combine-thread" to remove it.\n', err)
+        self.assertEqual('patch', tree.branch.nick)
+        # the tree needs to be updated.
+        self.assertEqual(patch_rev, tree.last_revision())
+        # the branch needs to be updated.
+        self.assertEqual(patch_rev, tree.branch.last_revision())
+        self.assertTrue(tree.has_filename('afile'))
+        # diff should return 0 now as we have no uncommitted changes.
+        self.run_bzr(['diff'])
+        self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
+
 
 
 class TestPush(TestsWithLooms):

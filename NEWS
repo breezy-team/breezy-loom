@@ -27,6 +27,10 @@ IN DEVELOPMENT
     * ``up`` and ``down`` are now aliases for ``up-thread`` and
       ``down-thread`` respectively.
 
+    * ``up-thread`` now notifies when a thread becomes empty. This is a step
+      towards removing it automatically/prompting to do so.
+      (James Westby, #195133)
+
   BUGFIXES:
 
     * ``pull`` expects the keywork local. (Mark Lee, #379347)
