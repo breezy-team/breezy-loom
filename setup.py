@@ -24,7 +24,7 @@ bzr_plugin_version = (1, 4, 0, 'dev', 0)
 bzr_minimum_version = (1, 0, 0)
 bzr_maximum_version = None
 
-if __name__ == 'main':
+if __name__ == '__main__':
     setup(name="Loom",
           version="1.4.0dev0",
           description="Loom plugin for bzr.",

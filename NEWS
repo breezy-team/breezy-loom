@@ -29,6 +29,12 @@ IN DEVELOPMENT
 
   BUGFIXES:
 
+    * ``pull`` expects the keywork local. (Mark Lee, #379347)
+
+    * ``setup.py`` doesn't actually install. (Mark Lee, #379069)
+
+    * module has no attribute ``PushResult``. (Robert Collins)
+
   API BREAKS:
 
   TESTING:
