@@ -232,7 +232,14 @@ class LoomSupport(object):
         This differs from the base clone by cloning the loom and 
         setting the current nick to the top of the loom.
         """
-        result = self._format.initialize(to_bzrdir)
+        # If the target is a stackable repository, force-upgrade the
+        # output loom format
+        if (isinstance(to_bzrdir, bzrdir.BzrDirMeta1) and
+            to_bzrdir._format.repository_format.supports_external_lookups):
+            format = BzrBranchLoomFormat7()
+        else:
+            format = self._format
+        result = format.initialize(to_bzrdir)
         if repository_policy is not None:
             repository_policy.configure_branch(result)
         self.copy_content_into(result, revision_id=revision_id)
@@ -449,9 +456,9 @@ class LoomSupport(object):
             return super(LoomSupport, self).pull(source,
                 overwrite=overwrite, stop_revision=stop_revision,
                 possible_transports=possible_transports,
-                _override_hook_target=_override_hook_target)
+                _override_hook_target=_override_hook_target, local=local)
         return _Puller(source, self).transfer(overwrite, stop_revision,
-            run_hooks, possible_transports, _override_hook_target)
+            run_hooks, possible_transports, _override_hook_target, local)
 
     @needs_read_lock
     def push(self, target, overwrite=False, stop_revision=None,
@@ -670,8 +677,10 @@ class _Puller(object):
         return result
 
     def transfer(self, overwrite, stop_revision, run_hooks=True,
-                 possible_transports=None, _override_hook_target=None):
+        possible_transports=None, _override_hook_target=None, local=False):
         """Implementation of push and pull"""
+        if local:
+            raise bzrlib.errors.LocalRequiresBoundBranch()
         # pull the loom, and position our
         pb = bzrlib.ui.ui_factory.nested_progress_bar()
         try:
