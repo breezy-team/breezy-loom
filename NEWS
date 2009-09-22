@@ -15,6 +15,25 @@ IN DEVELOPMENT
 
   IMPROVEMENTS:
 
+  BUGFIXES:
+
+  API BREAKS:
+
+  TESTING:
+
+  INTERNALS:
+
+2.0
+---
+
+  NOTES WHEN UPGRADING:
+  
+  CHANGES:
+
+  FEATURES:
+
+  IMPROVEMENTS:
+
     * ``bzr status`` now shows the current thread of the loom. (Jonathan
       Lange, #232465)
 
