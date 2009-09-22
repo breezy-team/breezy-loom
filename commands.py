@@ -204,13 +204,13 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
 
     def run(self, to_location, force=False, create_branch=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
-        if create_branch:
-            return branch.create_thread(tree.branch, to_location)
         tree = LoomTreeDecorator(tree)
         try:
+            if create_branch:
+                return branch.create_thread(tree.branch, to_location)
             thread_name = self._get_thread_name(tree.branch, to_location)
             return tree.down_thread(thread_name)
-        except (AttributeError, branch.NoSuchThread):
+        except (AttributeError, branch.NoSuchThread, branch.NotALoom):
             # When there is no thread its probably an external branch
             # that we have been given.
             raise errors.MustUseDecorated
