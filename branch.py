@@ -45,6 +45,17 @@ import loom_state
 EMPTY_REVISION = 'empty:'
 
 
+def create_thread(loom, thread_name):
+    """Create a thread in the branch loom called thread."""
+    require_loom_branch(loom)
+    loom.lock_write()
+    try:
+        loom.new_thread(thread_name, loom.nick)
+        loom.nick = thread_name
+    finally:
+        loom.unlock()
+
+
 def loomify(branch):
     """Convert branch to a loom.
 

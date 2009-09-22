@@ -21,6 +21,8 @@ IN DEVELOPMENT
     * ``bzr switch`` now accepts ``top:`` and ``bottom:`` to jump to the top
       and bottom thread respectively. (Jonathan Lange)
 
+    * ``bzr switch -b newthread`` now works. (Robert Collins, #433811)
+
     * ``bzr push`` now pushes the last-loom rather than creating an empty loom.
       (Robert Collins, #201613)
 

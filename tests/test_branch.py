@@ -132,6 +132,7 @@ class TestLoomify(TestCaseWithTransport):
             bzrlib.plugins.loom.branch.LoomBranch7,
             bzrlib.plugins.loom.branch.BzrBranchLoomFormat7)
 
+
 class TestLoom(TestCaseWithLoom):
 
     def make_loom(self, path):

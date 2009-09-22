@@ -266,6 +266,17 @@ class TestSwitch(TestsWithLooms):
             "All changes applied successfully.\nMoved to thread 'thread2'.\n",
             err)
 
+    def test_switch_dash_b(self):
+        # 'bzr switch -b new-thread' makes and switches to a new thread.
+        tree = self.get_vendor_loom()
+        self._add_patch(tree, 'thread2')
+        LoomTreeDecorator(tree).down_thread('vendor')
+        self.assertEqual(tree.branch.nick, 'vendor')
+        out, err = self.run_bzr(['switch', '-b', 'thread1'], retcode=0)
+        self.assertEqual(tree.branch.nick, 'thread1')
+        self.assertEqual('', out)
+        self.assertEqual('', err)
+
 
 class TestRecord(TestsWithLooms):
 

@@ -112,13 +112,7 @@ class cmd_create_thread(bzrlib.commands.Command):
 
     def run(self, thread):
         (loom, path) = bzrlib.branch.Branch.open_containing('.')
-        branch.require_loom_branch(loom)
-        loom.lock_write()
-        try:
-            loom.new_thread(thread, loom.nick)
-            loom.nick = thread
-        finally:
-            loom.unlock()
+        branch.create_thread(loom, thread)
 
 
 class cmd_show_loom(bzrlib.commands.Command):
@@ -208,8 +202,10 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
             return thread[0]
         return to_location
 
-    def run(self, to_location, force=False):
+    def run(self, to_location, force=False, create_branch=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
+        if create_branch:
+            return branch.create_thread(tree.branch, to_location)
         tree = LoomTreeDecorator(tree)
         try:
             thread_name = self._get_thread_name(tree.branch, to_location)
