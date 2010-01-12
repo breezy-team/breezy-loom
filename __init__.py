@@ -88,7 +88,7 @@ commands.cmd_status._original_command = bzrlib.commands.register_command(
 
 revspec_registry = getattr(bzrlib.revisionspec, 'revspec_registry', None)
 if revspec_registry is not None:
-    revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom', 
+    revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
                                    'RevisionSpecThread')
 else:
     import revspec
