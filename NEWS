@@ -17,6 +17,10 @@ IN DEVELOPMENT
 
   BUGFIXES:
 
+  * Stop using APIs deprecated for 2.1.0 (child progress bars for
+    merge and trace.info).  
+    (Vincent Ladeuil, #528472)
+
   API BREAKS:
 
   TESTING:

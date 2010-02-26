@@ -24,7 +24,10 @@ loom-aware functionality.
 __all__ = ['LoomTreeDecorator']
 
 
-from bzrlib import ui
+from bzrlib import (
+    trace,
+    ui,
+    )
 from bzrlib.decorators import needs_write_lock
 import bzrlib.errors
 import bzrlib.revision
@@ -87,19 +90,15 @@ class LoomTreeDecorator(object):
         # merge the tree up into the new patch:
         if merge_type is None:
             merge_type = bzrlib.merge.Merge3Merger
-        pb = ui.ui_factory.nested_progress_bar()
         try:
-            try:
-                merge_controller = bzrlib.merge.Merger.from_revision_ids(
-                    pb, self.tree, new_thread_rev, revision_graph=graph)
-            except bzrlib.errors.UnrelatedBranches:
-                raise bzrlib.errors.BzrCommandError('corrupt loom: thread %s'
-                    ' has no common ancestor with thread %s'
-                    % (new_thread_name, threadname))
-            merge_controller.merge_type = merge_type
-            result = merge_controller.do_merge()
-        finally:
-            pb.finished()
+            merge_controller = bzrlib.merge.Merger.from_revision_ids(
+                None, self.tree, new_thread_rev, revision_graph=graph)
+        except bzrlib.errors.UnrelatedBranches:
+            raise bzrlib.errors.BzrCommandError('corrupt loom: thread %s'
+                ' has no common ancestor with thread %s'
+                % (new_thread_name, threadname))
+        merge_controller.merge_type = merge_type
+        result = merge_controller.do_merge()
         # change the tree to the revision of the new thread.
         parent_trees = []
         if new_thread_rev != bzrlib.revision.NULL_REVISION:
@@ -127,12 +126,12 @@ class LoomTreeDecorator(object):
         self.tree.branch.generate_revision_history(new_thread_rev)
         # update the branch nick.
         self.tree.branch.nick = new_thread_name
-        bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
-        if (basis_tree is not None and 
+        trace.note("Moved to thread '%s'." % new_thread_name)
+        if (basis_tree is not None and
             not result and not
             self.tree.changes_from(basis_tree).has_changed()):
-            bzrlib.trace.info("This thread is now empty, you may wish to "
-                'run "bzr combine-thread" to remove it.')
+            trace.note("This thread is now empty, you may wish to "
+                       'run "bzr combine-thread" to remove it.')
         if result != 0:
             return 1
         else:
