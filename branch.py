@@ -835,6 +835,8 @@ class LoomFormatMixin(object):
         if not _found:
             format = BranchFormat.find_format(a_bzrdir)
             assert format.__class__ == self.__class__
+        if name is not None:
+            raise bzrlib.errors.NoColocatedBranchSupport(self)
         transport = a_bzrdir.get_branch_transport(None)
         control_files = bzrlib.lockable_files.LockableFiles(
             transport, 'lock', bzrlib.lockdir.LockDir)
