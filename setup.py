@@ -20,13 +20,13 @@ bzr_branch_formats = {
     "Bazaar-NG Loom branch format 6\n":"Loom branch format 6",
     }
 
-bzr_plugin_version = (2, 1, 0, 'final', 0)
+bzr_plugin_version = (2, 2, 1, 'dev', 0)
 bzr_minimum_version = (1, 0, 0)
 bzr_maximum_version = None
 
 if __name__ == '__main__':
     setup(name="Loom",
-          version="2.1.0final0",
+          version="2.2.1dev0",
           description="Loom plugin for bzr.",
           author="Canonical Ltd",
           author_email="bazaar@lists.canonical.com",
