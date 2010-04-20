@@ -17,7 +17,7 @@
 
 """Loom commands."""
 
-from bzrlib import workingtree
+from bzrlib import bzrdir, directory_service, workingtree
 import bzrlib.commands
 import bzrlib.branch
 from bzrlib import errors
@@ -202,17 +202,40 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
             return thread[0]
         return to_location
 
-    def run(self, to_location, force=False, create_branch=False):
-        (tree, path) = workingtree.WorkingTree.open_containing('.')
-        tree = LoomTreeDecorator(tree)
+    def run(self, to_location=None, force=False, create_branch=False, revision=None):
+        # The top of this is cribbed from bzr; because bzr isn't factored out
+        # enough.
+        control_dir, path = bzrdir.BzrDir.open_containing('.')
+        if to_location is None:
+            if revision is None:
+                raise errors.BzrCommandError(
+                    'You must supply either a revision or a location')
+            to_location = '.'
         try:
-            if create_branch:
-                return branch.create_thread(tree.branch, to_location)
-            thread_name = self._get_thread_name(tree.branch, to_location)
-            return tree.down_thread(thread_name)
-        except (AttributeError, branch.NoSuchThread, branch.NotALoom):
-            # When there is no thread its probably an external branch
-            # that we have been given.
+            from_branch = control_dir.open_branch()
+        except errors.NotBranchError:
+            from_branch = None
+        if create_branch:
+            if from_branch is None:
+                raise errors.BzrCommandError(
+                    'cannot create branch without source branch')
+            to_location = directory_service.directories.dereference(
+                to_location)
+        if from_branch is not None:
+            # Note: reopens.
+            (tree, path) = workingtree.WorkingTree.open_containing('.')
+            tree = LoomTreeDecorator(tree)
+            try:
+                if create_branch:
+                    return branch.create_thread(tree.branch, to_location)
+                thread_name = self._get_thread_name(tree.branch, to_location)
+                return tree.down_thread(thread_name)
+            except (AttributeError, branch.NoSuchThread, branch.NotALoom):
+                # When there is no thread its probably an external branch
+                # that we have been given.
+                raise errors.MustUseDecorated
+        else:
+            # switching to a relocated branch
             raise errors.MustUseDecorated
 
     def run_argv_aliases(self, argv, alias_argv=None):

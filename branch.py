@@ -801,9 +801,11 @@ class LoomFormatMixin(object):
     # A mixin is not ideal because it is tricky to test, but it seems to be the
     # best solution for now.
 
-    def initialize(self, a_bzrdir):
+    def initialize(self, a_bzrdir, name=None):
         """Create a branch of this format in a_bzrdir."""
-        super(LoomFormatMixin, self).initialize(a_bzrdir)
+        if name is not None:
+            raise bzrlib.errors.NoColocatedBranchSupport(self)
+        super(LoomFormatMixin, self).initialize(a_bzrdir, name=None)
         branch_transport = a_bzrdir.get_branch_transport(self)
         files = []
         state = loom_state.LoomState()
