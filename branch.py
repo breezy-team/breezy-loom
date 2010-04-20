@@ -822,11 +822,15 @@ class LoomFormatMixin(object):
             control_files.unlock()
         return self.open(a_bzrdir, _found=True, )
 
-    def open(self, a_bzrdir, _found=False, ignore_fallbacks=False):
+    def open(self, a_bzrdir, name=None, _found=False, ignore_fallbacks=False):
         """Return the branch object for a_bzrdir
 
         _found is a private parameter, do not use it. It is used to indicate
                if format probing has already be done.
+
+        :param name: The 'colocated branches' name for the branch to open.
+            in future, Loom may use that to return a Thread, but for now
+            it is unused.
         """
         if not _found:
             format = BranchFormat.find_format(a_bzrdir)
