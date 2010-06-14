@@ -33,7 +33,10 @@ from bzrlib.plugins.loom.tests import TestCaseWithLoom
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
 import bzrlib.revision
 from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import TestCaseWithTransport
+from bzrlib.tests import (
+    TestCaseWithTransport,
+    test_server,
+    )
 from bzrlib.transport import get_transport
 from bzrlib.workingtree import WorkingTree
 
@@ -253,6 +256,9 @@ class TestLoom(TestCaseWithLoom):
 
     def test_clone_nonempty_loom_bottom(self):
         """Cloning loom should reset the current loom pointer."""
+        self.make_and_clone_simple_loom()
+
+    def make_and_clone_simple_loom(self):
         source_tree = self.get_tree_with_one_commit('source')
         source_tree.branch.new_thread('bottom')
         source_tree.branch.new_thread('top')
@@ -260,9 +266,16 @@ class TestLoom(TestCaseWithLoom):
         source_tree.commit('phwoar', allow_pointless=True)
         source_tree.branch.record_loom('commit to loom')
         LoomTreeDecorator(source_tree).down_thread()
-        # now clone
-        target_tree = source_tree.bzrdir.clone('target').open_workingtree()
+        # now clone from the 'default url' - transport_server rather than
+        # vfs_server.
+        source_branch = Branch.open(self.get_url('source'))
+        target_tree = source_branch.bzrdir.sprout('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
+
+    def test_sprout_remote_loom(self):
+        # RemoteBranch should permit sprouting properly.
+        self.transport_server = test_server.SmartTCPServer_for_testing
+        self.make_and_clone_simple_loom()
 
     def test_sprout_nonempty_loom_bottom(self):
         """Sprouting always resets the loom to the top."""
@@ -356,6 +369,9 @@ class TestLoom(TestCaseWithLoom):
         
     def test_pull_into_empty_loom(self):
         """Doing a pull into a loom with no loom revisions works."""
+        self.pull_into_empty_loom()
+
+    def pull_into_empty_loom(self):
         source = self.get_tree_with_loom('source')
         target = source.bzrdir.sprout('target').open_branch()
         source.branch.new_thread('a thread')
@@ -363,7 +379,10 @@ class TestLoom(TestCaseWithLoom):
         # put a commit in the thread for source.
         bottom_rev1 = source.commit('commit a thread')
         source.branch.record_loom('commit to loom')
-        target.pull(source.branch)
+        # now pull from the 'default url' - transport_server rather than
+        # vfs_server - this may be a RemoteBranch.
+        source_branch = Branch.open(self.get_url('source'))
+        target.pull(source_branch)
         # check loom threads
         threads = target.get_loom_state().get_threads()
         self.assertEqual(
@@ -374,6 +393,11 @@ class TestLoom(TestCaseWithLoom):
         for rev_id in loom_rev_ids:
             self.assertTrue(target.repository.has_revision(rev_id))
         self.assertEqual(source.branch.loom_parents(), target.loom_parents())
+
+    def test_pull_remote_loom(self):
+        # RemoteBranch should permit sprouting properly.
+        self.transport_server = test_server.SmartTCPServer_for_testing
+        self.pull_into_empty_loom()
 
     def test_pull_thread_at_null(self):
         """Doing a pull when the source loom has a thread with no history."""

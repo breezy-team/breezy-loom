@@ -22,6 +22,7 @@
 import bzrlib.plugins.loom.branch
 from bzrlib.tests import TestCaseWithTransport
 from bzrlib.tests.TestUtil import TestLoader, TestSuite
+from bzrlib.workingtree import WorkingTree
 
 
 def test_suite():
@@ -41,7 +42,9 @@ class TestCaseWithLoom(TestCaseWithTransport):
 
     def get_tree_with_loom(self, path="."):
         """Get a tree with no commits in loom format."""
-        tree = self.make_branch_and_tree(path)
+        # May open on Remote - we want the vfs backed version for loom tests.
+        self.make_branch_and_tree(path)
+        tree = WorkingTree.open(path)
         bzrlib.plugins.loom.branch.loomify(tree.branch)
         return tree.bzrdir.open_workingtree()
 
