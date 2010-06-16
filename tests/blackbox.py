@@ -416,7 +416,7 @@ class TestUp(TestsWithLooms):
         self.assertEqual('', out)
         self.assertEqual(
             'bzr: ERROR: Cannot move up from the highest thread.\n', err)
-        
+
     def test_up_thread_same_revision(self):
         """moving up when the revision is unchanged should work."""
         tree = self.get_vendor_loom()
@@ -428,8 +428,8 @@ class TestUp(TestsWithLooms):
         self.assertEqual('', err)
         self.assertEqual('patch', tree.branch.nick)
         self.assertEqual(rev, tree.last_revision())
-        
-    def test_up_thread_preserves_changes(self):
+
+    def test_up_thread_manual_preserves_changes(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
         tree.branch.nick = 'vendor'
@@ -438,7 +438,7 @@ class TestUp(TestsWithLooms):
         self.build_tree(['afile'])
         tree.add('afile')
         vendor_release = tree.commit('new vendor release adds a file.')
-        out, err = self.run_bzr(['up-thread'])
+        out, err = self.run_bzr(['up-thread', '--manual'])
         self.assertEqual('', out)
         self.assertEqual(
             "All changes applied successfully.\n"
@@ -454,6 +454,13 @@ class TestUp(TestsWithLooms):
         # diff should return 1 now as we have uncommitted changes.
         self.run_bzr(['diff'], retcode=1)
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
+
+    def test_up_thread_manual_rejects_specified_thread(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('patch')
+        out, err = self.run_bzr('up-thread --manual patch', retcode=3)
+        self.assertContainsRe(err, 'Specifying a thread does not work with'
+                              ' --manual.')
 
     def test_up_thread_gets_conflicts(self):
         """Do a change in both the baseline and the next patch up."""
@@ -496,11 +503,11 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['down-thread'])
         self.run_bzr(['up-thread', '--lca'])
 
-    def test_up_thread_auto(self):
+    def test_up_thread_no_manual(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('middle')
         tree.branch.new_thread('top')
-        self.run_bzr('up-thread --auto')
+        self.run_bzr('up-thread')
         branch = _mod_branch.Branch.open('.')
         self.assertEqual('top', branch.nick)
 
@@ -536,12 +543,13 @@ class TestUp(TestsWithLooms):
         vendor_release = tree.commit('make the same change to afile')
         # check that the trees no longer differ after the up merge,
         # and that we are 
-        out, err = self.run_bzr(['up-thread'])
+        out, err = self.run_bzr(['up-thread', '--manual'])
         self.assertEqual('', out)
-        self.assertEqual("All changes applied successfully.\n"
+        self.assertStartsWith(err,
+            "All changes applied successfully.\n"
             "Moved to thread 'patch'.\n"
             'This thread is now empty, you may wish to run "bzr '
-            'combine-thread" to remove it.\n', err)
+            'combine-thread" to remove it.\n')
         self.assertEqual('patch', tree.branch.nick)
         # the tree needs to be updated.
         self.assertEqual(patch_rev, tree.last_revision())
@@ -552,6 +560,14 @@ class TestUp(TestsWithLooms):
         self.run_bzr(['diff'])
         self.assertEqual([patch_rev, vendor_release], tree.get_parent_ids())
 
+    def test_up_thread_accepts_thread(self):
+        tree = self.get_vendor_loom()
+        tree.branch.new_thread('lower-middle')
+        tree.branch.new_thread('upper-middle')
+        tree.branch.new_thread('top')
+        self.run_bzr('up-thread upper-middle')
+        branch = _mod_branch.Branch.open('.')
+        self.assertEqual('upper-middle', branch.nick)
 
 
 class TestPush(TestsWithLooms):

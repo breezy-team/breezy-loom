@@ -74,8 +74,12 @@ for command in [
     'show_loom',
     'up_thread',
     ]:
-    bzrlib.commands.register_command(getattr(commands, 'cmd_' + command))
+    bzrlib.commands.plugin_cmds.register_lazy('cmd_' + command, [],
+        'bzrlib.plugins.loom.commands')
 
+# XXX: bzr fix needed: for status and switch, we have to register directly, not
+# lazily, because register_lazy does not stack in the same way register_command
+# does.
 if not hasattr(bzrlib.builtins, "cmd_switch"):
     # provide a switch command (allows 
     bzrlib.commands.register_command(getattr(commands, 'cmd_switch'))

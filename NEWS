@@ -18,6 +18,9 @@ NOTES WHEN UPGRADING
 CHANGES
 -------
 
+* --auto is now the default on up-thread. You can supply a thread name to stop
+  at a given thread, or --manual to go up a single thread. (Aaron Bentley)
+
 FEATURES
 --------
 

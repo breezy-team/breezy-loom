@@ -326,26 +326,34 @@ class cmd_down_thread(bzrlib.commands.Command):
 
 
 class cmd_up_thread(bzrlib.commands.Command):
-    """Move the branch up a thread in the loom.
-    
+    """Move the branch up to the top thread in the loom.
+
     This merges the changes done in this thread but not incorporated into
     the next thread up into the next thread up and switches your tree to be
-    that thread.
+    that thread.  Unless there are conflicts, or --manual is specified, it
+    will then commit and repeat the process.
     """
 
+    takes_args = ['thread?']
+
     takes_options = ['merge-type', Option('auto',
-        help='Automatically commit and merge repeatedly.')]
+        help='Deprecated - now the default.'),
+        Option('manual', help='Perform commit manually.'),
+        ]
 
     _see_also = ['down-thread', 'switch']
 
-    def run(self, merge_type=None, auto=False):
+    def run(self, merge_type=None, manual=False, thread=None, auto=None):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
-        if not auto:
+        if manual:
+            if thread is not None:
+                raise errors.BzrCommandError('Specifying a thread does not'
+                                             ' work with --manual.')
             return tree.up_thread(merge_type)
         else:
-            return tree.up_many(merge_type)
+            return tree.up_many(merge_type, thread)
 
 
 class cmd_export_loom(bzrlib.commands.Command):

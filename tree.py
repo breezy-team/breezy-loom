@@ -137,13 +137,25 @@ class LoomTreeDecorator(object):
         else:
             return 0
 
-    def up_many(self, merge_type=None):
-        threads = self.branch.get_loom_state().get_threads()
-        top_thread_name = threads[-1][0]
-        while self.branch.nick != top_thread_name:
+    def up_many(self, merge_type=None, target_thread=None):
+        loom_state = self.branch.get_loom_state()
+        threads = loom_state.get_threads()
+        if target_thread is None:
+            target_thread = threads[-1][0]
+            if self.branch.nick == target_thread:
+                raise bzrlib.errors.BzrCommandError(
+                    'Cannot move up from the highest thread.')
+        else:
+            upper_thread_i = loom_state.thread_index(target_thread)
+            lower_thread_i = loom_state.thread_index(self.branch.nick)
+            if lower_thread_i > upper_thread_i:
+                raise bzrlib.errors.BzrCommandError(
+                    "Cannot up-thread to lower thread.")
+        while self.branch.nick != target_thread:
             old_nick = self.branch.nick
-            if self.up_thread(merge_type) != 0:
-                break
+            result = self.up_thread(merge_type)
+            if result != 0:
+                return result
             if len(self.tree.get_parent_ids()) > 1:
                 self.tree.commit('Merge %s into %s' % (old_nick,
                                                        self.branch.nick))
@@ -151,12 +163,11 @@ class LoomTreeDecorator(object):
     @needs_write_lock
     def down_thread(self, name=None):
         """Move to a thread down in the loom.
-        
+
         :param name: If None, use the next lower thread; otherwise the nae of
             the thread to move to.
         """
         self._check_switch()
-        current_revision = self.tree.last_revision()
         threadname = self.tree.branch.nick
         state = self.tree.branch.get_loom_state()
         threads = state.get_threads()
@@ -181,17 +192,30 @@ class LoomTreeDecorator(object):
             new_thread_rev = bzrlib.revision.NULL_REVISION
         if old_thread_rev == EMPTY_REVISION:
             old_thread_rev = bzrlib.revision.NULL_REVISION
-        basis_tree = self.tree.branch.repository.revision_tree(old_thread_rev)
-        to_tree = self.tree.branch.repository.revision_tree(new_thread_rev)
+        repository = self.tree.branch.repository
+        try:
+            basis_tree = self.tree.revision_tree(old_thread_rev)
+        except bzrlib.errors.NoSuchRevisionInTree:
+            basis_tree = repository.revision_tree(old_thread_rev)
+        to_tree = repository.revision_tree(new_thread_rev)
         result = bzrlib.merge.merge_inner(self.tree.branch,
             to_tree,
             basis_tree,
             this_tree=self.tree)
-        self.tree.branch.generate_revision_history(new_thread_rev)
-        self.tree.set_last_revision(new_thread_rev)
+        branch_revno, branch_revision = self.tree.branch.last_revision_info()
+        graph = repository.get_graph()
+        new_thread_revno = graph.find_distance_to_null(new_thread_rev,
+            [(branch_revision, branch_revno)])
+        self.tree.branch.set_last_revision_info(new_thread_revno,
+                                                new_thread_rev)
+        if new_thread_rev == bzrlib.revision.NULL_REVISION:
+            parent_list = []
+        else:
+            parent_list = [(new_thread_rev, to_tree)]
+        self.tree.set_parent_trees(parent_list)
         bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)
         return result
-        
+
     def lock_write(self):
         self.tree.lock_write()
 

@@ -193,6 +193,20 @@ class TestTreeDecorator(TestCaseWithLoom):
         self.assertEqual(['middle-1', 'bottom-2'], tree.get_parent_ids())
         self.assertEqual(1, len(tree.conflicts()))
 
+    def test_up_many_target_thread(self):
+        loom_tree = self.get_loom_with_three_threads()
+        tree = loom_tree.tree
+        loom_tree.up_many(target_thread='middle')
+        self.assertEqual('middle', tree.branch.nick)
+
+    def test_up_many_target_thread_lower(self):
+        loom_tree = self.get_loom_with_three_threads()
+        tree = loom_tree.tree
+        loom_tree.up_many(target_thread='top')
+        e = self.assertRaises(errors.BzrCommandError,
+                              loom_tree.up_many, target_thread='middle')
+        self.assertEqual('Cannot up-thread to lower thread.', str(e))
+
     def test_revert_loom(self):
         tree = self.get_tree_with_loom(',')
         # ensure we have some stuff to revert
