@@ -226,7 +226,7 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
                 to_location)
         if from_branch is not None:
             # Note: reopens.
-            (tree, path) = workingtree.WorkingTree.open_containing('.')
+            (tree, path) = workingtree.WorkingTree.open_containing(directory)
             tree = LoomTreeDecorator(tree)
             try:
                 if create_branch:
