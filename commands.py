@@ -202,10 +202,13 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
             return thread[0]
         return to_location
 
-    def run(self, to_location=None, force=False, create_branch=False, revision=None):
+    def run(self, to_location=None, force=False, create_branch=False,
+            revision=None, directory=None):
         # The top of this is cribbed from bzr; because bzr isn't factored out
         # enough.
-        control_dir, path = bzrdir.BzrDir.open_containing('.')
+        if directory is None:
+            directory = u'.'
+        control_dir, path = bzrdir.BzrDir.open_containing(directory)
         if to_location is None:
             if revision is None:
                 raise errors.BzrCommandError(
