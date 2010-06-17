@@ -881,6 +881,16 @@ bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat7())
 
 class InterLoomBranch(bzrlib.branch.GenericInterBranch):
 
+    @classmethod
+    def _get_branch_formats_to_test(klass):
+        return [
+            (bzrlib.branch.BranchFormat._default_format,
+             BzrBranchLoomFormat7()),
+            (BzrBranchLoomFormat7(),
+             bzrlib.branch.BranchFormat._default_format),
+            (BzrBranchLoomFormat7(), BzrBranchLoomFormat7()),
+            ]
+
     def unwrap_branch(self, branch):
         if isinstance(branch, remote.RemoteBranch):
             branch._ensure_real()
@@ -888,19 +898,9 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
         return branch
 
     @classmethod
-    def unwrap_format(klass, format):
-        if isinstance(format, remote.RemoteBranchFormat):
-            format._ensure_real()
-            return format._custom_format
-        return format
-
-    @classmethod
     def is_compatible(klass, source, target):
-        source_format = klass.unwrap_format(source._format)
-        target_format = klass.unwrap_format(target._format)
         # 1st cut: special case and handle all *->Loom and Loom->*
-        return (isinstance(source_format, LoomFormatMixin) or
-            isinstance(target_format, LoomFormatMixin))
+        return klass.branch_is_loom(source) or klass.branch_is_loom(target)
 
     def get_loom_state(self, branch):
         branch = self.unwrap_branch(branch)
@@ -910,8 +910,18 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
         branch = self.unwrap_branch(branch)
         return branch.get_threads(revision_id)
 
+    @classmethod
+    def branch_is_loom(klass, branch):
+        format = klass.unwrap_format(branch._format)
+        return isinstance(format, LoomFormatMixin)
+
     @needs_write_lock
     def copy_content_into(self, revision_id=None):
+        if not self.__class__.branch_is_loom(self.source):
+            # target is loom, but the generic code path works Just Fine for
+            # regular to loom copy_content_into.
+            return super(InterLoomBranch, self).copy_content_into(
+                revision_id=revision_id)
         # XXX: hint for bzrlib - break this into two routines, one for
         # copying the last-rev pointer, one for copying parent etc.
         source_nick = self.source.nick
@@ -980,21 +990,22 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
     def pull(self, overwrite=False, stop_revision=None,
         run_hooks=True, possible_transports=None, _override_hook_target=None,
         local=False):
-        """Pull from a branch into this loom.
+        """Perform a pull, reading from self.source and writing to self.target.
 
-        If the remote branch is a non-loom branch, the pull is done against the
+        If the source branch is a non-loom branch, the pull is done against the
         current warp. If it is a loom branch, then the pull is done against the
         entire loom and the current thread set to the top thread.
         """
-        # Special code only needed when target is a loom
-        target_format = self.__class__.unwrap_format(self.target._format)
-        if not isinstance(target_format, LoomFormatMixin):
-            return super(InterLoomBranch, self).pull(
-                overwrite=overwrite, stop_revision=stop_revision,
-                possible_transports=possible_transports,
-                _override_hook_target=_override_hook_target, local=local)
-        return _Puller(self.source, self.target).transfer(overwrite, stop_revision,
-            run_hooks, possible_transports, _override_hook_target, local)
+        # Special code only needed when both source and targets are looms:
+        if (self.__class__.branch_is_loom(self.target) and
+            self.__class__.branch_is_loom(self.source)):
+            return _Puller(self.source, self.target).transfer(overwrite, stop_revision,
+                run_hooks, possible_transports, _override_hook_target, local)
+        return super(InterLoomBranch, self).pull(
+            overwrite=overwrite, stop_revision=stop_revision,
+            possible_transports=possible_transports,
+            _override_hook_target=_override_hook_target, local=local,
+            run_hooks=run_hooks)
 
 
 bzrlib.branch.InterBranch.register_optimiser(InterLoomBranch)
