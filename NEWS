@@ -30,6 +30,8 @@ IMPROVEMENTS
 BUGFIXES
 --------
 
+* ``switch`` now accepts the ``--directory`` option. (Vincent Ladeuil, #595563)
+
 API BREAKS
 ----------
 
