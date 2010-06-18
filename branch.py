@@ -38,6 +38,7 @@ from bzrlib.revision import is_null, NULL_REVISION
 import bzrlib.tree
 import bzrlib.urlutils
 
+import formats
 import loom_io
 import loom_state
 
@@ -76,20 +77,8 @@ def loomify(branch):
         branch.unlock()
 
 
-def require_loom_branch(branch):
-    """Return None if branch is already loomified, or raise NotALoom."""
-    if not branch._format.__class__ in LOOM_FORMATS:
-        raise NotALoom(branch)
-
-
-class NotALoom(bzrlib.errors.BzrError):
-
-    _fmt = ("The branch %(branch)s is not a loom. "
-        "You can use 'bzr loomify' to make it into a loom.")
-
-    def __init__(self, branch):
-        bzrlib.errors.BzrError.__init__(self)
-        self.branch = branch
+require_loom_branch = formats.require_loom_branch
+NotALoom = formats.NotALoom
 
 
 class LoomThreadError(bzrlib.errors.BzrError):
@@ -873,10 +862,6 @@ class BzrBranchLoomFormat7(LoomFormatMixin, bzrlib.branch.BzrBranchFormat7):
         return "bzr loom format 7 (based on bzr branch format 7)\n"
 
 
-bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat1())
-bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat6())
-bzrlib.branch.BranchFormat.register_format(BzrBranchLoomFormat7())
-
 # Handle the smart server:
 
 class InterLoomBranch(bzrlib.branch.GenericInterBranch):
@@ -1009,10 +994,3 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
 
 
 bzrlib.branch.InterBranch.register_optimiser(InterLoomBranch)
-
-
-LOOM_FORMATS = [
-    BzrBranchLoomFormat1,
-    BzrBranchLoomFormat6,
-    BzrBranchLoomFormat7,
-]

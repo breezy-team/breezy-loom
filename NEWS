@@ -27,6 +27,10 @@ FEATURES
 IMPROVEMENTS
 ------------
 
+* Loom now takes advantage of lazy loading of bzr objects (though not to a
+  complete degree), reducing the overhead of having it installed.
+  (Robert Collins)
+
 BUGFIXES
 --------
 

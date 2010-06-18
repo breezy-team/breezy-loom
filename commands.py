@@ -21,14 +21,19 @@ from bzrlib import bzrdir, directory_service, workingtree
 import bzrlib.commands
 import bzrlib.branch
 from bzrlib import errors
+from bzrlib.lazy_import import lazy_import
 import bzrlib.merge
 from bzrlib.option import Option
 import bzrlib.revision
 import bzrlib.trace
 import bzrlib.transport
 
+import formats
+
+lazy_import(globals(), """
 import branch
 from tree import LoomTreeDecorator
+""")
 
 
 class cmd_loomify(bzrlib.commands.Command):
@@ -154,7 +159,7 @@ class cmd_status(bzrlib.builtins.cmd_status):
         else:
             path = file_list[0]
         (loom, _) = bzrlib.branch.Branch.open_containing(path)
-        branch.require_loom_branch(loom)
+        formats.require_loom_branch(loom)
         loom.lock_read()
         try:
             print 'Current thread: %s' % loom.nick
@@ -166,7 +171,7 @@ class cmd_status(bzrlib.builtins.cmd_status):
         self._original_command().run_argv_aliases(argv, alias_argv)
         try:
             super(cmd_status, self).run_argv_aliases(list(argv), alias_argv)
-        except branch.NotALoom:
+        except formats.NotALoom:
             pass
 
 

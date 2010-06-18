@@ -59,8 +59,8 @@ import bzrlib.builtins
 import bzrlib.commands
 import bzrlib.revisionspec
 
-import branch
 import commands
+import formats
 
 
 for command in [
@@ -97,6 +97,9 @@ if revspec_registry is not None:
 else:
     import revspec
     bzrlib.revisionspec.SPEC_TYPES.append(revspec.RevisionSpecThread)
+
+#register loom formats
+formats.register_formats()
 
 def test_suite():
     import bzrlib.plugins.loom.tests
