@@ -958,7 +958,8 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
             else:
                 # no threads yet, be a normal branch.
                 self.source._synchronize_history(self.target, revision_id)
-            self.target._set_last_loom(state)
+            target_loom = self.unwrap_branch(self.target)
+            target_loom._set_last_loom(state)
         except NotALoom:
             self.source._synchronize_history(self.target, revision_id)
         try:
