@@ -747,6 +747,19 @@ class TestCombineThread(TestsWithLooms):
         self.assertEqual(vendor_revid, tree.last_revision())
         self.assertEqual('vendor', tree.branch.nick)
 
+    def test_combine_unmerged_thread_errors(self):
+        """Combining a thread with unique work errors without --force."""
+        tree, loom_tree = self.get_loom_with_unique_thread()
+        loom_tree.up_thread()
+        unique_revid = tree.last_revision()
+        out, err = self.run_bzr(['combine-thread'], retcode=3)
+        self.assertEqual('', out)
+        self.assertEqual("bzr: ERROR: "
+"Thread 'unique-thread' has unmerged work. Use --force to combine anyway.\n",
+            err)
+        self.assertEqual(unique_revid, tree.last_revision())
+        self.assertEqual('unique-thread', tree.branch.nick)
+
     def test_combine_last_two_threads(self):
         """Doing a combine on two threads gives you just the bottom one."""
         tree, loom_tree = self.get_two_thread_loom()

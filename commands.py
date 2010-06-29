@@ -92,21 +92,45 @@ class cmd_combine_thread(bzrlib.commands.Command):
     def run(self, force=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         branch.require_loom_branch(tree.branch)
-        tree.lock_write()
-        try:
-            current_thread = tree.branch.nick
-            state = tree.branch.get_loom_state()
+        self.add_cleanup(tree.lock_write().unlock)
+        current_thread = tree.branch.nick
+        state = tree.branch.get_loom_state()
+        if not force:
+            # Check for unmerged work.
             # XXX: Layering issue whom should be caring for the check, not the
             # command thats for sure.
-            new_thread = state.get_new_thread_after_deleting(current_thread)
-            if new_thread is None:
-                raise branch.CannotCombineOnLastThread
-            bzrlib.trace.note("Combining thread '%s' into '%s'",
-                current_thread, new_thread)
-            LoomTreeDecorator(tree).down_thread(new_thread)
-            tree.branch.remove_thread(current_thread)
-        finally:
-            tree.unlock()
+            threads = state.get_threads()
+            current_index = state.thread_index(current_thread)
+            rev_below = None
+            rev_current = threads[current_index][1]
+            rev_above = None
+            if current_index:
+                # There is a thread below
+                rev_below = threads[current_index - 1][1]
+            if current_index < len(threads) - 1:
+                rev_above = threads[current_index + 1][1]
+            graph = tree.branch.repository.get_graph()
+            candidates = [rev for rev in
+                (rev_below, rev_current, rev_above) if rev]
+            heads = graph.heads(candidates)
+            # If current is not a head, its trivially merged, or
+            # if current is == rev_below, its also merged, or
+            # if there is only one thread its merged (well its not unmerged).
+            if (rev_current == rev_below or rev_current not in heads or
+                (rev_below is None and rev_above is None)):
+                merged = True
+            else:
+                merged = False
+            if not merged:
+                raise errors.BzrCommandError("Thread '%s' has unmerged work"
+                    ". Use --force to combine anyway." % current_thread)
+        new_thread = state.get_new_thread_after_deleting(current_thread)
+        if new_thread is None:
+            raise branch.CannotCombineOnLastThread
+        bzrlib.trace.note("Combining thread '%s' into '%s'",
+            current_thread, new_thread)
+        LoomTreeDecorator(tree).down_thread(new_thread)
+        tree.branch.remove_thread(current_thread)
 
 
 class cmd_create_thread(bzrlib.commands.Command):

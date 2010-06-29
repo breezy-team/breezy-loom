@@ -36,6 +36,10 @@ IMPROVEMENTS
 BUGFIXES
 --------
 
+* ``bzr combine-thread`` will no longer combine threads without ``--force``
+  when the thread being removed has work not merged into either the thread
+  above or below. (Robert Collins, #506235)
+
 * ``switch`` now accepts the ``--directory`` option. (Vincent Ladeuil, #595563)
 
 API BREAKS
