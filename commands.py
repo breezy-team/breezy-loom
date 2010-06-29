@@ -72,7 +72,7 @@ class cmd_loomify(bzrlib.commands.Command):
 
 
 class cmd_combine_thread(bzrlib.commands.Command):
-    """Combine the current thread with the thread below it.
+    __doc__ = """Combine the current thread with the thread below it.
     
     This will currently refuse to operate on the last thread, but in the future
     will just turn the loom into a normal branch again.
@@ -84,14 +84,20 @@ class cmd_combine_thread(bzrlib.commands.Command):
      * Change threads to the thread below.
     """
 
-    def run(self):
+    takes_options = [
+        Option('force', help='Combine even if work in the thread is not '
+            'integrated up or down the loom.'),
+        ]
+
+    def run(self, force=False):
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         branch.require_loom_branch(tree.branch)
         tree.lock_write()
         try:
             current_thread = tree.branch.nick
             state = tree.branch.get_loom_state()
-            threads = state.get_threads()
+            # XXX: Layering issue whom should be caring for the check, not the
+            # command thats for sure.
             new_thread = state.get_new_thread_after_deleting(current_thread)
             if new_thread is None:
                 raise branch.CannotCombineOnLastThread

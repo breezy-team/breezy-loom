@@ -710,6 +710,43 @@ class TestCombineThread(TestsWithLooms):
         loom_tree.down_thread()
         return tree, loom_tree
 
+    def get_loom_with_unique_thread(self):
+        """Return a loom with a unique thread.
+
+        That is:
+        vendor:[]
+        unique-thread:[vendor]
+        above-vendor:[vendor]
+
+        - unique-thread has work not in vendor and not in above-vendor.
+
+        The returned loom is on the vendor thread.
+        """
+        tree, _ = self.get_two_thread_loom()
+        tree.branch.new_thread('unique-thread', 'vendor')
+        loom_tree = LoomTreeDecorator(tree)
+        loom_tree.up_thread()
+        self.build_tree(['file-b'])
+        tree.add('file-b')
+        tree.commit('a unique change', rev_id='uniquely-yrs-1')
+        loom_tree.down_thread()
+        return tree, loom_tree
+
+    def test_combine_unmerged_thread_force(self):
+        """Combining a thread with unique work works with --force."""
+        tree, loom_tree = self.get_loom_with_unique_thread()
+        vendor_revid = tree.last_revision()
+        loom_tree.up_thread()
+        out, err = self.run_bzr(['combine-thread', '--force'])
+        self.assertEqual('', out)
+        self.assertEqual(
+            "Combining thread 'unique-thread' into 'vendor'\n"
+            'All changes applied successfully.\n'
+            "Moved to thread 'vendor'.\n",
+            err)
+        self.assertEqual(vendor_revid, tree.last_revision())
+        self.assertEqual('vendor', tree.branch.nick)
+
     def test_combine_last_two_threads(self):
         """Doing a combine on two threads gives you just the bottom one."""
         tree, loom_tree = self.get_two_thread_loom()
