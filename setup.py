@@ -20,9 +20,7 @@ bzr_branch_formats = {
     "Bazaar-NG Loom branch format 6\n":"Loom branch format 6",
     }
 
-bzr_plugin_version = (2, 2, 1, 'dev', 0)
-bzr_minimum_version = (1, 0, 0)
-bzr_maximum_version = None
+from version import *
 
 if __name__ == '__main__':
     setup(name="Loom",
