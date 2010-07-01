@@ -19,16 +19,15 @@
 """Tests of the loom revision-specifiers."""
 
 
-import bzrlib
+import bzrlib.errors
 from bzrlib.plugins.loom.branch import NoLowerThread, NoSuchThread
 from bzrlib.plugins.loom.tests import TestCaseWithLoom
 import bzrlib.plugins.loom.tree
 from bzrlib.revisionspec import RevisionSpec
 
 
-class TestThreadRevSpec(TestCaseWithLoom):
-    """Tests of the ThreadRevisionSpecifier."""
-    
+class TestRevSpec(TestCaseWithLoom):
+
     def get_two_thread_loom(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
@@ -39,6 +38,10 @@ class TestThreadRevSpec(TestCaseWithLoom):
         loom_tree.up_thread()
         rev_id_top = tree.commit('change top')
         return tree, loom_tree, rev_id_bottom, rev_id_top
+
+
+class TestThreadRevSpec(TestRevSpec):
+    """Tests of the ThreadRevisionSpecifier."""
     
     def test_thread_colon_at_bottom_errors(self):
         tree, loom_tree, rev_id, _ = self.get_two_thread_loom()
@@ -69,3 +72,44 @@ class TestThreadRevSpec(TestCaseWithLoom):
         loom_tree.down_thread()
         spec = RevisionSpec.from_string('thread:top')
         self.assertEqual(rev_id, spec.as_revision_id(tree.branch))
+
+    def test_thread_on_non_loom_gives_BzrError(self):
+        tree = self.make_branch_and_tree('.')
+        spec = RevisionSpec.from_string('thread:')
+        err = self.assertRaises(bzrlib.errors.BzrError, spec.as_revision_id,
+            tree.branch)
+        self.assertFalse(err.internal_error)
+
+
+class TestBelowRevSpec(TestRevSpec):
+    """Tests of the below: revision specifier."""
+
+    def test_below_gets_tip_of_thread_below(self):
+        tree, loom_tree, _, rev_id = self.get_two_thread_loom()
+        loom_tree.down_thread()
+        expected_id = tree.branch.last_revision()
+        loom_tree.up_thread()
+        spec = RevisionSpec.from_string('below:')
+        self.assertEqual(expected_id, spec.as_revision_id(tree.branch))
+
+    def test_below_on_bottom_thread_gives_BzrError(self):
+        tree, loom_tree, _, rev_id = self.get_two_thread_loom()
+        loom_tree.down_thread()
+        spec = RevisionSpec.from_string('below:')
+        err = self.assertRaises(bzrlib.errors.BzrError, spec.as_revision_id,
+            tree.branch)
+        self.assertFalse(err.internal_error)
+
+    def test_below_named_thread(self):
+        tree, loom_tree, _, rev_id = self.get_two_thread_loom()
+        loom_tree.down_thread()
+        expected_id = tree.branch.last_revision()
+        spec = RevisionSpec.from_string('below:top')
+        self.assertEqual(expected_id, spec.as_revision_id(tree.branch))
+
+    def test_below_on_non_loom_gives_BzrError(self):
+        tree = self.make_branch_and_tree('.')
+        spec = RevisionSpec.from_string('below:')
+        err = self.assertRaises(bzrlib.errors.BzrError, spec.as_revision_id,
+            tree.branch)
+        self.assertFalse(err.internal_error)

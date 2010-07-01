@@ -177,7 +177,7 @@ When upstream have merged a patch
 When you are doing an update to upstream and they have merged a patch, your
 thread will suddenly lose all its changes. Lets say in the example above that
 upstream have merged the autoconf update. When you are updating that thread,
-add in a call to ``diff -r thread:`` and you will see no changes.
+add in a call to ``diff -r below:`` and you will see no changes.
 
     % bzr up-thread
     All changes applied successfully.
@@ -201,3 +201,16 @@ combines the current thread into the one below it.::
       debian
     =>fix 64-bit compilation
       upstream
+
+
+Showing a single patch
+----------------------
+
+You can show a single patch without knowing the names of other threads by using
+the below: and thread: revision specifiers::
+
+    % bzr show-loom
+      debian
+    =>update-configure
+      upstream
+    % bzr diff -r below:update-configure..thread:update-configure

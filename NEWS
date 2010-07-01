@@ -26,6 +26,8 @@ CHANGES
 FEATURES
 --------
 
+* A new revision specifier ``below:`` has been added. (Robert Collins, #195282)
+
 IMPROVEMENTS
 ------------
 
@@ -41,6 +43,9 @@ BUGFIXES
   above or below. (Robert Collins, #506235)
 
 * ``switch`` now accepts the ``--directory`` option. (Vincent Ladeuil, #595563)
+
+* The ``thread:`` revision specifier will no longer throw an attribute error
+  when used on a normal branch. (Robert Collins, #231283)
 
 API BREAKS
 ----------

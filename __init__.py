@@ -48,9 +48,11 @@ Loom adds the following new commands:
    to remove a thread which has been merged into upstream. 
 
 
-Loom also adds a new revision specifier 'thread:'. You can use this to diff
-against threads in the current Loom. For instance, 'bzr diff -r thread:' will
-show you the different between the thread below yours, and your thread.
+Loom also adds new revision specifiers 'thread:' and 'below:'. You can use these
+to diff against threads in the current Loom. For instance, 'bzr diff -r
+thread:' will show you the different between the thread below yours, and your
+thread. See ``bzr help revisionspec`` for the detailed help on these two
+revision specifiers.
 """
 
 from version import bzr_plugin_version as version_info
@@ -94,9 +96,12 @@ revspec_registry = getattr(bzrlib.revisionspec, 'revspec_registry', None)
 if revspec_registry is not None:
     revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
                                    'RevisionSpecThread')
+    revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
+                                   'RevisionSpecBelow')
 else:
     import revspec
     bzrlib.revisionspec.SPEC_TYPES.append(revspec.RevisionSpecThread)
+    bzrlib.revisionspec.SPEC_TYPES.append(revspec.RevisionSpecBelow)
 
 #register loom formats
 formats.register_formats()

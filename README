@@ -77,9 +77,11 @@ the current thread into the standard branch. Similarly, pulling from a standard
 branch will pull into the current thread of a loom. This assymetry makes it easy
 to work with developers who are not using looms.
 
-Loom also adds a new revision specifier 'thread:'. You can use this to diff
-against threads in the current loom. For example: 'bzr diff -r thread:' will
-show you the difference between the current thread and the thread below it.
+Loom also adds new revision specifiers 'thread:' and 'below:'. You can use these
+to diff against threads in the current Loom. For instance, 'bzr diff -r
+thread:' will show you the different between the thread below yours, and your
+thread. See ``bzr help revisionspec`` for the detailed help on these two
+revision specifiers.
 
 
 Documentation
