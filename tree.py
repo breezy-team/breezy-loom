@@ -81,7 +81,7 @@ class LoomTreeDecorator(object):
         graph = self.tree.branch.repository.get_graph()
         # special case no-change condition.
         if new_thread_rev == old_thread_rev:
-            self.tree.branch.nick = new_thread_name
+            self.tree.branch._set_nick(new_thread_name)
             return 0
         if new_thread_rev == EMPTY_REVISION:
             new_thread_rev = bzrlib.revision.NULL_REVISION
@@ -125,7 +125,7 @@ class LoomTreeDecorator(object):
         # change the branch
         self.tree.branch.generate_revision_history(new_thread_rev)
         # update the branch nick.
-        self.tree.branch.nick = new_thread_name
+        self.tree.branch._set_nick(new_thread_name)
         trace.note("Moved to thread '%s'." % new_thread_name)
         if (basis_tree is not None and
             not result and not
@@ -183,7 +183,7 @@ class LoomTreeDecorator(object):
             index = state.thread_index(name)
             new_thread_rev = threads[index][1]
         assert new_thread_rev is not None
-        self.tree.branch.nick = new_thread_name
+        self.tree.branch._set_nick(new_thread_name)
         if new_thread_rev == old_thread_rev:
             # fast path no-op changes
             bzrlib.trace.note("Moved to thread '%s'." % new_thread_name)

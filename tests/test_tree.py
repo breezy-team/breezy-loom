@@ -38,14 +38,14 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('top')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         return bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
 
     def test_down_thread(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('top')
-        tree.branch.nick = 'top'
+        tree.branch._set_nick('top')
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.down_thread()
         self.assertEqual('bottom', tree.branch.nick)
@@ -53,7 +53,7 @@ class TestTreeDecorator(TestCaseWithLoom):
     def _add_thread(self, tree, name):
         """Create a new thread with a commit and return the commit id."""
         tree.branch.new_thread(name)
-        tree.branch.nick = name
+        tree.branch._set_nick(name)
         return tree.commit(name)
 
     def test_down_named_thread(self):
@@ -78,7 +78,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree = self.get_tree_with_loom('tree')
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('top')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         bottom_rev1 = tree.commit('bottom_commit')
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.up_thread()
@@ -89,10 +89,10 @@ class TestTreeDecorator(TestCaseWithLoom):
         """up-thread into a thread that already has this thread is a no-op."""
         tree = self.get_tree_with_loom('tree')
         tree.branch.new_thread('bottom')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         bottom_rev1 = tree.commit('bottom_commit')
         tree.branch.new_thread('top', 'bottom')
-        tree.branch.nick = 'top'
+        tree.branch._set_nick('top')
         top_rev1 = tree.commit('top_commit', allow_pointless=True)
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.down_thread()
@@ -108,10 +108,10 @@ class TestTreeDecorator(TestCaseWithLoom):
         """up-thread from a thread with new work."""
         tree = self.get_tree_with_loom('tree')
         tree.branch.new_thread('bottom')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         bottom_rev1 = tree.commit('bottom_commit')
         tree.branch.new_thread('top', 'bottom')
-        tree.branch.nick = 'top'
+        tree.branch._set_nick('top')
         top_rev1 = tree.commit('top_commit', allow_pointless=True)
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.down_thread()
@@ -153,7 +153,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('middle')
         tree.branch.new_thread('top')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         return bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
 
     def test_up_many(self):
@@ -212,7 +212,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         # ensure we have some stuff to revert
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         tree.commit('change something', allow_pointless=True)
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom()
@@ -227,7 +227,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         # ensure we have some stuff to revert
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         tree.commit('change something', allow_pointless=True)
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom(thread='bar')
@@ -244,7 +244,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         # ensure we have some stuff to revert
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         tree.commit('change something', allow_pointless=True)
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom(thread='foo')

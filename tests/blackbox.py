@@ -35,7 +35,7 @@ class TestsWithLooms(TestCaseWithLoom):
     def _add_patch(self, tree, name):
         """Add a patch to a new thread, returning the revid of te commit."""
         tree.branch.new_thread(name)
-        tree.branch.nick = name
+        tree.branch._set_nick(name)
         self.build_tree([name])
         tree.add(name)
         return tree.commit(name)
@@ -147,11 +147,11 @@ class TestShow(TestsWithLooms):
         self.assertShowLoom(['vendor'], 'vendor')
         tree.branch.new_thread('debian')
         self.assertShowLoom(['vendor', 'debian'], 'vendor')
-        tree.branch.nick = 'debian'
+        tree.branch._set_nick('debian')
         self.assertShowLoom(['vendor', 'debian'], 'debian')
         tree.branch.new_thread('patch A', 'vendor')
         self.assertShowLoom(['vendor', 'patch A', 'debian'], 'debian')
-        tree.branch.nick = 'patch A'
+        tree.branch._set_nick('patch A')
         self.assertShowLoom(['vendor', 'patch A', 'debian'], 'patch A')
 
     def test_show_loom_with_location(self):
@@ -292,7 +292,7 @@ class TestRecord(TestsWithLooms):
         """Adding a new thread is enough to allow recording."""
         tree = self.get_vendor_loom()
         tree.branch.new_thread('feature')
-        tree.branch.nick = 'feature'
+        tree.branch._set_nick('feature')
         out, err = self.run_bzr(['record', 'add feature branch.'])
         self.assertEqual('Loom recorded.\n', out)
         self.assertEqual('', err)
@@ -314,7 +314,7 @@ class TestDown(TestsWithLooms):
         """moving down when the revision is unchanged should work."""
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'patch'
+        tree.branch._set_nick('patch')
         rev = tree.last_revision()
         out, err = self.run_bzr(['down-thread'])
         self.assertEqual('', out)
@@ -325,7 +325,7 @@ class TestDown(TestsWithLooms):
     def test_down_thread_removes_changes_between_threads(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'patch'
+        tree.branch._set_nick('patch')
         rev = tree.last_revision()
         self.build_tree(['afile'])
         tree.add('afile')
@@ -347,7 +347,7 @@ class TestDown(TestsWithLooms):
         """Do a down thread when the lower patch is not in the r-h of the old."""
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'vendor'
+        tree.branch._set_nick('vendor')
         # do a null change in vendor - a new release.
         vendor_release = tree.commit('new vendor release.', allow_pointless=True)
         # pop up, then down
@@ -400,7 +400,7 @@ class TestDown(TestsWithLooms):
         """Trying to down-thread with changes causes an error."""
         tree = self.get_vendor_loom()
         tree.branch.new_thread('upper-thread')
-        tree.branch.nick = 'upper-thread'
+        tree.branch._set_nick('upper-thread')
         self.build_tree(['new-file'])
         tree.add('new-file')
         out, err = self.run_bzr('down-thread', retcode=3)
@@ -421,7 +421,7 @@ class TestUp(TestsWithLooms):
         """moving up when the revision is unchanged should work."""
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'vendor'
+        tree.branch._set_nick('vendor')
         rev = tree.last_revision()
         out, err = self.run_bzr(['up-thread'])
         self.assertEqual('', out)
@@ -432,7 +432,7 @@ class TestUp(TestsWithLooms):
     def test_up_thread_manual_preserves_changes(self):
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'vendor'
+        tree.branch._set_nick('vendor')
         patch_rev = tree.last_revision()
         # add a change in vendor - a new release.
         self.build_tree(['afile'])
@@ -466,7 +466,7 @@ class TestUp(TestsWithLooms):
         """Do a change in both the baseline and the next patch up."""
         tree = self.get_vendor_loom()
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'patch'
+        tree.branch._set_nick('patch')
         # add a change in patch - a new release.
         self.build_tree(['afile'])
         tree.add('afile')
@@ -525,7 +525,7 @@ class TestUp(TestsWithLooms):
         tree.add('afile')
         patch_rev = tree.commit('add afile in base')
         tree.branch.new_thread('patch')
-        tree.branch.nick = 'patch'
+        tree.branch._set_nick('patch')
         # make a change to afile in patch.
         f = open('afile', 'wb')
         try:
@@ -670,7 +670,7 @@ class TestRevert(TestsWithLooms):
         # not in, so we can revert that by name,
         tree = self.get_vendor_loom()
         tree.branch.new_thread('after-vendor')
-        tree.branch.nick = 'after-vendor'
+        tree.branch._set_nick('after-vendor')
         tree.commit('after-vendor commit', allow_pointless=True)
         tree.branch.record_loom('save loom with vendor and after-vendor')
         old_threads = tree.branch.get_loom_state().get_threads()

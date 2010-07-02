@@ -32,7 +32,7 @@ class TestRevSpec(TestCaseWithLoom):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('top')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         rev_id_bottom = tree.commit('change bottom')
         loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.up_thread()

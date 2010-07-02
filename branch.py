@@ -52,7 +52,7 @@ def create_thread(loom, thread_name):
     loom.lock_write()
     try:
         loom.new_thread(thread_name, loom.nick)
-        loom.nick = thread_name
+        loom._set_nick(thread_name)
     finally:
         loom.unlock()
 
@@ -198,14 +198,14 @@ class LoomSupport(object):
             if len(threads) <= current_index:
                 # removed the end
                 # take the new end thread
-                self.nick = threads[-1][0]
+                self._set_nick(threads[-1][0])
                 new_rev = threads[-1][1]
                 if new_rev == EMPTY_REVISION:
                     new_rev = bzrlib.revision.NULL_REVISION
                 self.generate_revision_history(new_rev)
                 return
             # non-end thread removed.
-            self.nick = threads[current_index][0]
+            self._set_nick(threads[current_index][0])
             new_rev = threads[current_index][1]
             if new_rev == EMPTY_REVISION:
                 new_rev = bzrlib.revision.NULL_REVISION
@@ -374,6 +374,15 @@ class LoomSupport(object):
             rev_id, name = line.split(' ', 1)
             result.append((name, rev_id))
         return result
+
+    def _loom_get_nick(self):
+        return self._get_nick(local=True)
+
+    def _rename_thread(self, nick):
+        """Rename the current thread to nick."""
+        return self._set_nick(nick)
+
+    nick = property(_loom_get_nick, _rename_thread)
 
     @needs_read_lock
     def push(self, target, overwrite=False, stop_revision=None,
@@ -659,7 +668,7 @@ class _Puller(object):
                 # and save the state.
                 self.target._set_last_loom(my_state)
                 # set the branch nick.
-                self.target.nick = threads[-1][0]
+                self.target._set_nick(threads[-1][0])
                 # and position the branch on the top loom
                 new_rev = threads[-1][1]
                 if new_rev == EMPTY_REVISION:
@@ -970,7 +979,7 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
             if parent:
                 self.target.set_parent(parent)
         if threads:
-            self.target.nick = threads[-1][0]
+            self.target._set_nick(threads[-1][0])
 
     @needs_write_lock
     def pull(self, overwrite=False, stop_revision=None,

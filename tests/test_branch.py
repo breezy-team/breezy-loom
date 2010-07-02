@@ -188,9 +188,9 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.new_thread('baseline')
         tree.branch.new_thread('middlepoint')
         tree.branch.new_thread('endpoint')
-        tree.branch.nick = 'middlepoint'
+        tree.branch._set_nick('middlepoint')
         rev_id2 = tree.commit('middle', allow_pointless=True)
-        tree.branch.nick = 'endpoint'
+        tree.branch._set_nick('endpoint')
         rev_id3 = tree.commit('end', allow_pointless=True)
         tree.branch.new_thread('afterbase', 'baseline')
         tree.branch.new_thread('aftermiddle', 'middlepoint')
@@ -213,7 +213,7 @@ class TestLoom(TestCaseWithLoom):
         tree = self.get_tree_with_one_commit()
         tree.branch.new_thread('baseline')
         tree.branch.new_thread('tail')
-        tree.branch.nick = 'baseline'
+        tree.branch._set_nick('baseline')
         first_rev = tree.last_revision()
         # lock the tree to prevent unlock triggering implicit record
         tree.lock_write()
@@ -234,7 +234,7 @@ class TestLoom(TestCaseWithLoom):
 
     def test_clone_empty_loom(self):
         source_tree = self.get_tree_with_loom('source')
-        source_tree.branch.nick = 'source'
+        source_tree.branch._set_nick('source')
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
 
@@ -248,7 +248,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree = self.get_tree_with_one_commit('source')
         source_tree.branch.new_thread('bottom')
         source_tree.branch.new_thread('top')
-        source_tree.branch.nick = 'top'
+        source_tree.branch._set_nick('top')
         source_tree.commit('phwoar', allow_pointless=True)
         source_tree.branch.record_loom('commit to loom')
         target_tree = source_tree.bzrdir.clone('target').open_workingtree()
@@ -262,7 +262,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree = self.get_tree_with_one_commit('source')
         source_tree.branch.new_thread('bottom')
         source_tree.branch.new_thread('top')
-        source_tree.branch.nick = 'top'
+        source_tree.branch._set_nick('top')
         source_tree.commit('phwoar', allow_pointless=True)
         source_tree.branch.record_loom('commit to loom')
         LoomTreeDecorator(source_tree).down_thread()
@@ -282,7 +282,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree = self.get_tree_with_one_commit('source')
         source_tree.branch.new_thread('bottom')
         source_tree.branch.new_thread('top')
-        source_tree.branch.nick = 'top'
+        source_tree.branch._set_nick('top')
         source_tree.commit('phwoar', allow_pointless=True)
         source_tree.branch.record_loom('commit to loom')
         LoomTreeDecorator(source_tree).down_thread()
@@ -336,10 +336,10 @@ class TestLoom(TestCaseWithLoom):
         source = self.get_tree_with_loom('source')
         source.branch.new_thread('bottom')
         source.branch.new_thread('top')
-        source.branch.nick = 'bottom'
+        source.branch._set_nick('bottom')
         source.branch.record_loom('commit to loom')
         target = source.bzrdir.sprout('target').open_branch()
-        target.nick = 'top'
+        target._set_nick('top')
         # put a commit in the bottom and top of this loom
         bottom_rev1 = source.commit('commit my arse')
         source_loom_tree = LoomTreeDecorator(source)
@@ -375,7 +375,7 @@ class TestLoom(TestCaseWithLoom):
         source = self.get_tree_with_loom('source')
         target = source.bzrdir.sprout('target').open_branch()
         source.branch.new_thread('a thread')
-        source.branch.nick = 'a thread'
+        source.branch._set_nick('a thread')
         # put a commit in the thread for source.
         bottom_rev1 = source.commit('commit a thread')
         source.branch.record_loom('commit to loom')
@@ -404,7 +404,7 @@ class TestLoom(TestCaseWithLoom):
         source = self.get_tree_with_loom('source')
         target = source.bzrdir.sprout('target').open_branch()
         source.branch.new_thread('a thread')
-        source.branch.nick = 'a thread'
+        source.branch._set_nick('a thread')
         source.branch.record_loom('commit to loom')
         target.pull(source.branch)
         # check loom threads
@@ -423,10 +423,10 @@ class TestLoom(TestCaseWithLoom):
         source = self.get_tree_with_loom('source')
         source.branch.new_thread('bottom')
         source.branch.new_thread('top')
-        source.branch.nick = 'bottom'
+        source.branch._set_nick('bottom')
         source.branch.record_loom('commit to loom')
         target = source.bzrdir.sprout('target').open_branch()
-        target.nick = 'top'
+        target._set_nick('top')
         # put a commit in the bottom and top of this loom
         bottom_rev1 = source.commit('commit bottom')
         source_loom_tree = LoomTreeDecorator(source)
@@ -457,7 +457,7 @@ class TestLoom(TestCaseWithLoom):
     def test_implicit_record(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         tree.lock_write()
         try:
             bottom_rev1 = tree.commit('commit my arse')
@@ -478,7 +478,7 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual([], tree.branch.loom_parents())
         # add a thread and record it.
         tree.branch.new_thread('bottom')
-        tree.branch.nick = 'bottom'
+        tree.branch._set_nick('bottom')
         rev_id = tree.branch.record_loom('Setup test loom.')
         # after recording, the parents list should have changed.
         self.assertEqual([rev_id], tree.branch.loom_parents())
@@ -489,7 +489,7 @@ class TestLoom(TestCaseWithLoom):
         # new threads
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         last_rev = tree.branch.last_revision()
         # and a change to the revision history of this thread
         tree.commit('change bar', allow_pointless=True)
@@ -503,7 +503,7 @@ class TestLoom(TestCaseWithLoom):
         # new threads
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         # and a change to the revision history of this thread
         tree.commit('change bar', allow_pointless=True)
         # now record
@@ -528,7 +528,7 @@ class TestLoom(TestCaseWithLoom):
         # new threads
         tree.branch.new_thread('base')
         tree.branch.new_thread('top')
-        tree.branch.nick = 'top'
+        tree.branch._set_nick('top')
         # and a change to the revision history of this thread
         tree.tree.commit('change top', allow_pointless=True)
         last_rev = tree.branch.last_revision()
@@ -552,7 +552,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
         # do a commit, so the last_revision should change.
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         tree.commit('bar-ness', allow_pointless=True)
         tree.branch.revert_thread('bar')
         self.assertEqual(
@@ -565,11 +565,11 @@ class TestLoom(TestCaseWithLoom):
         # ensure we have some stuff to revert
         tree.branch.new_thread('foo')
         tree.branch.new_thread('bar')
-        tree.branch.nick = 'foo'
+        tree.branch._set_nick('foo')
         # record the loom to put the threads in the basis
         tree.branch.record_loom('record it!')
         # do a commit, so the last_revision should change.
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         tree.commit('bar-ness', allow_pointless=True)
         tree.branch.revert_thread('bar')
         self.assertEqual(
@@ -583,7 +583,7 @@ class TestLoom(TestCaseWithLoom):
         tree = self.get_tree_with_loom()
         tree.branch.new_thread('bar')
         tree.branch.new_thread('foo')
-        tree.branch.nick = 'bar'
+        tree.branch._set_nick('bar')
         tree.branch.remove_thread('foo')
         state = tree.branch.get_loom_state()
         self.assertEqual([('bar', 'empty:', [])], state.get_threads())
@@ -594,17 +594,17 @@ class TestLoom(TestCaseWithLoom):
         self.assertEqual([], tree.branch.get_threads(NULL_REVISION))
         # and loom history should make no difference:
         tree.branch.new_thread('foo')
-        tree.branch.nick = 'foo'
+        tree.branch._set_nick('foo')
         tree.branch.record_loom('foo')
         self.assertEqual([], tree.branch.get_threads(NULL_REVISION))
 
     def get_multi_threaded(self):
         tree = self.get_tree_with_loom()
         tree.branch.new_thread('thread1')
-        tree.branch.nick = 'thread1'
+        tree.branch._set_nick('thread1')
         tree.commit('thread1', rev_id='thread1-id')
         tree.branch.new_thread('thread2', 'thread1')
-        tree.branch.nick = 'thread2'
+        tree.branch._set_nick('thread2')
         tree.commit('thread2', rev_id='thread2-id')
         return tree
 
