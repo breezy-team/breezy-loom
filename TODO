@@ -110,5 +110,4 @@ does note calls.
   therein as well, to support uncommit between record calls.
 - combine-thread should de-dup penmding merges (use case: up-thread finds a fully merged thread so there are pending merges but no diff between threads; this is when combine-thread is often called).
 - support tags on push/pull in looms
-- bzr nick <name> should rename the current thread (by adding one with the new name and in current-thread deleted the active location - same as merging a delete.
 - perhaps bzr send should send the whole loom ? (e.g. as a patch bomb - a series of patches?)

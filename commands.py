@@ -141,6 +141,8 @@ class cmd_create_thread(bzrlib.commands.Command):
 
     The thread-name must be a valid branch 'nickname', and must not be the name
     of an existing thread in your loom.
+
+    The new thread is created immediately after the current thread.
     """
 
     takes_args = ['thread']
