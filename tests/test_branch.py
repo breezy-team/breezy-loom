@@ -660,3 +660,13 @@ class TestLoom(TestCaseWithLoom):
         export_branch = Branch.open_from_transport(
             root_transport.clone('thread1'))
         self.assertEqual('thread1-id', export_branch.last_revision())
+
+    def test_set_nick_renames_thread(self):
+        tree = self.get_tree_with_loom()
+        tree.branch.new_thread(tree.branch.nick)
+        orig_threads = tree.branch.get_loom_state().get_threads()
+        new_thread_name = 'new thread name'
+        tree.branch.nick = new_thread_name
+        new_threads = tree.branch.get_loom_state().get_threads()
+        self.assertNotEqual(orig_threads, new_threads)
+        self.assertEqual(new_thread_name, new_threads[0][0])

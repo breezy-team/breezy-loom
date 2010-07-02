@@ -380,7 +380,12 @@ class LoomSupport(object):
 
     def _rename_thread(self, nick):
         """Rename the current thread to nick."""
-        return self._set_nick(nick)
+        state = self.get_loom_state()
+        threads = state.get_threads()
+        current_index = state.thread_index(self.nick)
+        threads[current_index] = (nick,) + threads[current_index][1:]
+        state.set_threads(threads)
+        self._set_last_loom(state)
 
     nick = property(_loom_get_nick, _rename_thread)
 

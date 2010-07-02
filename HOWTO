@@ -49,7 +49,8 @@ This will convert your branch to a loom - at this point you will require the
 loom plugin to use bzr on it. It will also create a thread called 'upstream'.
 
 The bzr ``nick`` is used to index into the threads in the loom. The current
-thread is the bzr nick for the branch and is recorded in commits as such.
+thread is the bzr nick for the branch and is recorded in commits as such. You
+can use ``bzr nick newname`` to change the name of a thread.
 
 If you do 'bzr push' to a new branch now, it will make the remote branch be a
 loom as well. If you push to an existing normal bzr branch, then the current
