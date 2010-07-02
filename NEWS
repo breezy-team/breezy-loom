@@ -42,6 +42,10 @@ BUGFIXES
   when the thread being removed has work not merged into either the thread
   above or below. (Robert Collins, #506235)
 
+* ``bzr loomify`` explicitly checks that branches being converted are not Looms
+  already. This should not have been needed, but apparently it was.
+  (Robert Collins, #600452)
+
 * ``bzr nick`` will now rename a thread rather than setting the current thread
   pointer to an invalid value. (Robert Collins, #203203, #260947, #304608)
 

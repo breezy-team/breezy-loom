@@ -57,6 +57,15 @@ def create_thread(loom, thread_name):
         loom.unlock()
 
 
+class AlreadyLoom(bzrlib.errors.BzrError):
+
+    _fmt = """Loom %(loom)s is already a loom."""
+
+    def __init__(self, loom):
+        bzrlib.errors.BzrError.__init__(self)
+        self.loom = loom
+
+
 def loomify(branch):
     """Convert branch to a loom.
 
@@ -64,6 +73,12 @@ def loomify(branch):
     """
     try:
         branch.lock_write()
+        try:
+            require_loom_branch(branch)
+        except NotALoom:
+            pass
+        else:
+            raise AlreadyLoom(branch)
         try:
             format = {
                 bzrlib.branch.BzrBranchFormat5: BzrBranchLoomFormat1,
@@ -82,8 +97,7 @@ NotALoom = formats.NotALoom
 
 
 class LoomThreadError(bzrlib.errors.BzrError):
-
-    _fmt = """Base class for Loom-Thread errors."""
+    """Base class for Loom-Thread errors."""
 
     def __init__(self, branch, thread):
         bzrlib.errors.BzrError.__init__(self)

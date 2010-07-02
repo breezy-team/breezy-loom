@@ -23,6 +23,7 @@ import bzrlib
 from bzrlib.branch import Branch
 import bzrlib.errors as errors
 from bzrlib.plugins.loom.branch import (
+    AlreadyLoom,
     EMPTY_REVISION,
     loomify,
     require_loom_branch,
@@ -70,8 +71,7 @@ class TestRequireLoomBranch(TestCaseWithTransport):
         branch = self.make_branch('.')
         self.assertRaises(NotALoom, require_loom_branch, branch)
 
-
-    def works_on_loom(self, format):
+    def works_on_format(self, format):
         branch = self.make_branch('.', format)
         loomify(branch)
         # reopen it
@@ -79,13 +79,19 @@ class TestRequireLoomBranch(TestCaseWithTransport):
         self.assertEqual(None, require_loom_branch(branch))
 
     def test_works_on_loom1(self):
-        self.works_on_loom('knit')
+        self.works_on_format('knit')
 
     def test_works_on_loom6(self):
-        self.works_on_loom('pack-0.92')
+        self.works_on_format('pack-0.92')
 
     def test_works_on_loom7(self):
-        self.works_on_loom('1.6')
+        self.works_on_format('1.6')
+
+    def test_no_harm_to_looms(self):
+        branch = self.make_branch('.')
+        loomify(branch)
+        branch = branch.bzrdir.open_branch()
+        self.assertRaises(AlreadyLoom, loomify, branch)
 
 
 class TestLoomify(TestCaseWithTransport):
