@@ -52,11 +52,18 @@ class TestFormat(TestCaseWithTransport):
         self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
 
 
+
+class StubFormat(object):
+
+    def network_name(self):
+        return "Nothing to see."
+
+
 class LockableStub(object):
 
     def __init__(self):
         self._calls = []
-        self._format = "Nothing to see."
+        self._format = StubFormat()
 
     def lock_write(self):
         self._calls.append(("write",))

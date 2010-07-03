@@ -396,6 +396,10 @@ class LoomSupport(object):
         """Rename the current thread to nick."""
         state = self.get_loom_state()
         threads = state.get_threads()
+        if not len(threads):
+            # No threads at all - probably a default initialised loom in the
+            # test suite.
+            return self._set_nick(nick)
         current_index = state.thread_index(self.nick)
         threads[current_index] = (nick,) + threads[current_index][1:]
         state.set_threads(threads)
