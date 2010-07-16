@@ -683,3 +683,4 @@ class TestLoom(TestCaseWithLoom):
         new_threads = tree.branch.get_loom_state().get_threads()
         self.assertNotEqual(orig_threads, new_threads)
         self.assertEqual(new_thread_name, new_threads[0][0])
+        self.assertEqual(new_thread_name, tree.branch.nick)

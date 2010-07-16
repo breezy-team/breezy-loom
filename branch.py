@@ -399,11 +399,13 @@ class LoomSupport(object):
         if not len(threads):
             # No threads at all - probably a default initialised loom in the
             # test suite.
-            return self._set_nick(nick)
+            return  self._set_nick(nick)
         current_index = state.thread_index(self.nick)
         threads[current_index] = (nick,) + threads[current_index][1:]
         state.set_threads(threads)
         self._set_last_loom(state)
+        # Preserve default behavior: set the branch nick
+        self._set_nick(nick)
 
     nick = property(_loom_get_nick, _rename_thread)
 

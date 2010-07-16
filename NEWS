@@ -49,6 +49,8 @@ BUGFIXES
 * ``bzr nick`` will now rename a thread rather than setting the current thread
   pointer to an invalid value. (Robert Collins, #203203, #260947, #304608)
 
+* ``bzr nick`` will now rename the branch too. (Vincent Ladeuil, #606174)
+
 * ``switch`` now accepts the ``--directory`` option. (Vincent Ladeuil, #595563)
 
 * The ``thread:`` revision specifier will no longer throw an attribute error
