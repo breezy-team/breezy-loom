@@ -31,6 +31,10 @@ FEATURES
 IMPROVEMENTS
 ------------
 
+* bzr-loom is now compatible with bzr 2.3b5 and newer.  There were some API
+  additions bzr-loom needed to support.  Compatibility with earlier versions is
+  unaffected.  (Andrew Bennetts)
+
 * Loom now takes advantage of lazy loading of bzr objects (though not to a
   complete degree), reducing the overhead of having it installed.
   (Robert Collins)

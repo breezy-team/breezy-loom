@@ -749,11 +749,17 @@ class LoomFormatMixin(object):
     # A mixin is not ideal because it is tricky to test, but it seems to be the
     # best solution for now.
 
-    def initialize(self, a_bzrdir, name=None):
+    def initialize(self, a_bzrdir, name=None, repository=None):
         """Create a branch of this format in a_bzrdir."""
         if name is not None:
             raise bzrlib.errors.NoColocatedBranchSupport(self)
-        super(LoomFormatMixin, self).initialize(a_bzrdir, name=None)
+        if repository is None:
+            super(LoomFormatMixin, self).initialize(a_bzrdir, name=None)
+        else:
+            # The 'repository' optional keyword arg is new in bzr 2.3, so don't
+            # pass it unless it was passed in.
+            super(LoomFormatMixin, self).initialize(a_bzrdir, name=None,
+                    repository=repository)
         branch_transport = a_bzrdir.get_branch_transport(self)
         files = []
         state = loom_state.LoomState()
@@ -772,7 +778,8 @@ class LoomFormatMixin(object):
             control_files.unlock()
         return self.open(a_bzrdir, _found=True, )
 
-    def open(self, a_bzrdir, name=None, _found=False, ignore_fallbacks=False):
+    def open(self, a_bzrdir, name=None, _found=False, ignore_fallbacks=False,
+            found_repository=None):
         """Return the branch object for a_bzrdir
 
         _found is a private parameter, do not use it. It is used to indicate
@@ -790,10 +797,12 @@ class LoomFormatMixin(object):
         transport = a_bzrdir.get_branch_transport(None)
         control_files = bzrlib.lockable_files.LockableFiles(
             transport, 'lock', bzrlib.lockdir.LockDir)
+        if found_repository is None:
+            found_repository = a_bzrdir.find_repository()
         return self._branch_class(_format=self,
                           _control_files=control_files,
                           a_bzrdir=a_bzrdir,
-                          _repository=a_bzrdir.find_repository(),
+                          _repository=found_repository,
                           ignore_fallbacks=ignore_fallbacks)
 
     def take_over(self, branch):
