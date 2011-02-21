@@ -409,6 +409,17 @@ class LoomSupport(object):
 
     nick = property(_loom_get_nick, _rename_thread)
 
+    def heads_to_fetch(self):
+        """See Branch.heads_to_fetch."""
+        must_fetch, should_fetch = super(LoomSupport, self).heads_to_fetch()
+        bzrlib.trace.mutter('must_fetch orig: %r', must_fetch)
+        bzrlib.trace.mutter('should_fetch orig: %r', should_fetch)
+        must_fetch.update(
+            thread_rev for thread_name, thread_rev, thread_parents in
+            self.get_loom_state().get_threads())
+        bzrlib.trace.mutter('must_fetch updated: %r', must_fetch)
+        return must_fetch, should_fetch
+
     @needs_read_lock
     def push(self, target, overwrite=False, stop_revision=None,
         _override_hook_source_branch=None):
