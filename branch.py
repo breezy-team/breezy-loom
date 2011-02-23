@@ -911,11 +911,15 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
 
     @classmethod
     def _get_branch_formats_to_test(klass):
+        try:
+            format_registry = getattr(bzrlib.branch, "format_registry")
+        except AttributeError: # bzr < 2.4
+            default_format = bzrlib.branch.BranchFormat._default_format
+        else:
+            default_format = format_registry.get_default()
         return [
-            (bzrlib.branch.BranchFormat._default_format,
-             BzrBranchLoomFormat7()),
-            (BzrBranchLoomFormat7(),
-             bzrlib.branch.BranchFormat._default_format),
+            (default_format, BzrBranchLoomFormat7()),
+            (BzrBranchLoomFormat7(), default_format),
             (BzrBranchLoomFormat7(), BzrBranchLoomFormat7()),
             ]
 
