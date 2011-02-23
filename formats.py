@@ -54,7 +54,13 @@ def register_formats():
             branch.BzrBranchLoomFormat6(),
             branch.BzrBranchLoomFormat7(),
             ]
-    map(_mod_branch.BranchFormat.register_format, branch_formats)
+    try:
+        format_registry = getattr(_mod_branch, 'format_registry')
+        register = format_registry.register
+    except AttributeError: # bzr < 2.4
+        register = _mod_branch.BranchFormat.register_format
+
+    map(register, branch_formats)
 
 
 def require_loom_branch(branch):
