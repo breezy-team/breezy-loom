@@ -30,6 +30,8 @@ import bzrlib.branch
 from bzrlib import bzrdir
 from bzrlib.decorators import needs_read_lock, needs_write_lock
 import bzrlib.errors
+import bzrlib.fetch
+import bzrlib.graph
 import bzrlib.osutils
 from bzrlib import remote, symbol_versioning
 import bzrlib.trace
@@ -411,13 +413,14 @@ class LoomSupport(object):
 
     def heads_to_fetch(self):
         """See Branch.heads_to_fetch."""
+        # The base implementation returns ([tip], tags)
         must_fetch, should_fetch = super(LoomSupport, self).heads_to_fetch()
-        bzrlib.trace.mutter('must_fetch orig: %r', must_fetch)
-        bzrlib.trace.mutter('should_fetch orig: %r', should_fetch)
+        # Add each thread's content to must_fetch
         must_fetch.update(
             thread_rev for thread_name, thread_rev, thread_parents in
             self.get_loom_state().get_threads())
-        bzrlib.trace.mutter('must_fetch updated: %r', must_fetch)
+        must_fetch.discard(EMPTY_REVISION)
+        must_fetch.discard(bzrlib.revision.NULL_REVISION)
         return must_fetch, should_fetch
 
     @needs_read_lock
@@ -602,7 +605,6 @@ class _Puller(object):
         return result
 
     def finish_result(self, result):
-        result.tag_conflicts = None
         result.new_revno, result.new_revid = self.target.last_revision_info()
 
     def do_hooks(self, result, run_hooks):
@@ -629,8 +631,9 @@ class _Puller(object):
             new_rev = self.source.last_revision()
         if new_rev == EMPTY_REVISION:
             new_rev = bzrlib.revision.NULL_REVISION
+        fetch_spec = self.build_fetch_spec(stop_revision)
         self.target.repository.fetch(self.source.repository,
-            revision_id=new_rev)
+            fetch_spec=fetch_spec)
         if not overwrite:
             new_rev_ancestry = self.source.repository.get_ancestry(
                 new_rev)
@@ -642,9 +645,19 @@ class _Puller(object):
                 raise bzrlib.errors.DivergedBranches(
                     self.target, self.source)
         self.target.generate_revision_history(new_rev)
+        result.tag_conflicts = self.source.tags.merge_to(self.target.tags)
         # get the final result object details
         self.do_hooks(result, run_hooks)
         return result
+
+    def build_fetch_spec(self, stop_revision):
+        factory = bzrlib.fetch.FetchSpecFactory()
+        factory.source_branch = self.source
+        factory.source_repo = self.source.repository
+        factory.source_branch_stop_revision_id = stop_revision
+        factory.target_repo = self.target.repository
+        factory.target_repo_kind = bzrlib.fetch.TargetRepoKinds.PREEXISTING
+        return factory.make_fetch_spec()
 
     def transfer(self, overwrite, stop_revision, run_hooks=True,
         possible_transports=None, _override_hook_target=None, local=False):
@@ -683,17 +696,10 @@ class _Puller(object):
                     source_state.get_basis_revision_id())
                 # stopping at from our repository.
                 revisions = [rev for name,rev in threads]
-                # for each thread from top to bottom, retrieve its referenced
-                # content. XXX FIXME: a revision_ids parameter to fetch would be
-                # nice here.
-                # the order is reversed because the common case is for the top
-                # thread to include all content.
-                for rev_id in reversed(revisions):
-                    if rev_id not in (EMPTY_REVISION,
-                        bzrlib.revision.NULL_REVISION):
-                        # fetch the loom content for this revision
-                        self.target.repository.fetch(self.source.repository,
-                            revision_id=rev_id)
+                # fetch content for all threads and tags.
+                fetch_spec = self.build_fetch_spec(stop_revision)
+                self.target.repository.fetch(self.source.repository,
+                    fetch_spec=fetch_spec)
                 # set our work threads to match (this is where we lose data if
                 # there are local mods)
                 my_state.set_threads(
@@ -710,6 +716,8 @@ class _Puller(object):
                 if new_rev == EMPTY_REVISION:
                     new_rev = bzrlib.revision.NULL_REVISION
                 self.target.generate_revision_history(new_rev)
+                # merge tags
+                result.tag_conflicts = self.source.tags.merge_to(self.target.tags)
                 self.do_hooks(result, run_hooks)
                 return result
             finally:
@@ -1025,6 +1033,8 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
                 self.target.set_parent(parent)
         if threads:
             self.target._set_nick(threads[-1][0])
+        if self.source._push_should_merge_tags():
+            self.source.tags.merge_to(self.target.tags)
 
     @needs_write_lock
     def pull(self, overwrite=False, stop_revision=None,
