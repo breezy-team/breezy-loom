@@ -818,7 +818,7 @@ class LoomFormatMixin(object):
             transport, 'lock', bzrlib.lockdir.LockDir)
         if found_repository is None:
             found_repository = a_bzrdir.find_repository()
-        return self._branch_class(_format=self,
+        return self._branch_class()(_format=self,
                           _control_files=control_files,
                           a_bzrdir=a_bzrdir,
                           _repository=found_repository,
@@ -855,7 +855,9 @@ class BzrBranchLoomFormat1(LoomFormatMixin, bzrlib.branch.BzrBranchFormat5):
     This format is new in the loom plugin.
     """
 
-    _branch_class = LoomBranch
+    def _branch_class(self):
+        return LoomBranch
+
     _parent_classs = bzrlib.branch.BzrBranchFormat5
 
     def get_format_string(self):
@@ -882,7 +884,9 @@ class BzrBranchLoomFormat6(LoomFormatMixin, bzrlib.branch.BzrBranchFormat6):
     This format is new in the loom plugin.
     """
 
-    _branch_class = LoomBranch6
+    def _branch_class(self):
+        return LoomBranch6
+
     _parent_classs = bzrlib.branch.BzrBranchFormat6
 
     def get_format_string(self):
@@ -909,7 +913,9 @@ class BzrBranchLoomFormat7(LoomFormatMixin, bzrlib.branch.BzrBranchFormat7):
     This format is new in the loom plugin.
     """
 
-    _branch_class = LoomBranch7
+    def _branch_class(self):
+        return LoomBranch7
+
     _parent_classs = bzrlib.branch.BzrBranchFormat7
 
     def get_format_string(self):
