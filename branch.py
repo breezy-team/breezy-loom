@@ -245,7 +245,7 @@ class LoomSupport(object):
         raise bzrlib.errors.UpgradeRequired(self.base)
 
     @needs_read_lock
-    def clone(self, to_bzrdir, revision_id=None, repository_policy=None):
+    def clone(self, to_bzrdir, revision_id=None, repository_policy=None, name=None):
         """Clone the branch into to_bzrdir.
         
         This differs from the base clone by cloning the loom, setting the
@@ -260,7 +260,7 @@ class LoomSupport(object):
             format = BzrBranchLoomFormat7()
         else:
             format = self._format
-        result = format.initialize(to_bzrdir)
+        result = format.initialize(to_bzrdir, name=name)
         if repository_policy is not None:
             repository_policy.configure_branch(result)
         bzrlib.branch.InterBranch.get(self, result).copy_content_into(
