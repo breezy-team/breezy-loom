@@ -22,9 +22,7 @@ import bzrlib.commands
 import bzrlib.branch
 from bzrlib import errors
 from bzrlib.lazy_import import lazy_import
-import bzrlib.merge
 from bzrlib.option import Option
-import bzrlib.revision
 import bzrlib.trace
 import bzrlib.transport
 
