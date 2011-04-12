@@ -47,6 +47,9 @@ import loom_state
 
 EMPTY_REVISION = 'empty:'
 
+# Required for compatibility with bzr < 2.4b2
+InventoryTree = getattr(bzrlib.tree, "InventoryTree", bzrlib.tree.Tree)
+
 
 def create_thread(loom, thread_name):
     """Create a thread in the branch loom called thread."""
@@ -150,7 +153,7 @@ class CannotCombineOnLastThread(NoLowerThread):
     _fmt = """Cannot combine threads on the bottom thread."""
 
 
-class LoomMetaTree(bzrlib.tree.Tree):
+class LoomMetaTree(InventoryTree):
     """A 'tree' object that is used to commit the loom meta branch."""
 
     def __init__(self, loom_meta_ie, loom_stream, loom_sha1):
