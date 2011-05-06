@@ -30,6 +30,7 @@ from bzrlib import (
     )
 from bzrlib.decorators import needs_write_lock
 import bzrlib.errors
+import bzrlib.merge
 import bzrlib.revision
 
 from branch import EMPTY_REVISION
