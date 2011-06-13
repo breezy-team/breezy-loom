@@ -814,7 +814,7 @@ class LoomFormatMixin(object):
             it is unused.
         """
         if not _found:
-            format = BranchFormat.find_format(a_bzrdir)
+            format = bzrlib.branch.BranchFormat.find_format(a_bzrdir)
             assert format.__class__ == self.__class__
         if name is not None:
             raise bzrlib.errors.NoColocatedBranchSupport(self)
