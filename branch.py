@@ -427,13 +427,15 @@ class LoomSupport(object):
         return must_fetch, should_fetch
 
     @needs_read_lock
-    def push(self, target, overwrite=False, stop_revision=None,
+    def push(self, target, overwrite=False, stop_revision=None, lossy=False,
         _override_hook_source_branch=None):
         # Not ideal, but see the issues raised on bazaar@lists.canonical.com
         # about the push api needing work.
         if not isinstance(target, LoomSupport):
             return super(LoomSupport, self).push(target, overwrite,
-                stop_revision, _override_hook_source_branch=None)
+                stop_revision, lossy=lossy, _override_hook_source_branch=None)
+        if lossy:
+            raise bzrlib.errors.LossyPushToSameVCS(self, target)
         return _Pusher(self, target).transfer(overwrite, stop_revision,
                                               run_hooks=True)
 
