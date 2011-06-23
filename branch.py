@@ -639,17 +639,8 @@ class _Puller(object):
         fetch_spec = self.build_fetch_spec(stop_revision)
         self.target.repository.fetch(self.source.repository,
             fetch_spec=fetch_spec)
-        if not overwrite:
-            new_rev_ancestry = self.source.repository.get_ancestry(
-                new_rev)
-            last_rev = self.target.last_revision()
-            # get_ancestry returns None for NULL_REVISION currently.
-            if last_rev == NULL_REVISION:
-                last_rev = None
-            if last_rev not in new_rev_ancestry:
-                raise bzrlib.errors.DivergedBranches(
-                    self.target, self.source)
-        self.target.generate_revision_history(new_rev)
+        self.target.generate_revision_history(new_rev, self.target.last_revision(),
+            self.source)
         result.tag_conflicts = self.source.tags.merge_to(self.target.tags)
         # get the final result object details
         self.do_hooks(result, run_hooks)
@@ -688,9 +679,9 @@ class _Puller(object):
                 if not overwrite:
                     # is the loom compatible?
                     if len(my_state.get_parents()) > 0:
-                        source_ancestry = self.source.repository.get_ancestry(
-                            source_loom_rev)
-                        if my_state.get_parents()[0] not in source_ancestry:
+                        graph = self.source.repository.get_graph()
+                        if not graph.is_ancestor(my_state.get_parents()[0],
+                                source_loom_rev):
                             raise bzrlib.errors.DivergedBranches(
                                 self.target, self.source)
                 # fetch the loom content
