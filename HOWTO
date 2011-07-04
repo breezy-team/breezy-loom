@@ -160,26 +160,54 @@ loom to the top thread.
        % bzr pull UPSTREAM-URL
 
 3. Now, integrate the changes from upstream into your loom by moving up through
-   your threads. When you go up a thread, bzr will automatically perform a
-   merge and you simply need to check that the merge came out correctly and
-   then commit it. If you are sure it has come out correctly, you can just
-   commit straight away. (Again, this will be made slicker and more automated
-   in the future). In our example, where we have ``compilation-fix`` in the
-   stack, its quite likely that upstream will cause regressions in new code
-   they are writing; so, before committing, it would be prudent to view a
-   detailed diff to see what changes they have made::
+   your threads using the ``up-thread`` command.  ``up-thread`` will
+   automatically perform a merge and commit for each thread in your loom,
+   moving up one thread at a time and stopping after it has committed to the
+   top thread::
 
        % bzr up-thread
+       All changes applied successfully.
+       Moved to thread 'compilation-fix'.
+       Committing to: /demo
+       Committed revision 140.
+       All changes applied successfully.
+       Moved to thread 'configure-update'.
+       Committing to: /demo
+       Committed revision 141.
+       All changes applied successfully.
+       Moved to thread 'debian'.
+       Committing to: /demo
+       Committed revision 142.
+
+   If you would prefer to commit the change to each thread yourself, instead of
+   letting ``up-thread`` perform this automatically, just specify the
+   ``--manual`` flag.  In this mode of operation, the merge will still happen
+   automatically, but you'll have the opportunity to inspect the changes before
+   committing them yourself.  Continue using ``up-thread`` and committing
+   until you've reached the top, or drop the ``--manual`` flag to automatically
+   perform the merge and commit on the remaining threads::
+
+       % bzr up-thread --manual
        All changes applied successfully.
        Moved to thread 'compilation-fix'.
        % bzr diff
        % bzr st
        % bzr commit -m 'New upstream release.'
+       Committing to: /demo
+       Committed revision 140.
+       % bzr up-thread
+       All changes applied successfully.
+       Moved to thread 'configure-update'.
+       Committing to: /demo
+       Committed revision 141.
+       All changes applied successfully.
+       Moved to thread 'debian'.
+       Committing to: /demo
+       Committed revision 142.
 
-4. Repeat the previous step to move up through the loom until you reach the
-   top. Once at the top, you are fully updated to upstream and you've adjusted
-   every thread to the new release. This is a good time to record your loom, so
-   that you can push a new release::
+4. Once at the top, you are fully updated to upstream and you've adjusted every
+   thread to the new release. This is a good time to record your loom, so that
+   you can push a new release::
 
        % bzr record "Update to 1.2."
 
