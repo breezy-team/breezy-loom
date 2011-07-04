@@ -29,10 +29,10 @@ Installation
 ============
 
 Loom is most easily installed by symlinking its source directory to
-~/.bazaar/plugins/loom. Alternatively you can install it for the entire machine
-using setup.py --install.
+``~/.bazaar/plugins/loom``. Alternatively you can install it for the entire
+machine using ``setup.py --install``.
 
-You can verify that loom is installed by running`` bzr plugins`` and looking
+You can verify that loom is installed by running ``bzr plugins`` and looking
 for loom in the output.
 
 
@@ -48,17 +48,17 @@ In this example I call the upstream 'upstream'. In your upstream branch run::
 This will convert your branch to a loom - at this point you will require the
 loom plugin to use bzr on it. It will also create a thread called 'upstream'.
 
-The bzr ``nick`` is used to index into the threads in the loom. The current
+The ``bzr nick`` is used to index into the threads in the loom. The current
 thread is the bzr nick for the branch and is recorded in commits as such. You
 can use ``bzr nick newname`` to change the name of a thread.
 
-If you do 'bzr push' to a new branch now, it will make the remote branch be a
+If you do ``bzr push`` to a new branch now, it will make the remote branch a
 loom as well. If you push to an existing normal bzr branch, then the current
 thread of your loom is what will be pushed. You can use this to publish
 individual threads for people that do not have the loom plugin.
 
 1. Now you can create another thread, which will represent the first patch
-you are building on top of the 'upstream'.
+you are building on top of the 'upstream'::
 
      % bzr create-thread "demo-patch"
  
@@ -67,7 +67,7 @@ it. You can see what thread you are on using::
 
      % bzr show-loom
 
-Look for the '=>' marker beside the thread you are on. The output represents
+Look for the ``=>`` marker beside the thread you are on. The output represents
 a stack of threads - at the top is the thread you are working towards, below
 that are the threads that it depends upon. At the very bottom is the thread
 that represents the upstream release being built upon.
@@ -98,24 +98,24 @@ as makes sense. For instance, if you are a debian maintainer with the following 
 
 And you have received a bug report with patch which corrects a typographical
 error in the manual, you could put this in one of the existing threads - but
-none fit that well. You could put it above the debian thread, but it does not
-depend on the debian thread, and the debian thread *does* depend on it,
-because the debian thread represents what you will be uploading to the distro.
-You could put it above the configure update, or the 64-bit compilation fix, or
-right above upstream.
+none fit that well. You could put it above the ``debian`` thread, but it does
+not depend on the ``debian`` thread, and the ``debian`` thread *does* depend on
+it, because the ``debian`` thread represents what you will be uploading to the
+distro. You could put it above the configure update, or the 64-bit compilation
+fix, or right above upstream.
 
 So where to put it?
 
 If none of the threads are in the process of being merged into upstream, and
 this is something you plan to send upstream immediately then
-the best place for this new thread is probably right next to upstream.
+the best place for this new thread is probably right next to ``upstream``.
 On the other hand, if the fix-64 bit and update-configure threads are already
 in the process of being merged into upstream, then the best place for the new
 thread is after the update configure thread.
 
-To create the thread after the update-configure thread, use down-thread once
-to switch to the update configure script thread, and then invoke
-create-thread::
+To create the thread after the update-configure thread, use ``down-thread``
+once to switch to the update configure script thread, and then invoke
+``create-thread``::
 
     % bzr down-thread
     % bzr create-thread documentation-fixes
@@ -146,9 +146,10 @@ operation)::
       fix 64-bit compilation
     =>upstream
 
-1. Now pull the new upstream release. You can use bzr pull or bzr merge for
-this, depending on whether you want the upstream branch to be a clone of the
-upstreams branch, or to reflect the times that you have updated to upstream::
+1. Now pull the new upstream release. You can use ``bzr pull`` or ``bzr merge``
+for this, depending on whether you want the ``upstream`` branch to be a clone
+of the upstreams branch, or to reflect the times that you have updated to
+upstream::
 
     % bzr pull UPSTREAM-URL
 
@@ -182,7 +183,7 @@ When upstream have merged a patch
 When you are doing an update to upstream and they have merged a patch, your
 thread will suddenly lose all its changes. Lets say in the example above that
 upstream have merged the autoconf update. When you are updating that thread,
-add in a call to ``diff -r below:`` and you will see no changes.
+add in a call to ``diff -r below:`` and you will see no changes::
 
     % bzr up-thread
     All changes applied successfully.
@@ -212,7 +213,7 @@ Showing a single patch
 ----------------------
 
 You can show a single patch without knowing the names of other threads by using
-the below: and thread: revision specifiers::
+the ``below:`` and ``thread:`` revision specifiers::
 
     % bzr show-loom
       debian
