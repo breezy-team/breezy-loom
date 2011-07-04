@@ -21,8 +21,9 @@ A quick guide to using looms
 Overview
 ========
 
-Loom is used to build up a new version of a source tree on top of an upstream
-version. 
+Loom is a Bazaar plugin to assist in developing focused patches. It adds a
+'loom' to a bzr branch. A loom allows the development of multiple patches at
+once, while still giving each patch a branch of its own.
 
 
 Installation
