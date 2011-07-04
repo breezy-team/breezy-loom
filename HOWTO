@@ -30,8 +30,8 @@ Installation
 ============
 
 Loom is most easily installed by symlinking its source directory to
-``~/.bazaar/plugins/loom``. Alternatively you can install it for the entire
-machine using ``setup.py --install``.
+``~/.bazaar/plugins/loom``. Alternatively, you can install it for the entire
+machine using ``python setup.py --install``.
 
 You can verify that loom is installed by running ``bzr plugins`` and looking
 for loom in the output.
@@ -40,49 +40,53 @@ for loom in the output.
 Getting Started
 ===============
 
-1. The first thing to do is to convert a upstream version branch into a loom.
-In this example I call the upstream 'upstream'. In your upstream branch run::
+1. First, convert an upstream version branch into a loom. In this example, I
+   call the upstream branch ``upstream``. In your upstream branch, run::
 
-     % bzr nick upstream
-     % bzr loomify
+       % bzr nick upstream
+       % bzr loomify
 
-This will convert your branch to a loom - at this point you will require the
-loom plugin to use bzr on it. It will also create a thread called 'upstream'.
+   This will convert your branch to a loom - from this point forward the loom
+   plugin is required to work on this branch. It will also create a thread
+   called ``upstream``, which will act as a pristine branch to track the
+   upstream code.
 
-The ``bzr nick`` is used to index into the threads in the loom. The current
-thread is the bzr nick for the branch and is recorded in commits as such. You
-can use ``bzr nick newname`` to change the name of a thread.
+   The ``bzr nick`` is used to index into the threads in the loom. The current
+   thread is the bzr nick for the branch and is recorded in commits as such.
+   You can use ``bzr nick newname`` to change the name of a thread.
 
-If you do ``bzr push`` to a new branch now, it will make the remote branch a
-loom as well. If you push to an existing normal bzr branch, then the current
-thread of your loom is what will be pushed. You can use this to publish
-individual threads for people that do not have the loom plugin.
+   If you ``bzr push`` to a new branch now, it will make the remote branch a
+   loom, as well. However, if you push to an existing, normal bzr branch, then
+   the current thread of your loom is what will be pushed. You can use this to
+   publish individual threads for people that do not have the loom plugin.
 
-1. Now you can create another thread, which will represent the first patch
-you are building on top of the 'upstream'::
+2. Now you can create another thread, which will represent the first patch you
+   are building on top of the upstream code::
 
-     % bzr create-thread "demo-patch"
- 
-This creates the new thread after your current thread, and switches you onto
-it. You can see what thread you are on using::
+       % bzr create-thread "demo-patch"
 
-     % bzr show-loom
+   This creates a new thread, named ``demo-patch``, above your current thread
+   and switches you onto the new thread. You can see which thread you are
+   currently on using the ``show-loom`` command::
 
-Look for the ``=>`` marker beside the thread you are on. The output represents
-a stack of threads - at the top is the thread you are working towards, below
-that are the threads that it depends upon. At the very bottom is the thread
-that represents the upstream release being built upon.
- 
+       % bzr show-loom
+       =>demo-patch
+       upstream
+
+   The output represents a stack of threads, with the ``=>`` marker indicating
+   the current thread. At the top of the thread stack is the thread you are
+   working towards, below that are the threads that it depends upon, and at the
+   bottom is the thread that represents the upstream code being built upon.
+
 
 Working with the loom
 =====================
 
-
 You can now work with the thread you are in just like a normal bzr branch -
 you can pull work from a normal branch into it, perform commits, uncommits,
-look at bzr log etc. There are however additional commands that you can use -
-they are covered in the following sections. For more information on them, use
-``bzr help command-name``.
+look at bzr log, etc. There are, however, additional commands that the loom
+plugin provides - they are covered in the following sections. For more
+information on them, use ``bzr help command-name``.
 
 
 Starting a new patch
@@ -90,33 +94,34 @@ Starting a new patch
 
 When you make a new patch, you need to decide where in the loom it should go.
 Best practice is to put the thread for this new patch as close to the upstream
-as makes sense. For instance, if you are a debian maintainer with the following loom::
+as makes sense. For instance, if you are a Debian maintainer with the following
+loom::
 
- =>debian
-   update configure for 2.59
-   fix 64-bit compilation
-   upstream
+    =>debian
+      configure-update
+      compilation-fix
+      upstream
 
-And you have received a bug report with patch which corrects a typographical
+...and you have received a bug report and patch that corrects a typographical
 error in the manual, you could put this in one of the existing threads - but
 none fit that well. You could put it above the ``debian`` thread, but it does
-not depend on the ``debian`` thread, and the ``debian`` thread *does* depend on
-it, because the ``debian`` thread represents what you will be uploading to the
-distro. You could put it above the configure update, or the 64-bit compilation
-fix, or right above upstream.
+not depend on the ``debian`` thread; however, the ``debian`` thread *does*
+depend on it, because the ``debian`` thread represents what you will be
+uploading to the distro. You could put it above ``configure-update``, above
+``compilation-fix``, or right above ``upstream``.
 
-So where to put it?
+So, where should you put this new thread?
 
 If none of the threads are in the process of being merged into upstream, and
-this is something you plan to send upstream immediately then
-the best place for this new thread is probably right next to ``upstream``.
-On the other hand, if the fix-64 bit and update-configure threads are already
-in the process of being merged into upstream, then the best place for the new
-thread is after the update configure thread.
+this is something you plan to send upstream immediately, then the best place
+for this new thread is probably directly above ``upstream``. On the other hand,
+if the ``compilation-fix`` and ``configure-update`` threads are already in the
+process of being merged into upstream, then the best place for the new thread
+is directly above the ``configure-update`` thread.
 
-To create the thread after the update-configure thread, use ``down-thread``
-once to switch to the update configure script thread, and then invoke
-``create-thread``::
+To create a new thread above the ``configure-update`` thread, use the
+``down-thread`` command once to switch to the ``configure-update`` thread, and
+then invoke ``create-thread``::
 
     % bzr down-thread
     % bzr create-thread documentation-fixes
@@ -124,7 +129,7 @@ once to switch to the update configure script thread, and then invoke
 Now you can apply the patch and commit it::
 
     % patch -0 < doco-fix.patch
-    % bzr commit 
+    % bzr commit
 
 
 Updating to a new upstream version
@@ -132,81 +137,82 @@ Updating to a new upstream version
 
 When upstream makes a new release, you need to bring their changes into your
 baseline thread - the bottom thread, and then merge the changes up through your
-loom to the top thread. 
+loom to the top thread.
 
-1. Firstly, use ``down-thread`` repeatedly to move down to the bottom thread
-of the loom (this will be made easier in the future with an automatic mode of
-operation)::
+1. First, use ``down-thread`` repeatedly to move down to the bottom thread of
+   the loom (this will be made easier in the future with an automatic mode of
+   operation)::
 
-    % bzr down-thread
-    % bzr down-thread
-    % bzr down-thread
-    % bzr show-loom
-      debian
-      update configure for 2.59
-      fix 64-bit compilation
-    =>upstream
+       % bzr down-thread
+       % bzr down-thread
+       % bzr down-thread
+       % bzr show-loom
+         debian
+         configure-update
+         compilation-fix
+       =>upstream
 
-1. Now pull the new upstream release. You can use ``bzr pull`` or ``bzr merge``
-for this, depending on whether you want the ``upstream`` branch to be a clone
-of the upstreams branch, or to reflect the times that you have updated to
-upstream::
+2. Next, pull the new upstream release. You can use ``bzr pull`` or ``bzr
+   merge`` for this, depending on whether you want the ``upstream`` branch to
+   be a clone of the upstream branch you are tracking, or to reflect the times
+   that you have updated to upstream::
 
-    % bzr pull UPSTREAM-URL
+       % bzr pull UPSTREAM-URL
 
-1. Integrating the changes from upstream into your loom is straightforward
-now. When you go up a thread bzr will automatically perform a merge, and you
-simply need to check that the merge came out correctly and then commit it. If
-you are sure it has come out correctly, you can just commit straight away.
-(Again, this will be made slicker and more automated in the future). In our
-example, where we have 64-bit bugfixes in the stack, its quite likely that
-upstream will cause regressions in new code they are writing, so I'd be
-inclined to do a detailed diff to see what changes they have brought in...::
+3. Now, integrate the changes from upstream into your loom by moving up through
+   your threads. When you go up a thread, bzr will automatically perform a
+   merge and you simply need to check that the merge came out correctly and
+   then commit it. If you are sure it has come out correctly, you can just
+   commit straight away. (Again, this will be made slicker and more automated
+   in the future). In our example, where we have ``compilation-fix`` in the
+   stack, its quite likely that upstream will cause regressions in new code
+   they are writing; so, before committing, it would be prudent to view a
+   detailed diff to see what changes they have made::
+
+       % bzr up-thread
+       All changes applied successfully.
+       Moved to thread 'compilation-fix'.
+       % bzr diff
+       % bzr st
+       % bzr commit -m 'New upstream release.'
+
+4. Repeat the previous step to move up through the loom until you reach the
+   top. Once at the top, you are fully updated to upstream and you've adjusted
+   every thread to the new release. This is a good time to record your loom, so
+   that you can push a new release::
+
+       % bzr record "Update to 1.2."
+
+
+After upstream has merged your patch
+------------------------------------
+
+When you are performing an update to upstream and they have merged your patch,
+your thread will suddenly lose all its changes. Lets say in the example above
+that upstream has merged your changes in the ``configure-update`` thread. When
+you update to that thread, a call to ``diff -r below:`` will show no changes::
 
     % bzr up-thread
     All changes applied successfully.
-    Moved to thread 'fix 64-bit compilation'.
-    % bzr diff 
-    % bzr st
-    % bzr commit -m 'New upstream release.'
-
-1. Just repeat these steps to move up through the loom to the top. Once you
-reach the top, you are fully updated to upstream, and you've adjusted every
-thread to the new release. This is a good time to record your loom, so that
-you can push the new release::
-
-    % bzr record "Update to 1.2."
-
-
-When upstream have merged a patch
----------------------------------
-
-When you are doing an update to upstream and they have merged a patch, your
-thread will suddenly lose all its changes. Lets say in the example above that
-upstream have merged the autoconf update. When you are updating that thread,
-add in a call to ``diff -r below:`` and you will see no changes::
-
-    % bzr up-thread
-    All changes applied successfully.
-    Moved to thread 'update configure for 2.59'.
+    Moved to thread 'configure-update'.
     % bzr diff -r thread:
 
 Because there are no changes to the thread below, this thread has been fully
-merged, and unless you are planning further configure changes, you don't need
-it in your stack anymore. The way to remove it is to use ``combine-thread``.
-``combine-thread`` is the reverse of ``create-thread`` - where
+merged.  Unless you are planning further configure changes, you don't need it
+in your stack anymore. You remove a thread using the ``combine-thread``
+command. ``combine-thread`` is the reverse of ``create-thread`` - where
 ``create-thread`` makes a new thread above the current one, ``combine-thread``
-combines the current thread into the one below it.::
+combines the current thread into the one below it::
 
     % bzr show-loom
       debian
-    =>update configure for 2.59
-      fix 64-bit compilation
+    =>configure-update
+      compilation-fix
       upstream
     % bzr combine-thread
     % bzr show-loom
       debian
-    =>fix 64-bit compilation
+    =>compilation-fix
       upstream
 
 
@@ -218,6 +224,6 @@ the ``below:`` and ``thread:`` revision specifiers::
 
     % bzr show-loom
       debian
-    =>update-configure
+    =>configure-update
       upstream
-    % bzr diff -r below:update-configure..thread:update-configure
+    % bzr diff -r below:configure-update..thread:configure-update
