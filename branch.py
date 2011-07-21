@@ -467,7 +467,7 @@ class LoomSupport(object):
             builder.record_entry_contents(root_ie, [], '', loom_tree,
                 ('directory', None, None, None))
         builder.record_entry_contents(
-            loom_ie, parents, 'loom', loom_tree,
+            loom_ie, list(self.repository.iter_inventories(parents)), 'loom', loom_tree,
             # a fake contents so that the file is determined as changed.
             ('file', 0, False, None))
         builder.finish_inventory()
