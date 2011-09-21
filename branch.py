@@ -641,7 +641,11 @@ class _Puller(object):
             fetch_spec=fetch_spec)
         self.target.generate_revision_history(new_rev, self.target.last_revision(),
             self.source)
-        result.tag_conflicts = self.source.tags.merge_to(self.target.tags)
+        tag_ret = self.source.tags.merge_to(self.target.tags)
+        if isinstance(tag_ret, tuple):
+            result.tag_updates, result.tag_conflicts = tag_ret
+        else:
+            result.tag_conflicts = tag_ret
         # get the final result object details
         self.do_hooks(result, run_hooks)
         return result
@@ -713,7 +717,11 @@ class _Puller(object):
                     new_rev = bzrlib.revision.NULL_REVISION
                 self.target.generate_revision_history(new_rev)
                 # merge tags
-                result.tag_conflicts = self.source.tags.merge_to(self.target.tags)
+                tag_ret = self.source.tags.merge_to(self.target.tags)
+                if isinstance(tag_ret, tuple):
+                    result.tag_updates, tag_conflicts = tag_ret
+                else:
+                    result.tag_conflicts = tag_ret
                 self.do_hooks(result, run_hooks)
                 return result
             finally:
