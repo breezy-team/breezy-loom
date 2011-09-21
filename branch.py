@@ -267,7 +267,7 @@ class LoomSupport(object):
             revision_id=revision_id)
         return result
 
-    def _get_checkout_format(self):
+    def _get_checkout_format(self, lightweight=False):
         """Checking out a Loom gets a regular branch for now.
         
         This is a short term measure to get to an all-tests passing status.
@@ -764,17 +764,25 @@ class LoomFormatMixin(object):
     # A mixin is not ideal because it is tricky to test, but it seems to be the
     # best solution for now.
 
-    def initialize(self, a_bzrdir, name=None, repository=None):
+    def initialize(self, a_bzrdir, name=None, repository=None,
+                   append_revisions_only=None):
         """Create a branch of this format in a_bzrdir."""
         if name is not None:
             raise bzrlib.errors.NoColocatedBranchSupport(self)
-        if repository is None:
+        if repository is None and append_revisions_only is None:
             super(LoomFormatMixin, self).initialize(a_bzrdir, name=None)
-        else:
+        elif append_revisions_only is None:
             # The 'repository' optional keyword arg is new in bzr 2.3, so don't
             # pass it unless it was passed in.
             super(LoomFormatMixin, self).initialize(a_bzrdir, name=None,
                     repository=repository)
+        else:
+            # The 'append_revisions_only' optional keyword arg is new in bzr 
+            # 2.4, so don't  pass it unless it was passed in.
+            super(LoomFormatMixin, self).initialize(a_bzrdir, name=None,
+                    repository=repository,
+                    append_revisions_only=append_revisions_only)
+
         branch_transport = a_bzrdir.get_branch_transport(self)
         files = []
         state = loom_state.LoomState()
