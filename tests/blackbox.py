@@ -596,7 +596,9 @@ class TestBranch(TestsWithLooms):
         tree.branch.record_loom('commit loom.')
         out, err = self.run_bzr(['branch', 'source', 'target'])
         self.assertEqual('', out)
-        self.assertEqual('Branched 1 revision(s).\n', err)
+        self.assertTrue(
+            err == 'Branched 1 revision(s).\n' or
+            err == 'Branched 1 revision.\n')
         # lower level tests check behaviours, just check show-loom as a smoke
         # test.
         out, err = self.run_bzr(['show-loom', 'target'])
