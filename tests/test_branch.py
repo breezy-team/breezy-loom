@@ -338,11 +338,8 @@ class TestLoom(TestCaseWithLoom):
         if source_threads:
             source_tree.branch.generate_revision_history(source_threads[-1][1])
         self.assertEqual(
-            source_tree.branch.revision_history(),
-            target_tree.branch.revision_history())
-        self.assertEqual(
-            source_tree.branch.last_revision(),
-            target_tree.last_revision())
+            source_tree.branch.last_revision_info(),
+            target_tree.branch.last_revision_info())
 
     def test_pull_loom_at_bottom(self):
         """Pulling from a loom when in the bottom warp pulls all warps."""
