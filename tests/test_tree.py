@@ -97,9 +97,14 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.down_thread()
         # check the test will be valid
-        self.assertEqual([None, bottom_rev1, top_rev1],
-            tree.branch.repository.get_ancestry(top_rev1))
-        self.assertEqual([bottom_rev1], tree.get_parent_ids())
+        tree.lock_read()
+        try:
+            graph = tree.branch.repository.get_graph()
+            self.assertEqual([top_rev1, bottom_rev1, NULL_REVISION],
+                [r for (r, ps) in graph.iter_ancestry([top_rev1])])
+            self.assertEqual([bottom_rev1], tree.get_parent_ids())
+        finally:
+            tree.unlock()
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
         self.assertEqual([top_rev1], tree.get_parent_ids())
@@ -116,9 +121,14 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.down_thread()
         # check the test will be valid
-        self.assertEqual([None, bottom_rev1, top_rev1],
-            tree.branch.repository.get_ancestry(top_rev1))
-        self.assertEqual([bottom_rev1], tree.get_parent_ids())
+        tree.lock_read()
+        try:
+            graph = tree.branch.repository.get_graph()
+            self.assertEqual([top_rev1, bottom_rev1, NULL_REVISION],
+                [r for (r, ps) in graph.iter_ancestry([top_rev1])])
+            self.assertEqual([bottom_rev1], tree.get_parent_ids())
+        finally:
+            tree.unlock()
         bottom_rev2 = tree.commit('bottom_two', allow_pointless=True)
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
