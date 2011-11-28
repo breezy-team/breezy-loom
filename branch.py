@@ -810,7 +810,7 @@ class LoomFormatMixin(object):
         return self.open(a_bzrdir, _found=True, )
 
     def open(self, a_bzrdir, name=None, _found=False, ignore_fallbacks=False,
-            found_repository=None):
+            found_repository=None, possible_transports=None):
         """Return the branch object for a_bzrdir
 
         _found is a private parameter, do not use it. It is used to indicate
