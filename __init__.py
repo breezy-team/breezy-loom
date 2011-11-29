@@ -89,8 +89,23 @@ else:
     commands.cmd_switch._original_command = bzrlib.commands.register_command(
         getattr(commands, 'cmd_switch'), True)
 
-commands.cmd_status._original_command = bzrlib.commands.register_command(
-    commands.cmd_status, True)
+try:
+    from bzrlib.hooks import install_lazy_named_hook
+except ImportError: # bzr < 2.4
+    # no post_status hook. Fall back to overriding the status command
+    commands.cmd_status._original_command = bzrlib.commands.register_command(
+        commands.cmd_status, True)
+else:
+    def show_loom_summary(params):
+        try:
+            formats.require_loom_branch(params.new_tree.branch)
+        except formats.NotALoom:
+            return
+        params.to_file.write('Current thread: %s\n' %
+            params.new_tree.branch.nick)
+
+    install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
+        show_loom_summary, 'loom status')
 
 revspec_registry = getattr(bzrlib.revisionspec, 'revspec_registry', None)
 if revspec_registry is not None:
