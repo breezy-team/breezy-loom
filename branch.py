@@ -24,31 +24,36 @@ be specific to loom, to ensure people have the loom plugin when working on a
 loom branch.
 """
 
+from __future__ import absolute_import
+
 from StringIO import StringIO
 
 import bzrlib.branch
-from bzrlib import bzrdir
+from bzrlib import (
+    bzrdir,
+    errors,
+    fetch as _mod_fetch,
+    remote,
+    symbol_versioning,
+    trace,
+    tree as _mod_tree,
+    ui,
+    urlutils,
+    )
 from bzrlib.decorators import needs_read_lock, needs_write_lock
-import bzrlib.errors
-import bzrlib.fetch
-import bzrlib.graph
-import bzrlib.osutils
-from bzrlib import remote, symbol_versioning
-import bzrlib.trace
-import bzrlib.ui
 from bzrlib.revision import is_null, NULL_REVISION
-import bzrlib.tree
-import bzrlib.urlutils
 
-import formats
-import loom_io
-import loom_state
+from bzrlib.plugins.loom import (
+    formats,
+    loom_io,
+    loom_state,
+    )
 
 
 EMPTY_REVISION = 'empty:'
 
 # Required for compatibility with bzr < 2.4b2
-InventoryTree = getattr(bzrlib.tree, "InventoryTree", bzrlib.tree.Tree)
+InventoryTree = getattr(_mod_tree, "InventoryTree", _mod_tree.Tree)
 
 
 def create_thread(loom, thread_name):
@@ -62,12 +67,12 @@ def create_thread(loom, thread_name):
         loom.unlock()
 
 
-class AlreadyLoom(bzrlib.errors.BzrError):
+class AlreadyLoom(errors.BzrError):
 
     _fmt = """Loom %(loom)s is already a loom."""
 
     def __init__(self, loom):
-        bzrlib.errors.BzrError.__init__(self)
+        errors.BzrError.__init__(self)
         self.loom = loom
 
 
@@ -101,26 +106,26 @@ require_loom_branch = formats.require_loom_branch
 NotALoom = formats.NotALoom
 
 
-class LoomThreadError(bzrlib.errors.BzrError):
+class LoomThreadError(errors.BzrError):
     """Base class for Loom-Thread errors."""
 
     def __init__(self, branch, thread):
-        bzrlib.errors.BzrError.__init__(self)
+        errors.BzrError.__init__(self)
         self.branch = branch
         self.thread = thread
 
 
-class UnrecordedRevision(bzrlib.errors.BzrError):
+class UnrecordedRevision(errors.BzrError):
 
     _fmt = """The revision %(revision_id)s is not recorded in the loom %(branch)s."""
 
     def __init__(self, branch, revision_id):
-        bzrlib.errors.BzrError.__init__(self)
+        errors.BzrError.__init__(self)
         self.branch = branch
         self.revision_id = revision_id
 
 
-class UnsupportedBranchFormat(bzrlib.errors.BzrError):
+class UnsupportedBranchFormat(errors.BzrError):
 
     _fmt = """The branch format %(format)s is not supported by loomify."""
 
@@ -143,7 +148,7 @@ class NoSuchThread(LoomThreadError):
     _fmt = """No such thread '%(thread)s'."""
 
 
-class NoLowerThread(bzrlib.errors.BzrError):
+class NoLowerThread(errors.BzrError):
 
     _fmt = """No lower thread exists."""
 
@@ -242,7 +247,7 @@ class LoomSupport(object):
         :type other: Branch
         """
         # Looms are not currently bindable.
-        raise bzrlib.errors.UpgradeRequired(self.base)
+        raise errors.UpgradeRequired(self.base)
 
     @needs_read_lock
     def clone(self, to_bzrdir, revision_id=None, repository_policy=None, name=None):
@@ -287,7 +292,7 @@ class LoomSupport(object):
     def get_old_bound_location(self):
         """Return the URL of the branch we used to be bound to."""
         # No binding for looms yet.
-        raise bzrlib.errors.UpgradeRequired(self.base)
+        raise errors.UpgradeRequired(self.base)
 
     def get_threads(self, rev_id):
         """Return the threads from a loom revision.
@@ -313,14 +318,14 @@ class LoomSupport(object):
         threads = self.get_loom_state().get_threads()
         for thread_name, thread_revision, _parents in threads:
             thread_transport = root_transport.clone(thread_name)
-            user_location = bzrlib.urlutils.unescape_for_display(
+            user_location = urlutils.unescape_for_display(
                 thread_transport.base, 'utf-8')
             try:
                 control_dir = bzrdir.BzrDir.open(thread_transport.base,
                     possible_transports=[thread_transport])
                 tree, branch = control_dir._get_tree_branch()
-            except bzrlib.errors.NotBranchError:
-                bzrlib.trace.note('Creating branch at %s' % user_location)
+            except errors.NotBranchError:
+                trace.note('Creating branch at %s' % user_location)
                 branch = bzrdir.BzrDir.create_branch_convenience(
                     thread_transport.base,
                     possible_transports=[thread_transport])
@@ -328,11 +333,11 @@ class LoomSupport(object):
                     thread_transport.base)
             else:
                 if thread_revision == branch.last_revision():
-                    bzrlib.trace.note('Skipping up-to-date branch at %s'
+                    trace.note('Skipping up-to-date branch at %s'
                                       % user_location)
                     continue
                 else:
-                    bzrlib.trace.note('Updating branch at %s' % user_location)
+                    trace.note('Updating branch at %s' % user_location)
             if tree is not None:
                 tree.pull(self, stop_revision=thread_revision)
             else:
@@ -435,7 +440,7 @@ class LoomSupport(object):
             return super(LoomSupport, self).push(target, overwrite,
                 stop_revision, lossy=lossy, _override_hook_source_branch=None)
         if lossy:
-            raise bzrlib.errors.LossyPushToSameVCS(self, target)
+            raise errors.LossyPushToSameVCS(self, target)
         return _Pusher(self, target).transfer(overwrite, stop_revision,
                                               run_hooks=True)
 
@@ -451,7 +456,7 @@ class LoomSupport(object):
         threads = state.get_threads()
         # check the semantic value, not the serialised value for equality.
         if old_threads == threads:
-            raise bzrlib.errors.PointlessCommit
+            raise errors.PointlessCommit
         builder = self.get_commit_builder(parents)
         loom_ie = bzrlib.inventory.make_entry(
             'file', 'loom', bzrlib.inventory.ROOT_ID, 'loom_meta_tree')
@@ -651,21 +656,21 @@ class _Puller(object):
         return result
 
     def build_fetch_spec(self, stop_revision):
-        factory = bzrlib.fetch.FetchSpecFactory()
+        factory = _mod_fetch.FetchSpecFactory()
         factory.source_branch = self.source
         factory.source_repo = self.source.repository
         factory.source_branch_stop_revision_id = stop_revision
         factory.target_repo = self.target.repository
-        factory.target_repo_kind = bzrlib.fetch.TargetRepoKinds.PREEXISTING
+        factory.target_repo_kind = _mod_fetch.TargetRepoKinds.PREEXISTING
         return factory.make_fetch_spec()
 
     def transfer(self, overwrite, stop_revision, run_hooks=True,
         possible_transports=None, _override_hook_target=None, local=False):
         """Implementation of push and pull"""
         if local:
-            raise bzrlib.errors.LocalRequiresBoundBranch()
+            raise errors.LocalRequiresBoundBranch()
         # pull the loom, and position our
-        pb = bzrlib.ui.ui_factory.nested_progress_bar()
+        pb = ui.ui_factory.nested_progress_bar()
         try:
             result = self.prepare_result(_override_hook_target)
             self.target.lock_write()
@@ -686,7 +691,7 @@ class _Puller(object):
                         graph = self.source.repository.get_graph()
                         if not graph.is_ancestor(my_state.get_parents()[0],
                                 source_loom_rev):
-                            raise bzrlib.errors.DivergedBranches(
+                            raise errors.DivergedBranches(
                                 self.target, self.source)
                 # fetch the loom content
                 self.target.repository.fetch(self.source.repository,
@@ -776,7 +781,7 @@ class LoomFormatMixin(object):
                    append_revisions_only=None):
         """Create a branch of this format in a_bzrdir."""
         if name is not None:
-            raise bzrlib.errors.NoColocatedBranchSupport(self)
+            raise errors.NoColocatedBranchSupport(self)
         if repository is None and append_revisions_only is None:
             super(LoomFormatMixin, self).initialize(a_bzrdir, name=None)
         elif append_revisions_only is None:
@@ -824,7 +829,7 @@ class LoomFormatMixin(object):
             format = bzrlib.branch.BranchFormat.find_format(a_bzrdir)
             assert format.__class__ == self.__class__
         if name is not None:
-            raise bzrlib.errors.NoColocatedBranchSupport(self)
+            raise errors.NoColocatedBranchSupport(self)
         transport = a_bzrdir.get_branch_transport(None)
         control_files = bzrlib.lockable_files.LockableFiles(
             transport, 'lock', bzrlib.lockdir.LockDir)
@@ -1015,7 +1020,7 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
             # pull in the warp, which was skipped during the initial pull
             # because the front end does not know what to pull.
             # nb: this is mega huge hacky. THINK. RBC 2006062
-            nested = bzrlib.ui.ui_factory.nested_progress_bar()
+            nested = ui.ui_factory.nested_progress_bar()
             try:
                 if parents:
                     self.target.repository.fetch(self.source.repository,
@@ -1048,8 +1053,8 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
             self.source._synchronize_history(self.target, revision_id)
         try:
             parent = self.source.get_parent()
-        except bzrlib.errors.InaccessibleParent, e:
-            bzrlib.trace.mutter('parent was not accessible to copy: %s', e)
+        except errors.InaccessibleParent, e:
+            trace.mutter('parent was not accessible to copy: %s', e)
         else:
             if parent:
                 self.target.set_parent(parent)
