@@ -15,6 +15,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 #
 
+from __future__ import absolute_import
+
 """Format information about formats for Loom.
 
 This is split out from the implementation of the formats to permit lazy

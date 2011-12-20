@@ -15,6 +15,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 # 
 
+from __future__ import absolute_import
+
 """Loom is a bzr plugin which adds new commands to manage a loom of patches.
 
 Loom adds the following new commands:
@@ -55,14 +57,16 @@ thread. See ``bzr help revisionspec`` for the detailed help on these two
 revision specifiers.
 """
 
-from version import bzr_plugin_version as version_info
+from bzrlib.plugins.loom.version import bzr_plugin_version as version_info
 
 import bzrlib.builtins
 import bzrlib.commands
 import bzrlib.revisionspec
 
-import commands
-import formats
+from bzrlib.plugins.loom import (
+    commands,
+    formats,
+    )
 
 
 for command in [

@@ -17,6 +17,8 @@
 
 """Loom commands."""
 
+from __future__ import absolute_import
+
 from bzrlib import bzrdir, directory_service, workingtree
 import bzrlib.commands
 import bzrlib.branch
@@ -26,11 +28,11 @@ from bzrlib.option import Option
 import bzrlib.trace
 import bzrlib.transport
 
-import formats
+from bzrlib.plugins.loom import formats
 
 lazy_import(globals(), """
-import branch
-from tree import LoomTreeDecorator
+from bzrlib.plugins.loom import branch
+from bzrlib.plugins.loom.tree import LoomTreeDecorator
 """)
 
 
