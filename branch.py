@@ -780,19 +780,17 @@ class LoomFormatMixin(object):
     def initialize(self, a_bzrdir, name=None, repository=None,
                    append_revisions_only=None):
         """Create a branch of this format in a_bzrdir."""
-        if name is not None:
-            raise errors.NoColocatedBranchSupport(self)
         if repository is None and append_revisions_only is None:
-            super(LoomFormatMixin, self).initialize(a_bzrdir, name=None)
+            super(LoomFormatMixin, self).initialize(a_bzrdir, name=name)
         elif append_revisions_only is None:
             # The 'repository' optional keyword arg is new in bzr 2.3, so don't
             # pass it unless it was passed in.
-            super(LoomFormatMixin, self).initialize(a_bzrdir, name=None,
+            super(LoomFormatMixin, self).initialize(a_bzrdir, name=name,
                     repository=repository)
         else:
             # The 'append_revisions_only' optional keyword arg is new in bzr 
             # 2.4, so don't  pass it unless it was passed in.
-            super(LoomFormatMixin, self).initialize(a_bzrdir, name=None,
+            super(LoomFormatMixin, self).initialize(a_bzrdir, name=name,
                     repository=repository,
                     append_revisions_only=append_revisions_only)
 
@@ -808,11 +806,11 @@ class LoomFormatMixin(object):
             branch_transport, 'lock', bzrlib.lockdir.LockDir)
         control_files.lock_write()
         try:
-            for name, stream in files:
-                branch_transport.put_file(name, stream)
+            for filename, stream in files:
+                branch_transport.put_file(filename, stream)
         finally:
             control_files.unlock()
-        return self.open(a_bzrdir, _found=True, )
+        return self.open(a_bzrdir, _found=True, name=name)
 
     def open(self, a_bzrdir, name=None, _found=False, ignore_fallbacks=False,
             found_repository=None, possible_transports=None):
@@ -822,15 +820,13 @@ class LoomFormatMixin(object):
                if format probing has already be done.
 
         :param name: The 'colocated branches' name for the branch to open.
-            in future, Loom may use that to return a Thread, but for now
-            it is unused.
         """
+        if name is None:
+            name = a_bzrdir._get_selected_branch()
         if not _found:
-            format = bzrlib.branch.BranchFormat.find_format(a_bzrdir)
+            format = bzrlib.branch.BranchFormat.find_format(a_bzrdir, name=name)
             assert format.__class__ == self.__class__
-        if name is not None:
-            raise errors.NoColocatedBranchSupport(self)
-        transport = a_bzrdir.get_branch_transport(None)
+        transport = a_bzrdir.get_branch_transport(None, name=name)
         control_files = bzrlib.lockable_files.LockableFiles(
             transport, 'lock', bzrlib.lockdir.LockDir)
         if found_repository is None:
@@ -839,7 +835,8 @@ class LoomFormatMixin(object):
                           _control_files=control_files,
                           a_bzrdir=a_bzrdir,
                           _repository=found_repository,
-                          ignore_fallbacks=ignore_fallbacks)
+                          ignore_fallbacks=ignore_fallbacks,
+                          name=name)
 
     def take_over(self, branch):
         """Take an existing bzrlib branch over into Loom format.
@@ -877,7 +874,8 @@ class BzrBranchLoomFormat1(LoomFormatMixin, bzrlib.branch.BzrBranchFormat5):
 
     _parent_classs = bzrlib.branch.BzrBranchFormat5
 
-    def get_format_string(self):
+    @classmethod
+    def get_format_string(cls):
         """See BranchFormat.get_format_string()."""
         return "Bazaar-NG Loom branch format 1\n"
 
@@ -906,7 +904,8 @@ class BzrBranchLoomFormat6(LoomFormatMixin, bzrlib.branch.BzrBranchFormat6):
 
     _parent_classs = bzrlib.branch.BzrBranchFormat6
 
-    def get_format_string(self):
+    @classmethod
+    def get_format_string(cls):
         """See BranchFormat.get_format_string()."""
         return "Bazaar-NG Loom branch format 6\n"
 
@@ -935,7 +934,8 @@ class BzrBranchLoomFormat7(LoomFormatMixin, bzrlib.branch.BzrBranchFormat7):
 
     _parent_classs = bzrlib.branch.BzrBranchFormat7
 
-    def get_format_string(self):
+    @classmethod
+    def get_format_string(cls):
         """See BranchFormat.get_format_string()."""
         return "Bazaar-NG Loom branch format 7\n"
 
