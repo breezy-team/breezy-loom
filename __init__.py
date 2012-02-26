@@ -101,12 +101,15 @@ except ImportError: # bzr < 2.4
         commands.cmd_status, True)
 else:
     def show_loom_summary(params):
+        branch = getattr(params.new_tree, "branch", None)
+        if branch is None:
+            # Not a working tree, ignore
+            return
         try:
-            formats.require_loom_branch(params.new_tree.branch)
+            formats.require_loom_branch(branch)
         except formats.NotALoom:
             return
-        params.to_file.write('Current thread: %s\n' %
-            params.new_tree.branch.nick)
+        params.to_file.write('Current thread: %s\n' % branch.nick)
 
     install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
         show_loom_summary, 'loom status')
