@@ -23,6 +23,6 @@ __all__ = [
     'bzr_maximum_version',
     ]
 
-bzr_plugin_version = (2, 2, 0, 'final', 0)
+bzr_plugin_version = (2, 3, 0, 'dev', 0)
 bzr_minimum_version = (2, 4, 0)
 bzr_maximum_version = None
