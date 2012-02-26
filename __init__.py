@@ -57,7 +57,15 @@ thread. See ``bzr help revisionspec`` for the detailed help on these two
 revision specifiers.
 """
 
-from bzrlib.plugins.loom.version import bzr_plugin_version as version_info
+from bzrlib.plugins.loom.version import (
+    bzr_plugin_version as version_info,
+    bzr_minimum_version,
+    )
+
+import bzrlib
+import bzrlib.api
+
+bzrlib.api.require_api(bzrlib, bzr_minimum_version)
 
 import bzrlib.builtins
 import bzrlib.commands
