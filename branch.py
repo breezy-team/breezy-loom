@@ -52,9 +52,6 @@ from bzrlib.plugins.loom import (
 
 EMPTY_REVISION = 'empty:'
 
-# Required for compatibility with bzr < 2.4b2
-InventoryTree = getattr(_mod_tree, "InventoryTree", _mod_tree.Tree)
-
 
 def create_thread(loom, thread_name):
     """Create a thread in the branch loom called thread."""
@@ -158,7 +155,7 @@ class CannotCombineOnLastThread(NoLowerThread):
     _fmt = """Cannot combine threads on the bottom thread."""
 
 
-class LoomMetaTree(InventoryTree):
+class LoomMetaTree(_mod_tree.InventoryTree):
     """A 'tree' object that is used to commit the loom meta branch."""
 
     def __init__(self, loom_meta_ie, loom_stream, loom_sha1):
@@ -780,19 +777,9 @@ class LoomFormatMixin(object):
     def initialize(self, a_bzrdir, name=None, repository=None,
                    append_revisions_only=None):
         """Create a branch of this format in a_bzrdir."""
-        if repository is None and append_revisions_only is None:
-            super(LoomFormatMixin, self).initialize(a_bzrdir, name=name)
-        elif append_revisions_only is None:
-            # The 'repository' optional keyword arg is new in bzr 2.3, so don't
-            # pass it unless it was passed in.
-            super(LoomFormatMixin, self).initialize(a_bzrdir, name=name,
-                    repository=repository)
-        else:
-            # The 'append_revisions_only' optional keyword arg is new in bzr 
-            # 2.4, so don't  pass it unless it was passed in.
-            super(LoomFormatMixin, self).initialize(a_bzrdir, name=name,
-                    repository=repository,
-                    append_revisions_only=append_revisions_only)
+        super(LoomFormatMixin, self).initialize(a_bzrdir, name=name,
+                repository=repository,
+                append_revisions_only=append_revisions_only)
 
         branch_transport = a_bzrdir.get_branch_transport(self)
         files = []
@@ -953,12 +940,7 @@ class InterLoomBranch(bzrlib.branch.GenericInterBranch):
 
     @classmethod
     def _get_branch_formats_to_test(klass):
-        try:
-            format_registry = getattr(bzrlib.branch, "format_registry")
-        except AttributeError: # bzr < 2.4
-            default_format = bzrlib.branch.BranchFormat._default_format
-        else:
-            default_format = format_registry.get_default()
+        default_format = bzrlib.branch.format_registry.get_default()
         return [
             (default_format, BzrBranchLoomFormat7()),
             (BzrBranchLoomFormat7(), default_format),

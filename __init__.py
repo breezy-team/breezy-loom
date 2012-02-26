@@ -61,7 +61,6 @@ from bzrlib.plugins.loom.version import bzr_plugin_version as version_info
 
 import bzrlib.builtins
 import bzrlib.commands
-import bzrlib.revisionspec
 
 from bzrlib.plugins.loom import (
     commands,
@@ -83,7 +82,7 @@ for command in [
     bzrlib.commands.plugin_cmds.register_lazy('cmd_' + command, [],
         'bzrlib.plugins.loom.commands')
 
-# XXX: bzr fix needed: for status and switch, we have to register directly, not
+# XXX: bzr fix needed: for switch, we have to register directly, not
 # lazily, because register_lazy does not stack in the same way register_command
 # does.
 if not hasattr(bzrlib.builtins, "cmd_switch"):
@@ -93,37 +92,26 @@ else:
     commands.cmd_switch._original_command = bzrlib.commands.register_command(
         getattr(commands, 'cmd_switch'), True)
 
-try:
-    from bzrlib.hooks import install_lazy_named_hook
-except ImportError: # bzr < 2.4
-    # no post_status hook. Fall back to overriding the status command
-    commands.cmd_status._original_command = bzrlib.commands.register_command(
-        commands.cmd_status, True)
-else:
-    def show_loom_summary(params):
-        branch = getattr(params.new_tree, "branch", None)
-        if branch is None:
-            # Not a working tree, ignore
-            return
-        try:
-            formats.require_loom_branch(branch)
-        except formats.NotALoom:
-            return
-        params.to_file.write('Current thread: %s\n' % branch.nick)
+from bzrlib.hooks import install_lazy_named_hook
+def show_loom_summary(params):
+    branch = getattr(params.new_tree, "branch", None)
+    if branch is None:
+        # Not a working tree, ignore
+        return
+    try:
+        formats.require_loom_branch(branch)
+    except formats.NotALoom:
+        return
+    params.to_file.write('Current thread: %s\n' % branch.nick)
 
-    install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
-        show_loom_summary, 'loom status')
+install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
+    show_loom_summary, 'loom status')
 
-revspec_registry = getattr(bzrlib.revisionspec, 'revspec_registry', None)
-if revspec_registry is not None:
-    revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
-                                   'RevisionSpecThread')
-    revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
-                                   'RevisionSpecBelow')
-else:
-    import revspec
-    bzrlib.revisionspec.SPEC_TYPES.append(revspec.RevisionSpecThread)
-    bzrlib.revisionspec.SPEC_TYPES.append(revspec.RevisionSpecBelow)
+from bzrlib.revisionspec import revspec_registry
+revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
+                               'RevisionSpecThread')
+revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
+                               'RevisionSpecBelow')
 
 #register loom formats
 formats.register_formats()

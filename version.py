@@ -24,5 +24,5 @@ __all__ = [
     ]
 
 bzr_plugin_version = (2, 2, 1, 'dev', 0)
-bzr_minimum_version = (2, 2, 0)
+bzr_minimum_version = (2, 4, 0)
 bzr_maximum_version = None

@@ -44,25 +44,11 @@ _LOOM_FORMATS = {
     }
 
 def register_formats():
-    if getattr(_mod_branch, 'MetaDirBranchFormatFactory', None):
-        branch_formats = [_mod_branch.MetaDirBranchFormatFactory(format_string,
-            "bzrlib.plugins.loom.branch", format_class) for 
-            (format_string, format_class) in _LOOM_FORMATS.iteritems()]
-    else:
-        # Compat for folk not running bleeding edge. Like me as I commit this.
-        import branch
-        branch_formats = [
-            branch.BzrBranchLoomFormat1(),
-            branch.BzrBranchLoomFormat6(),
-            branch.BzrBranchLoomFormat7(),
-            ]
-    try:
-        format_registry = getattr(_mod_branch, 'format_registry')
-        register = format_registry.register
-    except AttributeError: # bzr < 2.4
-        register = _mod_branch.BranchFormat.register_format
-
-    map(register, branch_formats)
+    branch_formats = [_mod_branch.MetaDirBranchFormatFactory(format_string,
+        "bzrlib.plugins.loom.branch", format_class) for 
+        (format_string, format_class) in _LOOM_FORMATS.iteritems()]
+    format_registry = getattr(_mod_branch, 'format_registry')
+    map(format_registry.register, branch_formats)
 
 
 def require_loom_branch(branch):

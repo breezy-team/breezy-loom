@@ -10,9 +10,8 @@ IN DEVELOPMENT
 NOTES WHEN UPGRADING
 --------------------
 
-* bzr-loom requires bzr 2.2.0 (or very recent 2.2b releases) due to an API
-  change in bzr needed to fix branching and pulling of looms. On older versions
-  of bzr bzr-loom will still work for most operations but will fail when making
+* bzr-loom requires bzr 2.4.0 due to API changes in bzr. On older versions of
+  bzr bzr-loom will still work for most operations but will fail when making
   new branches as part of a push or branch operation. (Robert Collins, #201613)
 
 CHANGES
