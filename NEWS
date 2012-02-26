@@ -38,6 +38,12 @@ IMPROVEMENTS
   complete degree), reducing the overhead of having it installed.
   (Robert Collins)
 
+* Loom now registers a ``bzr status`` hook rather than overriding the
+  ``bzr status`` command. (Jelmer Vernooij)
+
+* Loom now checks that a compatible version of bzr is being used.
+  (Jelmer Vernooij, #338214)
+
 BUGFIXES
 --------
 
@@ -58,6 +64,9 @@ BUGFIXES
 
 * The ``thread:`` revision specifier will no longer throw an attribute error
   when used on a normal branch. (Robert Collins, #231283)
+
+* The ``bzr status`` hook for looms will no longer crash on non-workingtree
+  trees. (Jelmer Vernooij, #904095)
 
 API BREAKS
 ----------
