@@ -17,6 +17,7 @@
 
 """Loom specific revision-specifiers."""
 
+from __future__ import absolute_import
 
 from bzrlib.plugins.loom.branch import NoLowerThread
 from bzrlib.plugins.loom.formats import require_loom_branch

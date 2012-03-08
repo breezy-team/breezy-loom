@@ -17,6 +17,8 @@
 
 """Versioning information for bzr-loom."""
 
+from __future__ import absolute_import
+
 __all__ = [
     'bzr_plugin_version',
     'bzr_minimum_version',

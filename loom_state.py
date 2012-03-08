@@ -18,6 +18,8 @@
 
 """The current-loom state object."""
 
+from __future__ import absolute_import
+
 from bzrlib.revision import NULL_REVISION
 
 

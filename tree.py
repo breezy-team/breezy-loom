@@ -21,19 +21,19 @@ LoomTreeDecorator decorates any tree which has a loomed branch to give it
 loom-aware functionality.
 """
 
-__all__ = ['LoomTreeDecorator']
+from __future__ import absolute_import
 
+__all__ = ['LoomTreeDecorator']
 
 from bzrlib import (
     trace,
-    ui,
     )
 from bzrlib.decorators import needs_write_lock
 import bzrlib.errors
 import bzrlib.merge
 import bzrlib.revision
 
-from branch import EMPTY_REVISION
+from bzrlib.plugins.loom.branch import EMPTY_REVISION
 
 
 class LoomTreeDecorator(object):

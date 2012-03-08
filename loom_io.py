@@ -18,6 +18,8 @@
 
 """Routines for reading and writing Looms in streams."""
 
+from __future__ import absolute_import
+
 
 import bzrlib.osutils
 
