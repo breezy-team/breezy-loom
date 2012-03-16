@@ -67,12 +67,12 @@ import bzrlib.api
 
 bzrlib.api.require_api(bzrlib, bzr_minimum_version)
 
+from bzrlib import branch as _mod_branch
 import bzrlib.builtins
 import bzrlib.commands
 
 from bzrlib.plugins.loom import (
     commands,
-    formats,
     )
 
 
@@ -107,8 +107,8 @@ def show_loom_summary(params):
         # Not a working tree, ignore
         return
     try:
-        formats.require_loom_branch(branch)
-    except formats.NotALoom:
+        require_loom_branch(branch)
+    except NotALoom:
         return
     params.to_file.write('Current thread: %s\n' % branch.nick)
 
@@ -121,8 +121,38 @@ revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
 revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
                                'RevisionSpecBelow')
 
+
+_LOOM_FORMATS = {
+    "Bazaar-NG Loom branch format 1\n": "BzrBranchLoomFormat1",
+    "Bazaar-NG Loom branch format 6\n": "BzrBranchLoomFormat6",
+    "Bazaar-NG Loom branch format 7\n": "BzrBranchLoomFormat7",
+    }
+
+
+def register_formats():
+    for format_string, kls in _LOOM_FORMATS.iteritems():
+        _mod_branch.format_registry.register_lazy(format_string,
+                "bzrlib.plugins.loom.branch", kls)
+
+
+def require_loom_branch(branch):
+    """Return None if branch is already loomified, or raise NotALoom."""
+    if branch._format.network_name() not in _LOOM_FORMATS:
+        raise NotALoom(branch)
+
+
+# TODO: define errors without importing all errors.
+class NotALoom(bzrlib.errors.BzrError):
+
+    _fmt = ("The branch %(branch)s is not a loom. "
+        "You can use 'bzr loomify' to make it into a loom.")
+
+    def __init__(self, branch):
+        bzrlib.errors.BzrError.__init__(self)
+        self.branch = branch
+
 #register loom formats
-formats.register_formats()
+register_formats()
 
 def test_suite():
     import bzrlib.plugins.loom.tests

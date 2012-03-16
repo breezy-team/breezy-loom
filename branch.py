@@ -44,9 +44,10 @@ from bzrlib.decorators import needs_read_lock, needs_write_lock
 from bzrlib.revision import is_null, NULL_REVISION
 
 from bzrlib.plugins.loom import (
-    formats,
     loom_io,
     loom_state,
+    require_loom_branch,
+    NotALoom,
     )
 
 
@@ -98,9 +99,6 @@ def loomify(branch):
     finally:
         branch.unlock()
 
-
-require_loom_branch = formats.require_loom_branch
-NotALoom = formats.NotALoom
 
 
 class LoomThreadError(errors.BzrError):

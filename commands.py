@@ -28,8 +28,6 @@ from bzrlib.option import Option
 import bzrlib.trace
 import bzrlib.transport
 
-from bzrlib.plugins.loom import formats
-
 lazy_import(globals(), """
 from bzrlib.plugins.loom import branch
 from bzrlib.plugins.loom.tree import LoomTreeDecorator
