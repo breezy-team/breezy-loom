@@ -115,12 +115,19 @@ def show_loom_summary(params):
 install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
     show_loom_summary, 'loom status')
 
-from bzrlib.revisionspec import revspec_registry
-revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
-                               'RevisionSpecThread')
-revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
-                               'RevisionSpecBelow')
-
+try:
+    from bzrlib.registry import register_lazy
+except ImportError: # bzr < 2.6
+    from bzrlib.revisionspec import revspec_registry
+    revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
+                                   'RevisionSpecThread')
+    revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
+                                   'RevisionSpecBelow')
+else:
+    register_lazy("bzrlib.revisionspec", "revspec_registry", 'thread:',
+            'bzrlib.plugins.loom.revspec', 'RevisionSpecThread')
+    register_lazy("bzrlib.revisionspec", "revspec_registry", 'below:',
+            'bzrlib.plugins.loom.revspec', 'RevisionSpecBelow')
 
 _LOOM_FORMATS = {
     "Bazaar-NG Loom branch format 1\n": "BzrBranchLoomFormat1",
