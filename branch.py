@@ -54,6 +54,12 @@ from bzrlib.plugins.loom import (
 EMPTY_REVISION = 'empty:'
 
 
+try:
+    from bzrlib.branchfmt.fullhistory import BzrBranch5, BzrBranchFormat5
+except ImportError:
+    from bzrlib.branch import BzrBranch5, BzrBranchFormat5
+
+
 def create_thread(loom, thread_name):
     """Create a thread in the branch loom called thread."""
     require_loom_branch(loom)
@@ -89,7 +95,7 @@ def loomify(branch):
             raise AlreadyLoom(branch)
         try:
             format = {
-                bzrlib.branch.BzrBranchFormat5: BzrBranchLoomFormat1,
+                BzrBranchFormat5: BzrBranchLoomFormat1,
                 bzrlib.branch.BzrBranchFormat6: BzrBranchLoomFormat6,
                 bzrlib.branch.BzrBranchFormat7: BzrBranchLoomFormat7,
             }[branch._format.__class__]()
@@ -742,7 +748,7 @@ class _Pusher(_Puller):
         return bzrlib.branch.Branch.hooks['post_push']
 
 
-class LoomBranch(LoomSupport, bzrlib.branch.BzrBranch5):
+class LoomBranch(LoomSupport, BzrBranch5):
     """The Loom branch.
     
     A mixin is used as the easiest migration path to support branch6. A
@@ -842,7 +848,7 @@ class LoomFormatMixin(object):
 
 
 
-class BzrBranchLoomFormat1(LoomFormatMixin, bzrlib.branch.BzrBranchFormat5):
+class BzrBranchLoomFormat1(LoomFormatMixin, BzrBranchFormat5):
     """Loom's first format.
 
     This format is an extension to BzrBranchFormat5 with the following changes:
@@ -857,7 +863,7 @@ class BzrBranchLoomFormat1(LoomFormatMixin, bzrlib.branch.BzrBranchFormat5):
     def _branch_class(self):
         return LoomBranch
 
-    _parent_classs = bzrlib.branch.BzrBranchFormat5
+    _parent_classs = BzrBranchFormat5
 
     @classmethod
     def get_format_string(cls):
