@@ -21,14 +21,14 @@
 
 from cStringIO import StringIO
 
-import bzrlib
-import bzrlib.errors as errors
-import bzrlib.osutils
-import bzrlib.plugins.loom.loom_io as loom_io
-import bzrlib.plugins.loom.loom_state as loom_state
-from bzrlib.plugins.loom.tree import LoomTreeDecorator
-from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import TestCase
+import breezy
+import breezy.errors as errors
+import breezy.osutils
+import breezy.plugins.loom.loom_io as loom_io
+import breezy.plugins.loom.loom_state as loom_state
+from breezy.plugins.loom.tree import LoomTreeDecorator
+from breezy.revision import NULL_REVISION
+from breezy.tests import TestCase
 
 
 class TestLoomState(TestCase):

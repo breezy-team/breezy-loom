@@ -19,20 +19,20 @@
 """Tests for the loom plugin."""
 
 
-import bzrlib.plugins.loom.branch
-from bzrlib.tests import TestCaseWithTransport
-from bzrlib.tests.TestUtil import TestLoader, TestSuite
-from bzrlib.workingtree import WorkingTree
+import breezy.plugins.loom.branch
+from breezy.tests import TestCaseWithTransport
+from breezy.tests.TestUtil import TestLoader, TestSuite
+from breezy.workingtree import WorkingTree
 
 
 def test_suite():
     module_names = [
-        'bzrlib.plugins.loom.tests.test_branch',
-        'bzrlib.plugins.loom.tests.test_loom_io',
-        'bzrlib.plugins.loom.tests.test_loom_state',
-        'bzrlib.plugins.loom.tests.test_revspec',
-        'bzrlib.plugins.loom.tests.test_tree',
-        'bzrlib.plugins.loom.tests.blackbox',
+        'breezy.plugins.loom.tests.test_branch',
+        'breezy.plugins.loom.tests.test_loom_io',
+        'breezy.plugins.loom.tests.test_loom_state',
+        'breezy.plugins.loom.tests.test_revspec',
+        'breezy.plugins.loom.tests.test_tree',
+        'breezy.plugins.loom.tests.blackbox',
         ]
     loader = TestLoader()
     return loader.loadTestsFromModuleNames(module_names)
@@ -45,6 +45,6 @@ class TestCaseWithLoom(TestCaseWithTransport):
         # May open on Remote - we want the vfs backed version for loom tests.
         self.make_branch_and_tree(path)
         tree = WorkingTree.open(path)
-        bzrlib.plugins.loom.branch.loomify(tree.branch)
-        return tree.bzrdir.open_workingtree()
+        breezy.plugins.loom.branch.loomify(tree.branch)
+        return tree.controldir.open_workingtree()
 

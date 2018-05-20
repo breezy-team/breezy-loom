@@ -186,7 +186,7 @@ INTERNALS
     * Running loom command on non-loom branches will now give a clean error
       rather than a traceback. (Rob Weir)
 
-    * ``up-thread`` is now significantly faster by using more modern bzrlib
+    * ``up-thread`` is now significantly faster by using more modern breezy
       methods. (Aaron Bentley)
 
     * ``up-thread`` now accepts merge type parameters such as ``--lca``.

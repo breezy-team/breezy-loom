@@ -19,10 +19,11 @@
 """Tests of the loom Branch related routines."""
 
 
-import bzrlib
-from bzrlib.branch import Branch
-import bzrlib.errors as errors
-from bzrlib.plugins.loom.branch import (
+import breezy
+from breezy.branch import Branch
+from breezy.commit import PointlessCommit
+import breezy.errors as errors
+from breezy.plugins.loom.branch import (
     AlreadyLoom,
     EMPTY_REVISION,
     loomify,
@@ -30,16 +31,16 @@ from bzrlib.plugins.loom.branch import (
     NotALoom,
     UnsupportedBranchFormat,
     )
-from bzrlib.plugins.loom.tests import TestCaseWithLoom
-from bzrlib.plugins.loom.tree import LoomTreeDecorator
-import bzrlib.revision
-from bzrlib.revision import NULL_REVISION
-from bzrlib.tests import (
+from breezy.plugins.loom.tests import TestCaseWithLoom
+from breezy.plugins.loom.tree import LoomTreeDecorator
+import breezy.revision
+from breezy.revision import NULL_REVISION
+from breezy.tests import (
     TestCaseWithTransport,
     test_server,
     )
-from bzrlib.transport import get_transport
-from bzrlib.workingtree import WorkingTree
+from breezy.transport import get_transport
+from breezy.workingtree import WorkingTree
 
 
 class TestFormat(TestCaseWithTransport):
@@ -47,7 +48,7 @@ class TestFormat(TestCaseWithTransport):
     def test_disk_format(self):
         bzrdir = self.make_bzrdir('.')
         bzrdir.create_repository()
-        format = bzrlib.plugins.loom.branch.BzrBranchLoomFormat1()
+        format = breezy.plugins.loom.branch.BzrBranchLoomFormat1()
         branch = format.initialize(bzrdir)
         self.assertFileEqual('Loom current 1\n\n', '.bzr/branch/last-loom')
 
@@ -82,7 +83,7 @@ class TestRequireLoomBranch(TestCaseWithTransport):
         branch = self.make_branch('.', format)
         loomify(branch)
         # reopen it
-        branch = branch.bzrdir.open_branch()
+        branch = branch.controldir.open_branch()
         self.assertEqual(None, require_loom_branch(branch))
 
     def test_works_on_loom1(self):
@@ -97,7 +98,7 @@ class TestRequireLoomBranch(TestCaseWithTransport):
     def test_no_harm_to_looms(self):
         branch = self.make_branch('.')
         loomify(branch)
-        branch = branch.bzrdir.open_branch()
+        branch = branch.controldir.open_branch()
         self.assertRaises(AlreadyLoom, loomify, branch)
 
 
@@ -107,7 +108,7 @@ class TestLoomify(TestCaseWithTransport):
         """Assert that branch has been successfully converted to a loom."""
         self.assertFalse(branch.is_locked())
         # a loomed branch opens with a different format
-        branch = bzrlib.branch.Branch.open('.')
+        branch = breezy.branch.Branch.open('.')
         self.assertIsInstance(branch, branch_class)
         self.assertIsInstance(branch._format, format)
         # and it should have no recorded loom content so we can do
@@ -131,29 +132,29 @@ class TestLoomify(TestCaseWithTransport):
         branch = self.make_branch('.', format='dirstate')
         loomify(branch)
         self.assertConvertedBranchFormat(branch,
-            bzrlib.plugins.loom.branch.LoomBranch,
-            bzrlib.plugins.loom.branch.BzrBranchLoomFormat1)
+            breezy.plugins.loom.branch.LoomBranch,
+            breezy.plugins.loom.branch.BzrBranchLoomFormat1)
 
     def test_loomify_branch_format_6(self):
         branch = self.make_branch('.', format='dirstate-tags')
         loomify(branch)
         self.assertConvertedBranchFormat(branch,
-            bzrlib.plugins.loom.branch.LoomBranch6,
-            bzrlib.plugins.loom.branch.BzrBranchLoomFormat6)
+            breezy.plugins.loom.branch.LoomBranch6,
+            breezy.plugins.loom.branch.BzrBranchLoomFormat6)
 
     def test_loomify_branch_format_7(self):
         branch = self.make_branch('.', format='1.6')
         loomify(branch)
         self.assertConvertedBranchFormat(branch,
-            bzrlib.plugins.loom.branch.LoomBranch7,
-            bzrlib.plugins.loom.branch.BzrBranchLoomFormat7)
+            breezy.plugins.loom.branch.LoomBranch7,
+            breezy.plugins.loom.branch.BzrBranchLoomFormat7)
 
 
 class TestLoom(TestCaseWithLoom):
 
     def make_loom(self, path):
-        bzrlib.plugins.loom.branch.loomify(self.make_branch(path))
-        return bzrlib.branch.Branch.open(path)
+        breezy.plugins.loom.branch.loomify(self.make_branch(path))
+        return breezy.branch.Branch.open(path)
 
     def test_new_thread_empty_branch(self):
         branch = self.make_loom('.')
@@ -174,7 +175,7 @@ class TestLoom(TestCaseWithLoom):
     def test_new_thread_no_duplicate_names(self):
         branch = self.make_loom('.')
         branch.new_thread('foo')
-        self.assertRaises(bzrlib.plugins.loom.branch.DuplicateThreadName, 
+        self.assertRaises(breezy.plugins.loom.branch.DuplicateThreadName, 
             branch.new_thread, 'foo')
         self.assertEqual(
             [('foo', EMPTY_REVISION, [])],
@@ -220,8 +221,8 @@ class TestLoom(TestCaseWithLoom):
 
     def test_record_loom_no_changes(self):
         tree = self.get_tree_with_loom()
-        self.assertRaises(errors.PointlessCommit, tree.branch.record_loom, 'foo')
-            
+        self.assertRaises(PointlessCommit, tree.branch.record_loom, 'foo')
+
     def test_record_thread(self):
         tree = self.get_tree_with_one_commit()
         tree.branch.new_thread('baseline')
@@ -248,12 +249,12 @@ class TestLoom(TestCaseWithLoom):
     def test_clone_empty_loom(self):
         source_tree = self.get_tree_with_loom('source')
         source_tree.branch._set_nick('source')
-        target_tree = source_tree.bzrdir.clone('target').open_workingtree()
+        target_tree = source_tree.controldir.clone('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
 
     def test_sprout_empty_loom(self):
         source_tree = self.get_tree_with_loom('source')
-        target_tree = source_tree.bzrdir.sprout('target').open_workingtree()
+        target_tree = source_tree.controldir.sprout('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
         
     def test_clone_nonempty_loom_top(self):
@@ -264,7 +265,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree.branch._set_nick('top')
         source_tree.commit('phwoar', allow_pointless=True)
         source_tree.branch.record_loom('commit to loom')
-        target_tree = source_tree.bzrdir.clone('target').open_workingtree()
+        target_tree = source_tree.controldir.clone('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
 
     def test_clone_nonempty_loom_bottom(self):
@@ -282,7 +283,7 @@ class TestLoom(TestCaseWithLoom):
         # now clone from the 'default url' - transport_server rather than
         # vfs_server.
         source_branch = Branch.open(self.get_url('source'))
-        target_tree = source_branch.bzrdir.sprout('target').open_workingtree()
+        target_tree = source_branch.controldir.sprout('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
 
     def test_sprout_remote_loom(self):
@@ -300,7 +301,7 @@ class TestLoom(TestCaseWithLoom):
         source_tree.branch.record_loom('commit to loom')
         LoomTreeDecorator(source_tree).down_thread()
         # now sprout
-        target_tree = source_tree.bzrdir.sprout('target').open_workingtree()
+        target_tree = source_tree.controldir.sprout('target').open_workingtree()
         self.assertLoomSproutedOk(source_tree, target_tree)
 
     def assertLoomSproutedOk(self, source_tree, target_tree):
@@ -348,7 +349,7 @@ class TestLoom(TestCaseWithLoom):
         source.branch.new_thread('top')
         source.branch._set_nick('bottom')
         source.branch.record_loom('commit to loom')
-        target = source.bzrdir.sprout('target').open_branch()
+        target = source.controldir.sprout('target').open_branch()
         target._set_nick('top')
         # put a commit in the bottom and top of this loom
         bottom_rev1 = source.commit('commit my arse')
@@ -383,7 +384,7 @@ class TestLoom(TestCaseWithLoom):
 
     def pull_into_empty_loom(self):
         source = self.get_tree_with_loom('source')
-        target = source.bzrdir.sprout('target').open_branch()
+        target = source.controldir.sprout('target').open_branch()
         source.branch.new_thread('a thread')
         source.branch._set_nick('a thread')
         # put a commit in the thread for source.
@@ -412,7 +413,7 @@ class TestLoom(TestCaseWithLoom):
     def test_pull_thread_at_null(self):
         """Doing a pull when the source loom has a thread with no history."""
         source = self.get_tree_with_loom('source')
-        target = source.bzrdir.sprout('target').open_branch()
+        target = source.controldir.sprout('target').open_branch()
         source.branch.new_thread('a thread')
         source.branch._set_nick('a thread')
         source.branch.record_loom('commit to loom')
@@ -435,7 +436,7 @@ class TestLoom(TestCaseWithLoom):
         source.branch.new_thread('top')
         source.branch._set_nick('bottom')
         source.branch.record_loom('commit to loom')
-        target = source.bzrdir.sprout('target').open_branch()
+        target = source.controldir.sprout('target').open_branch()
         target._set_nick('top')
         # put a commit in the bottom and top of this loom
         bottom_rev1 = source.commit('commit bottom')
@@ -620,7 +621,7 @@ class TestLoom(TestCaseWithLoom):
 
     def test_export_loom_initial(self):
         tree = self.get_multi_threaded()
-        root_transport = tree.branch.bzrdir.root_transport
+        root_transport = tree.branch.controldir.root_transport
         tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
         self.assertEqual('thread1-id', thread1.last_revision())
@@ -629,7 +630,7 @@ class TestLoom(TestCaseWithLoom):
 
     def test_export_loom_update(self):
         tree = self.get_multi_threaded()
-        root_transport = tree.branch.bzrdir.root_transport
+        root_transport = tree.branch.controldir.root_transport
         tree.branch.export_threads(root_transport)
         tree.commit('thread2-2', rev_id='thread2-2-id')
         tree.branch.export_threads(root_transport)
@@ -640,8 +641,8 @@ class TestLoom(TestCaseWithLoom):
 
     def test_export_loom_root_transport(self):
         tree = self.get_multi_threaded()
-        tree.branch.bzrdir.root_transport.mkdir('root')
-        root_transport = tree.branch.bzrdir.root_transport.clone('root')
+        tree.branch.controldir.root_transport.mkdir('root')
+        root_transport = tree.branch.controldir.root_transport.clone('root')
         tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
@@ -651,16 +652,16 @@ class TestLoom(TestCaseWithLoom):
 
     def test_export_loom_as_tree(self):
         tree = self.get_multi_threaded()
-        tree.branch.bzrdir.root_transport.mkdir('root')
-        root_transport = tree.branch.bzrdir.root_transport.clone('root')
+        tree.branch.controldir.root_transport.mkdir('root')
+        root_transport = tree.branch.controldir.root_transport.clone('root')
         tree.branch.export_threads(root_transport)
         export_tree = WorkingTree.open(root_transport.local_abspath('thread1'))
         self.assertEqual('thread1-id', export_tree.last_revision())
 
     def test_export_loom_as_branch(self):
         tree = self.get_multi_threaded()
-        tree.branch.bzrdir.root_transport.mkdir('root')
-        root_path = tree.branch.bzrdir.root_transport.local_abspath('root')
+        tree.branch.controldir.root_transport.mkdir('root')
+        root_path = tree.branch.controldir.root_transport.local_abspath('root')
         repo = self.make_repository('root', shared=True)
         repo.set_make_working_trees(False)
         root_transport = get_transport('root')

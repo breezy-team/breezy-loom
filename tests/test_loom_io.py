@@ -21,15 +21,15 @@
 
 from cStringIO import StringIO
 
-import bzrlib
-import bzrlib.errors as errors
-import bzrlib.osutils
-from bzrlib.plugins.loom.branch import EMPTY_REVISION
-import bzrlib.plugins.loom.loom_io as loom_io
-import bzrlib.plugins.loom.loom_state as loom_state
-from bzrlib.plugins.loom.tree import LoomTreeDecorator
-import bzrlib.revision
-from bzrlib.tests import TestCase
+import breezy
+import breezy.errors as errors
+import breezy.osutils
+from breezy.plugins.loom.branch import EMPTY_REVISION
+import breezy.plugins.loom.loom_io as loom_io
+import breezy.plugins.loom.loom_state as loom_state
+from breezy.plugins.loom.tree import LoomTreeDecorator
+import breezy.revision
+from breezy.tests import TestCase
 
 
 class TestLoomIO(TestCase):
@@ -43,7 +43,7 @@ class TestLoomIO(TestCase):
         """Write threads through a LoomWriter and check the output and sha1."""
         writer = loom_io.LoomWriter()
         stream = StringIO()
-        expected_sha1 = bzrlib.osutils.sha_strings([expected_stream])
+        expected_sha1 = breezy.osutils.sha_strings([expected_stream])
         self.assertEqual(expected_sha1, writer.write_threads(threads, stream))
         self.assertEqual(expected_stream, stream.getvalue())
 

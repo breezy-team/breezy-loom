@@ -20,13 +20,13 @@
 
 import os
 
-import bzrlib
-from bzrlib import branch as _mod_branch
-from bzrlib import workingtree
-from bzrlib.plugins.loom.branch import EMPTY_REVISION
-from bzrlib.plugins.loom.tree import LoomTreeDecorator
-from bzrlib.plugins.loom.tests import TestCaseWithLoom
-from bzrlib.revision import NULL_REVISION
+import breezy
+from breezy import branch as _mod_branch
+from breezy import workingtree
+from breezy.plugins.loom.branch import EMPTY_REVISION
+from breezy.plugins.loom.tree import LoomTreeDecorator
+from breezy.plugins.loom.tests import TestCaseWithLoom
+from breezy.revision import NULL_REVISION
 
 
 class TestsWithLooms(TestCaseWithLoom):
@@ -51,7 +51,7 @@ class TestsWithLooms(TestCaseWithLoom):
         tree.branch.nick = 'vendor'
         tree.commit('first release')
         self.run_bzr(['loomify', path])
-        return tree.bzrdir.open_workingtree()
+        return tree.controldir.open_workingtree()
 
     def assert_exception_raised_on_non_loom_branch(self, args):
         """Helper to check UserError gets raised when commands are run in a non-loomed branch."""
@@ -69,7 +69,7 @@ class TestLoomify(TestCaseWithLoom):
         out, err = self.run_bzr(['loomify'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
-            'bzr: ERROR: You must specify --base or have a branch nickname set'
+            'brz: ERROR: You must specify --base or have a branch nickname set'
             ' to loomify a branch\n', err)
 
     def test_loomify_new_branch_with_nick(self):
@@ -77,8 +77,8 @@ class TestLoomify(TestCaseWithLoom):
         b.nick = 'base'
         out, err = self.run_bzr(['loomify'])
         # a loomed branch opens with a unique format
-        b = bzrlib.branch.Branch.open('.')
-        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomSupport)
+        b = breezy.branch.Branch.open('.')
+        self.assertIsInstance(b, breezy.plugins.loom.branch.LoomSupport)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
             [('base', EMPTY_REVISION, [])],
@@ -89,8 +89,8 @@ class TestLoomify(TestCaseWithLoom):
         b.nick = 'base'
         out, err = self.run_bzr(['loomify', 'foo'])
         # a loomed branch opens with a unique format
-        b = bzrlib.branch.Branch.open('foo')
-        self.assertIsInstance(b, bzrlib.plugins.loom.branch.LoomSupport)
+        b = breezy.branch.Branch.open('foo')
+        self.assertIsInstance(b, breezy.plugins.loom.branch.LoomSupport)
         threads = b.get_loom_state().get_threads()
         self.assertEqual(
             [('base', EMPTY_REVISION, [])],
@@ -99,7 +99,7 @@ class TestLoomify(TestCaseWithLoom):
     def test_loomify_base_option(self):
         b = self.make_branch('foo')
         self.run_bzr(['loomify', 'foo', '--base', 'bar'])
-        b = bzrlib.branch.Branch.open('foo')
+        b = breezy.branch.Branch.open('foo')
         self.assertEqual('bar', b.nick)
 
 
@@ -189,12 +189,12 @@ class TestStatus(TestsWithLooms):
         # The test suite resets after each run, so manually register
         # the loom status hook.
         try:
-            from bzrlib.hooks import install_lazy_named_hook
+            from breezy.hooks import install_lazy_named_hook
         except ImportError:
             pass
         else:
-            from bzrlib.plugins.loom import show_loom_summary
-            install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
+            from breezy.plugins.loom import show_loom_summary
+            install_lazy_named_hook('breezy.status', 'hooks', 'post_status',
                 show_loom_summary, 'loom status')
 
     def test_status_shows_current_thread(self):
@@ -299,7 +299,7 @@ class TestRecord(TestsWithLooms):
         out, err = self.run_bzr(['record', 'Try to commit.'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
-            'bzr: ERROR: No changes to commit\n', err)
+            'brz: ERROR: No changes to commit\n', err)
 
     def test_record_new_thread(self):
         """Adding a new thread is enough to allow recording."""
@@ -321,7 +321,7 @@ class TestDown(TestsWithLooms):
         tree = self.get_vendor_loom()
         out, err = self.run_bzr(['down-thread'], retcode=3)
         self.assertEqual('', out)
-        self.assertEqual('bzr: ERROR: Cannot move down from the lowest thread.\n', err)
+        self.assertEqual('brz: ERROR: Cannot move down from the lowest thread.\n', err)
         
     def test_down_thread_same_revision(self):
         """moving down when the revision is unchanged should work."""
@@ -417,7 +417,7 @@ class TestDown(TestsWithLooms):
         self.build_tree(['new-file'])
         tree.add('new-file')
         out, err = self.run_bzr('down-thread', retcode=3)
-        self.assertEqual('bzr: ERROR: Working tree has uncommitted changes.\n',
+        self.assertEqual('brz: ERROR: Working tree has uncommitted changes.\n',
                          err)
 
 
@@ -428,7 +428,7 @@ class TestUp(TestsWithLooms):
         out, err = self.run_bzr(['up-thread'], retcode=3)
         self.assertEqual('', out)
         self.assertEqual(
-            'bzr: ERROR: Cannot move up from the highest thread.\n', err)
+            'brz: ERROR: Cannot move up from the highest thread.\n', err)
 
     def test_up_thread_same_revision(self):
         """moving up when the revision is unchanged should work."""
@@ -625,7 +625,7 @@ class TestPull(TestsWithLooms):
         """Integration smoke test for bzr pull loom to loom."""
         tree = self.get_vendor_loom('source')
         tree.branch.record_loom('commit loom.')
-        tree.bzrdir.sprout('target')
+        tree.controldir.sprout('target')
         tree.commit('change the source', allow_pointless=True)
         tree.branch.new_thread('foo')
         LoomTreeDecorator(tree).up_thread()
@@ -661,7 +661,7 @@ class TestRevert(TestsWithLooms):
         tree = self.get_vendor_loom()
         out, err = self.run_bzr(['revert-loom', 'unknown-thread'], retcode=3)
         self.assertEqual('', out)
-        self.assertEqual("bzr: ERROR: No such thread 'unknown-thread'.\n", err)
+        self.assertEqual("brz: ERROR: No such thread 'unknown-thread'.\n", err)
 
     def test_revert_loom_all(self):
         """bzr revert-loom --all should restore the state of a loom."""
@@ -712,7 +712,7 @@ class TestCombineThread(TestsWithLooms):
         tree = self.get_vendor_loom()
         out, err = self.run_bzr(['combine-thread'], retcode=3)
         self.assertEqual('', out)
-        self.assertEqual('bzr: ERROR: Cannot combine threads on the bottom thread.\n', err)
+        self.assertEqual('brz: ERROR: Cannot combine threads on the bottom thread.\n', err)
 
     def get_two_thread_loom(self):
         tree = self.get_vendor_loom()
@@ -769,7 +769,7 @@ class TestCombineThread(TestsWithLooms):
         unique_revid = tree.last_revision()
         out, err = self.run_bzr(['combine-thread'], retcode=3)
         self.assertEqual('', out)
-        self.assertEqual("bzr: ERROR: "
+        self.assertEqual("brz: ERROR: "
 "Thread 'unique-thread' has unmerged work. Use --force to combine anyway.\n",
             err)
         self.assertEqual(unique_revid, tree.last_revision())
@@ -816,7 +816,7 @@ class TestExportLoom(TestsWithLooms):
         tree = self.get_vendor_loom()
         err = self.run_bzr(['export-loom'], retcode=3)[1]
         self.assertContainsRe(err,
-            'bzr: ERROR: No export root known or specified.')
+            'brz: ERROR: No export root known or specified.')
 
     def test_export_loom_config(self):
         tree = self.get_vendor_loom()
@@ -828,4 +828,4 @@ class TestExportLoom(TestsWithLooms):
         """Test exporting with specified path"""
         tree = self.get_vendor_loom()
         self.run_bzr(['export-loom', 'export-path'])
-        branch = bzrlib.branch.Branch.open('export-path/vendor')
+        branch = breezy.branch.Branch.open('export-path/vendor')

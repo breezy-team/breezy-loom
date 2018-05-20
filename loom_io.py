@@ -21,7 +21,7 @@
 from __future__ import absolute_import
 
 
-import bzrlib.osutils
+import breezy.osutils
 
 
 # The current format marker for serialised loom state.
@@ -48,7 +48,7 @@ class LoomWriter(object):
             thread_content += '%s %s\n' % (rev_id, thread)
         thread_content = thread_content.encode('utf8')
         stream.write(thread_content)
-        return bzrlib.osutils.sha_strings([thread_content])
+        return breezy.osutils.sha_strings([thread_content])
 
 
 class LoomStateWriter(object):

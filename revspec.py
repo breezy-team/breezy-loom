@@ -19,9 +19,9 @@
 
 from __future__ import absolute_import
 
-from bzrlib.plugins.loom.branch import NoLowerThread
-from bzrlib.plugins.loom import require_loom_branch
-from bzrlib.revisionspec import RevisionSpec, RevisionInfo
+from breezy.plugins.loom.branch import NoLowerThread
+from breezy.plugins.loom import require_loom_branch
+from breezy.revisionspec import RevisionSpec, RevisionInfo
 
 
 class LoomRevisionSpec(RevisionSpec):

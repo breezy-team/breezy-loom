@@ -19,22 +19,22 @@
 
 from __future__ import absolute_import
 
-from bzrlib import bzrdir, directory_service, workingtree
-import bzrlib.commands
-import bzrlib.branch
-from bzrlib import errors
-from bzrlib.lazy_import import lazy_import
-from bzrlib.option import Option
-import bzrlib.trace
-import bzrlib.transport
+from breezy import controldir, directory_service, workingtree
+import breezy.commands
+import breezy.branch
+from breezy import errors
+from breezy.lazy_import import lazy_import
+from breezy.option import Option
+import breezy.trace
+import breezy.transport
 
 lazy_import(globals(), """
-from bzrlib.plugins.loom import branch
-from bzrlib.plugins.loom.tree import LoomTreeDecorator
+from breezy.plugins.loom import branch
+from breezy.plugins.loom.tree import LoomTreeDecorator
 """)
 
 
-class cmd_loomify(bzrlib.commands.Command):
+class cmd_loomify(breezy.commands.Command):
     """Add a loom to this branch.
 
     This creates a loom in your branch, which will alter the behaviour of
@@ -51,7 +51,7 @@ class cmd_loomify(bzrlib.commands.Command):
                             help='The name to use for the base thread.')]
 
     def run(self, location='.', base=None):
-        (target, path) = bzrlib.branch.Branch.open_containing(location)
+        (target, path) = breezy.branch.Branch.open_containing(location)
         target.lock_write()
         try:
             if base is not None:
@@ -61,7 +61,7 @@ class cmd_loomify(bzrlib.commands.Command):
                     'You must specify --base or have a branch nickname set to'
                     ' loomify a branch')
             branch.loomify(target)
-            loom = target.bzrdir.open_branch()
+            loom = target.controldir.open_branch()
         finally:
             target.unlock()
         # requires a new lock as its a new instance, XXX: teach bzrdir about
@@ -69,7 +69,7 @@ class cmd_loomify(bzrlib.commands.Command):
         loom.new_thread(loom.nick)
 
 
-class cmd_combine_thread(bzrlib.commands.Command):
+class cmd_combine_thread(breezy.commands.Command):
     __doc__ = """Combine the current thread with the thread below it.
     
     This will currently refuse to operate on the last thread, but in the future
@@ -125,13 +125,13 @@ class cmd_combine_thread(bzrlib.commands.Command):
         new_thread = state.get_new_thread_after_deleting(current_thread)
         if new_thread is None:
             raise branch.CannotCombineOnLastThread
-        bzrlib.trace.note("Combining thread '%s' into '%s'",
+        breezy.trace.note("Combining thread '%s' into '%s'",
             current_thread, new_thread)
         LoomTreeDecorator(tree).down_thread(new_thread)
         tree.branch.remove_thread(current_thread)
 
 
-class cmd_create_thread(bzrlib.commands.Command):
+class cmd_create_thread(breezy.commands.Command):
     """Add a thread to this loom.
 
     This creates a new thread in this loom and moves the branch onto that
@@ -146,11 +146,11 @@ class cmd_create_thread(bzrlib.commands.Command):
     takes_args = ['thread']
 
     def run(self, thread):
-        (loom, path) = bzrlib.branch.Branch.open_containing('.')
+        (loom, path) = breezy.branch.Branch.open_containing('.')
         branch.create_thread(loom, thread)
 
 
-class cmd_show_loom(bzrlib.commands.Command):
+class cmd_show_loom(breezy.commands.Command):
     """Show the threads in this loom.
 
     Output the threads in this loom with the newest thread at the top and
@@ -161,7 +161,7 @@ class cmd_show_loom(bzrlib.commands.Command):
     takes_args = ['location?']
 
     def run(self, location='.'):
-        (loom, path) = bzrlib.branch.Branch.open_containing(location)
+        (loom, path) = breezy.branch.Branch.open_containing(location)
         branch.require_loom_branch(loom)
         loom.lock_read()
         try:
@@ -172,12 +172,12 @@ class cmd_show_loom(bzrlib.commands.Command):
                     symbol = '=>'
                 else:
                     symbol = '  '
-                print "%s%s" % (symbol, thread)
+                self.outf.write(symbol + thread + '\n')
         finally:
             loom.unlock()
 
 
-class cmd_switch(bzrlib.builtins.cmd_switch):
+class cmd_switch(breezy.builtins.cmd_switch):
     """Set the branch of a checkout and update.
  
     For looms, this is equivalent to 'down-thread' when to_location is the name
@@ -215,7 +215,7 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
         # enough.
         if directory is None:
             directory = u'.'
-        control_dir, path = bzrdir.BzrDir.open_containing(directory)
+        control_dir, path = controldir.ControlDir.open_containing(directory)
         if to_location is None:
             if revision is None:
                 raise errors.BzrCommandError(
@@ -261,19 +261,19 @@ class cmd_switch(bzrlib.builtins.cmd_switch):
             self._original_command().run_argv_aliases(argv, alias_argv)
 
 
-class cmd_record(bzrlib.commands.Command):
+class cmd_record(breezy.commands.Command):
     """Record the current last-revision of this tree into the current thread."""
 
     takes_args = ['message']
 
     def run(self, message):
-        (abranch, path) = bzrlib.branch.Branch.open_containing('.')
+        (abranch, path) = breezy.branch.Branch.open_containing('.')
         branch.require_loom_branch(abranch)
         abranch.record_loom(message)
         print "Loom recorded."
 
 
-class cmd_revert_loom(bzrlib.commands.Command):
+class cmd_revert_loom(breezy.commands.Command):
     """Revert part or all of a loom.
     
     This will update the current loom to be the same as the basis when --all
@@ -289,20 +289,20 @@ class cmd_revert_loom(bzrlib.commands.Command):
 
     def run(self, thread=None, all=None):
         if thread is None and all is None:
-            bzrlib.trace.note('Please see revert-loom -h.')
+            breezy.trace.note('Please see revert-loom -h.')
             return
         (tree, path) = workingtree.WorkingTree.open_containing('.')
         branch.require_loom_branch(tree.branch)
         tree = LoomTreeDecorator(tree)
         if all:
             tree.revert_loom()
-            bzrlib.trace.note('All threads reverted.')
+            breezy.trace.note('All threads reverted.')
         else:
             tree.revert_loom(thread)
-            bzrlib.trace.note("thread '%s' reverted.", thread)
+            breezy.trace.note("thread '%s' reverted.", thread)
 
 
-class cmd_down_thread(bzrlib.commands.Command):
+class cmd_down_thread(breezy.commands.Command):
     """Move the branch down a thread in the loom.
 
     This removes the changes introduced by the current thread from the branch
@@ -335,7 +335,7 @@ class cmd_down_thread(bzrlib.commands.Command):
             tree.unlock()
 
 
-class cmd_up_thread(bzrlib.commands.Command):
+class cmd_up_thread(breezy.commands.Command):
     """Move the branch up to the top thread in the loom.
 
     This merges the changes done in this thread but not incorporated into
@@ -366,7 +366,7 @@ class cmd_up_thread(bzrlib.commands.Command):
             return tree.up_many(merge_type, thread)
 
 
-class cmd_export_loom(bzrlib.commands.Command):
+class cmd_export_loom(breezy.commands.Command):
     """Export loom threads as a full-fledged branches.
 
     LOCATION specifies the location to export the threads under.  If it does
@@ -381,12 +381,12 @@ class cmd_export_loom(bzrlib.commands.Command):
 
     def run(self, location=None):
         root_transport = None
-        loom = bzrlib.branch.Branch.open_containing('.')[0]
+        loom = breezy.branch.Branch.open_containing('.')[0]
         if location is None:
             location = loom.get_config().get_user_option('export_loom_root')
         if location is None:
             raise errors.BzrCommandError('No export root known or specified.')
-        root_transport = bzrlib.transport.get_transport(location,
-            possible_transports=[loom.bzrdir.root_transport])
+        root_transport = breezy.transport.get_transport(location,
+            possible_transports=[loom.controldir.root_transport])
         root_transport.ensure_base()
         loom.export_threads(root_transport)

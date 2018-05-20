@@ -30,7 +30,7 @@ if __name__ == '__main__':
           author_email="bazaar@lists.canonical.com",
           license = "GNU GPL v2",
           url="https://launchpad.net/bzr-loom",
-          packages=['bzrlib.plugins.loom',
-                    'bzrlib.plugins.loom.tests',
+          packages=['breezy.plugins.loom',
+                    'breezy.plugins.loom.tests',
                     ],
-          package_dir={'bzrlib.plugins.loom': '.'})
+          package_dir={'breezy.plugins.loom': '.'})

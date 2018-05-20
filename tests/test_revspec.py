@@ -19,11 +19,11 @@
 """Tests of the loom revision-specifiers."""
 
 
-import bzrlib.errors
-from bzrlib.plugins.loom.branch import NoLowerThread, NoSuchThread
-from bzrlib.plugins.loom.tests import TestCaseWithLoom
-import bzrlib.plugins.loom.tree
-from bzrlib.revisionspec import RevisionSpec
+import breezy.errors
+from breezy.plugins.loom.branch import NoLowerThread, NoSuchThread
+from breezy.plugins.loom.tests import TestCaseWithLoom
+import breezy.plugins.loom.tree
+from breezy.revisionspec import RevisionSpec
 
 
 class TestRevSpec(TestCaseWithLoom):
@@ -34,7 +34,7 @@ class TestRevSpec(TestCaseWithLoom):
         tree.branch.new_thread('top')
         tree.branch._set_nick('bottom')
         rev_id_bottom = tree.commit('change bottom')
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.up_thread()
         rev_id_top = tree.commit('change top')
         return tree, loom_tree, rev_id_bottom, rev_id_top
@@ -76,7 +76,7 @@ class TestThreadRevSpec(TestRevSpec):
     def test_thread_on_non_loom_gives_BzrError(self):
         tree = self.make_branch_and_tree('.')
         spec = RevisionSpec.from_string('thread:')
-        err = self.assertRaises(bzrlib.errors.BzrError, spec.as_revision_id,
+        err = self.assertRaises(breezy.errors.BzrError, spec.as_revision_id,
             tree.branch)
         self.assertFalse(err.internal_error)
 
@@ -96,7 +96,7 @@ class TestBelowRevSpec(TestRevSpec):
         tree, loom_tree, _, rev_id = self.get_two_thread_loom()
         loom_tree.down_thread()
         spec = RevisionSpec.from_string('below:')
-        err = self.assertRaises(bzrlib.errors.BzrError, spec.as_revision_id,
+        err = self.assertRaises(breezy.errors.BzrError, spec.as_revision_id,
             tree.branch)
         self.assertFalse(err.internal_error)
 
@@ -110,6 +110,6 @@ class TestBelowRevSpec(TestRevSpec):
     def test_below_on_non_loom_gives_BzrError(self):
         tree = self.make_branch_and_tree('.')
         spec = RevisionSpec.from_string('below:')
-        err = self.assertRaises(bzrlib.errors.BzrError, spec.as_revision_id,
+        err = self.assertRaises(breezy.errors.BzrError, spec.as_revision_id,
             tree.branch)
         self.assertFalse(err.internal_error)

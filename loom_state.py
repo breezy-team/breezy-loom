@@ -20,7 +20,7 @@
 
 from __future__ import absolute_import
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 
 
 class LoomState(object):
@@ -73,7 +73,7 @@ class LoomState(object):
     def thread_index(self, thread):
         """Find the index of thread in threads."""
         # Avoid circular import
-        from bzrlib.plugins.loom.branch import NoSuchThread
+        from breezy.plugins.loom.branch import NoSuchThread
         thread_names = [name for name, rev, parents in self._threads]
         try:
             return thread_names.index(thread)

@@ -57,21 +57,20 @@ thread. See ``bzr help revisionspec`` for the detailed help on these two
 revision specifiers.
 """
 
-from bzrlib.plugins.loom.version import (
-    bzr_plugin_version as version_info,
-    bzr_minimum_version,
+from breezy.plugins.loom.version import (
+    brz_minimum_version,
     )
 
-import bzrlib
-import bzrlib.api
+from breezy import version_info as breezy_version_info
 
-bzrlib.api.require_api(bzrlib, bzr_minimum_version)
+if brz_minimum_version > breezy_version_info:
+    raise Exception('Breezy version too old')
 
-from bzrlib import branch as _mod_branch
-import bzrlib.builtins
-import bzrlib.commands
+from breezy import branch as _mod_branch
+import breezy.builtins
+import breezy.commands
 
-from bzrlib.plugins.loom import (
+from breezy.plugins.loom import (
     commands,
     )
 
@@ -87,20 +86,20 @@ for command in [
     'show_loom',
     'up_thread',
     ]:
-    bzrlib.commands.plugin_cmds.register_lazy('cmd_' + command, [],
-        'bzrlib.plugins.loom.commands')
+    breezy.commands.plugin_cmds.register_lazy('cmd_' + command, [],
+        'breezy.plugins.loom.commands')
 
 # XXX: bzr fix needed: for switch, we have to register directly, not
 # lazily, because register_lazy does not stack in the same way register_command
 # does.
-if not hasattr(bzrlib.builtins, "cmd_switch"):
+if not hasattr(breezy.builtins, "cmd_switch"):
     # provide a switch command (allows 
-    bzrlib.commands.register_command(getattr(commands, 'cmd_switch'))
+    breezy.commands.register_command(getattr(commands, 'cmd_switch'))
 else:
-    commands.cmd_switch._original_command = bzrlib.commands.register_command(
+    commands.cmd_switch._original_command = breezy.commands.register_command(
         getattr(commands, 'cmd_switch'), True)
 
-from bzrlib.hooks import install_lazy_named_hook
+from breezy.hooks import install_lazy_named_hook
 def show_loom_summary(params):
     branch = getattr(params.new_tree, "branch", None)
     if branch is None:
@@ -112,22 +111,22 @@ def show_loom_summary(params):
         return
     params.to_file.write('Current thread: %s\n' % branch.nick)
 
-install_lazy_named_hook('bzrlib.status', 'hooks', 'post_status',
+install_lazy_named_hook('breezy.status', 'hooks', 'post_status',
     show_loom_summary, 'loom status')
 
 try:
-    from bzrlib.registry import register_lazy
+    from breezy.registry import register_lazy
 except ImportError: # bzr < 2.6
-    from bzrlib.revisionspec import revspec_registry
-    revspec_registry.register_lazy('thread:', 'bzrlib.plugins.loom.revspec',
+    from breezy.revisionspec import revspec_registry
+    revspec_registry.register_lazy('thread:', 'breezy.plugins.loom.revspec',
                                    'RevisionSpecThread')
-    revspec_registry.register_lazy('below:', 'bzrlib.plugins.loom.revspec',
+    revspec_registry.register_lazy('below:', 'breezy.plugins.loom.revspec',
                                    'RevisionSpecBelow')
 else:
-    register_lazy("bzrlib.revisionspec", "revspec_registry", 'thread:',
-            'bzrlib.plugins.loom.revspec', 'RevisionSpecThread')
-    register_lazy("bzrlib.revisionspec", "revspec_registry", 'below:',
-            'bzrlib.plugins.loom.revspec', 'RevisionSpecBelow')
+    register_lazy("breezy.revisionspec", "revspec_registry", 'thread:',
+            'breezy.plugins.loom.revspec', 'RevisionSpecThread')
+    register_lazy("breezy.revisionspec", "revspec_registry", 'below:',
+            'breezy.plugins.loom.revspec', 'RevisionSpecBelow')
 
 _LOOM_FORMATS = {
     "Bazaar-NG Loom branch format 1\n": "BzrBranchLoomFormat1",
@@ -139,7 +138,7 @@ _LOOM_FORMATS = {
 def register_formats():
     for format_string, kls in _LOOM_FORMATS.iteritems():
         _mod_branch.format_registry.register_lazy(format_string,
-                "bzrlib.plugins.loom.branch", kls)
+                "breezy.plugins.loom.branch", kls)
 
 
 def require_loom_branch(branch):
@@ -149,18 +148,18 @@ def require_loom_branch(branch):
 
 
 # TODO: define errors without importing all errors.
-class NotALoom(bzrlib.errors.BzrError):
+class NotALoom(breezy.errors.BzrError):
 
     _fmt = ("The branch %(branch)s is not a loom. "
         "You can use 'bzr loomify' to make it into a loom.")
 
     def __init__(self, branch):
-        bzrlib.errors.BzrError.__init__(self)
+        breezy.errors.BzrError.__init__(self)
         self.branch = branch
 
 #register loom formats
 register_formats()
 
 def test_suite():
-    import bzrlib.plugins.loom.tests
-    return bzrlib.plugins.loom.tests.test_suite()
+    import breezy.plugins.loom.tests
+    return breezy.plugins.loom.tests.test_suite()

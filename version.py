@@ -20,11 +20,10 @@
 from __future__ import absolute_import
 
 __all__ = [
-    'bzr_plugin_version',
-    'bzr_minimum_version',
-    'bzr_maximum_version',
+    'brz_plugin_version',
+    'brz_minimum_version',
+    'brz_maximum_version',
     ]
 
-bzr_plugin_version = (2, 3, 0, 'dev', 0)
-bzr_minimum_version = (2, 4, 0)
-bzr_maximum_version = None
+brz_plugin_version = (2, 3, 0, 'dev', 0)
+brz_minimum_version = (3, 0, 0)

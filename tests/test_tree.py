@@ -19,16 +19,16 @@
 """Tests of the loom Tree related routines."""
 
 
-import bzrlib
-from bzrlib import (
+import breezy
+from breezy import (
     errors,
     merge as _mod_merge,
 )
 
-from bzrlib.plugins.loom.branch import EMPTY_REVISION
-from bzrlib.plugins.loom.tests import TestCaseWithLoom
-import bzrlib.plugins.loom.tree
-from bzrlib.revision import NULL_REVISION
+from breezy.plugins.loom.branch import EMPTY_REVISION
+from breezy.plugins.loom.tests import TestCaseWithLoom
+import breezy.plugins.loom.tree
+from breezy.revision import NULL_REVISION
 
 
 class TestTreeDecorator(TestCaseWithLoom):
@@ -39,14 +39,14 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('top')
         tree.branch._set_nick('bottom')
-        return bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        return breezy.plugins.loom.tree.LoomTreeDecorator(tree)
 
     def test_down_thread(self):
         tree = self.get_tree_with_loom('source')
         tree.branch.new_thread('bottom')
         tree.branch.new_thread('top')
         tree.branch._set_nick('top')
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.down_thread()
         self.assertEqual('bottom', tree.branch.nick)
 
@@ -58,7 +58,7 @@ class TestTreeDecorator(TestCaseWithLoom):
 
     def test_down_named_thread(self):
         tree = self.get_tree_with_loom('source')
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         bottom_id = self._add_thread(tree, 'bottom')
         self._add_thread(tree, 'middle')
         self._add_thread(tree, 'top')
@@ -80,7 +80,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('top')
         tree.branch._set_nick('bottom')
         bottom_rev1 = tree.commit('bottom_commit')
-        tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        tree_loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.up_thread()
         self.assertEqual('top', tree.branch.nick)
         self.assertEqual([bottom_rev1], tree.get_parent_ids())
@@ -94,7 +94,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('top', 'bottom')
         tree.branch._set_nick('top')
         top_rev1 = tree.commit('top_commit', allow_pointless=True)
-        tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        tree_loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.down_thread()
         # check the test will be valid
         tree.lock_read()
@@ -118,7 +118,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('top', 'bottom')
         tree.branch._set_nick('top')
         top_rev1 = tree.commit('top_commit', allow_pointless=True)
-        tree_loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        tree_loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         tree_loom_tree.down_thread()
         # check the test will be valid
         tree.lock_read()
@@ -164,7 +164,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('middle')
         tree.branch.new_thread('top')
         tree.branch._set_nick('bottom')
-        return bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        return breezy.plugins.loom.tree.LoomTreeDecorator(tree)
 
     def test_up_many(self):
         loom_tree = self.get_loom_with_three_threads()
@@ -224,7 +224,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('bar')
         tree.branch._set_nick('bar')
         tree.commit('change something', allow_pointless=True)
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom()
         # the tree should be reverted
         self.assertEqual(NULL_REVISION, tree.last_revision())
@@ -239,7 +239,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('bar')
         tree.branch._set_nick('bar')
         tree.commit('change something', allow_pointless=True)
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom(thread='bar')
         # the tree should be reverted
         self.assertEqual(NULL_REVISION, tree.last_revision())
@@ -256,7 +256,7 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree.branch.new_thread('bar')
         tree.branch._set_nick('bar')
         tree.commit('change something', allow_pointless=True)
-        loom_tree = bzrlib.plugins.loom.tree.LoomTreeDecorator(tree)
+        loom_tree = breezy.plugins.loom.tree.LoomTreeDecorator(tree)
         loom_tree.revert_loom(thread='foo')
         # the tree should not be reverted
         self.assertNotEqual(NULL_REVISION, tree.last_revision())
