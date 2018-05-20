@@ -46,7 +46,7 @@ from breezy.workingtree import WorkingTree
 class TestFormat(TestCaseWithTransport):
 
     def test_disk_format(self):
-        bzrdir = self.make_bzrdir('.')
+        bzrdir = self.make_controldir('.')
         bzrdir.create_repository()
         format = breezy.plugins.loom.branch.BzrBranchLoomFormat1()
         branch = format.initialize(bzrdir)

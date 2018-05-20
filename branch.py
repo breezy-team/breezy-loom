@@ -174,17 +174,17 @@ class LoomMetaTree(_mod_inventorytree.InventoryTree):
         self._loom_stream = loom_stream
         self._loom_sha1 = loom_sha1
     
-    def get_file(self, file_id, path):
+    def get_file(self, path, file_id):
         """Get the content of file_id from this tree.
 
         As usual this must be for the single existing file 'loom'.
         """
         return self._loom_stream
 
-    def get_file_with_stat(self, file_id, path=None):
-        return (self.get_file(file_id, path), None)
+    def get_file_with_stat(self, path, file_id=None):
+        return (self.get_file(path, file_id), None)
 
-    def get_file_sha1(self, file_id, path):
+    def get_file_sha1(self, path, file_id, stat_value=None):
         """Get the sha1 for a file. 
 
         This tree only has one file, so it MUST be present!
@@ -199,6 +199,11 @@ class LoomMetaTree(_mod_inventorytree.InventoryTree):
         Nothing in a LoomMetaTree is executable.
         """
         return False
+
+    def _comparison_data(self, entry, path):
+        if entry is None:
+            return None, False, None
+        return entry.kind, entry.executable, None
 
 
 class LoomSupport(object):
@@ -359,7 +364,7 @@ class LoomSupport(object):
         if revisionid is empty:, this is a new, empty branch.
         """
         tree = self.repository.revision_tree(rev_id)
-        lines = tree.get_file('loom_meta_tree').read().split('\n')
+        lines = tree.get_file('loom', 'loom_meta_tree').read().split('\n')
         assert lines[0] == 'Loom meta 1'
         return lines[1:-1]
 
@@ -469,15 +474,14 @@ class LoomSupport(object):
             loom_sha1 = writer.write_threads(new_threads, loom_stream)
             loom_stream.seek(0)
             loom_tree = LoomMetaTree(loom_ie, loom_stream, loom_sha1)
-            if getattr(builder, 'record_root_entry', False):
-                root_ie = _mod_inventory.make_entry(
-                    'directory', '', None, _mod_inventory.ROOT_ID)
-                builder.record_entry_contents(root_ie, [], '', loom_tree,
-                    ('directory', None, None, None))
-            builder.record_entry_contents(
-                loom_ie, list(self.repository.iter_inventories(parents)), 'loom', loom_tree,
-                # a fake contents so that the file is determined as changed.
-                ('file', 0, False, None))
+            try:
+                basis_revid = parents[0]
+            except IndexError:
+                basis_revid = breezy.revision.NULL_REVISION
+            for unused in builder.record_iter_changes(
+                loom_tree, basis_revid,
+                loom_tree.iter_changes(self.repository.revision_tree(basis_revid))):
+                pass
             builder.finish_inventory()
             rev_id = builder.commit(commit_message)
             state.set_parents([rev_id])
