@@ -60,6 +60,19 @@ class StubFormat(object):
         return "Nothing to see."
 
 
+class FakeLock(object):
+
+    def __init__(self, unlock):
+        self.unlock = unlock
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.unlock()
+        return False
+
+
 class LockableStub(object):
 
     def __init__(self):
@@ -68,6 +81,7 @@ class LockableStub(object):
 
     def lock_write(self):
         self._calls.append(("write",))
+        return FakeLock(self.unlock)
 
     def unlock(self):
         self._calls.append(("unlock",))
@@ -421,7 +435,7 @@ class TestLoom(TestCaseWithLoom):
         # check loom threads
         threads = target.get_loom_state().get_threads()
         self.assertEqual(
-            [('a thread', 'empty:', ['empty:'])],
+            [('a thread', b'empty:', [b'empty:'])],
             threads)
         # check loom tip was pulled
         loom_rev_ids = source.branch.loom_parents()
@@ -525,7 +539,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.revert_loom()
         # the threads list should be restored
         self.assertEqual(
-            [(u'foo', 'empty:', [EMPTY_REVISION]),
+            [(u'foo', b'empty:', [EMPTY_REVISION]),
              (u'bar', last_rev, [last_rev])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(last_rev, tree.branch.last_revision())
@@ -552,7 +566,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.revert_loom()
         # the threads list should be restored
         self.assertEqual(
-            [('base', 'empty:', [EMPTY_REVISION]),
+            [('base', b'empty:', [EMPTY_REVISION]),
              ('top', last_rev, [last_rev])],
             tree.branch.get_loom_state().get_threads())
         self.assertEqual(last_rev, tree.branch.last_revision())
@@ -597,7 +611,7 @@ class TestLoom(TestCaseWithLoom):
         tree.branch._set_nick('bar')
         tree.branch.remove_thread('foo')
         state = tree.branch.get_loom_state()
-        self.assertEqual([('bar', 'empty:', [])], state.get_threads())
+        self.assertEqual([('bar', b'empty:', [])], state.get_threads())
 
     def test_get_threads_null(self):
         tree = self.get_tree_with_loom()
@@ -613,10 +627,10 @@ class TestLoom(TestCaseWithLoom):
         tree = self.get_tree_with_loom()
         tree.branch.new_thread('thread1')
         tree.branch._set_nick('thread1')
-        tree.commit('thread1', rev_id='thread1-id')
+        tree.commit('thread1', rev_id=b'thread1-id')
         tree.branch.new_thread('thread2', 'thread1')
         tree.branch._set_nick('thread2')
-        tree.commit('thread2', rev_id='thread2-id')
+        tree.commit('thread2', rev_id=b'thread2-id')
         return tree
 
     def test_export_loom_initial(self):
@@ -624,20 +638,20 @@ class TestLoom(TestCaseWithLoom):
         root_transport = tree.branch.controldir.root_transport
         tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
-        self.assertEqual('thread1-id', thread1.last_revision())
+        self.assertEqual(b'thread1-id', thread1.last_revision())
         thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
-        self.assertEqual('thread2-id', thread2.last_revision())
+        self.assertEqual(b'thread2-id', thread2.last_revision())
 
     def test_export_loom_update(self):
         tree = self.get_multi_threaded()
         root_transport = tree.branch.controldir.root_transport
         tree.branch.export_threads(root_transport)
-        tree.commit('thread2-2', rev_id='thread2-2-id')
+        tree.commit('thread2-2', rev_id=b'thread2-2-id')
         tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
-        self.assertEqual('thread1-id', thread1.last_revision())
+        self.assertEqual(b'thread1-id', thread1.last_revision())
         thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
-        self.assertEqual('thread2-2-id', thread2.last_revision())
+        self.assertEqual(b'thread2-2-id', thread2.last_revision())
 
     def test_export_loom_root_transport(self):
         tree = self.get_multi_threaded()
@@ -646,9 +660,9 @@ class TestLoom(TestCaseWithLoom):
         tree.branch.export_threads(root_transport)
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
         thread1 = Branch.open_from_transport(root_transport.clone('thread1'))
-        self.assertEqual('thread1-id', thread1.last_revision())
+        self.assertEqual(b'thread1-id', thread1.last_revision())
         thread2 = Branch.open_from_transport(root_transport.clone('thread2'))
-        self.assertEqual('thread2-id', thread2.last_revision())
+        self.assertEqual(b'thread2-id', thread2.last_revision())
 
     def test_export_loom_as_tree(self):
         tree = self.get_multi_threaded()
@@ -656,7 +670,7 @@ class TestLoom(TestCaseWithLoom):
         root_transport = tree.branch.controldir.root_transport.clone('root')
         tree.branch.export_threads(root_transport)
         export_tree = WorkingTree.open(root_transport.local_abspath('thread1'))
-        self.assertEqual('thread1-id', export_tree.last_revision())
+        self.assertEqual(b'thread1-id', export_tree.last_revision())
 
     def test_export_loom_as_branch(self):
         tree = self.get_multi_threaded()
@@ -670,7 +684,7 @@ class TestLoom(TestCaseWithLoom):
                           root_transport.local_abspath('thread1'))
         export_branch = Branch.open_from_transport(
             root_transport.clone('thread1'))
-        self.assertEqual('thread1-id', export_branch.last_revision())
+        self.assertEqual(b'thread1-id', export_branch.last_revision())
 
     def test_set_nick_renames_thread(self):
         tree = self.get_tree_with_loom()

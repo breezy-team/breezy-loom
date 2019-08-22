@@ -307,8 +307,8 @@ class TestRecord(TestsWithLooms):
         tree.branch.new_thread('feature')
         tree.branch._set_nick('feature')
         out, err = self.run_bzr(['record', 'add feature branch.'])
-        self.assertEqual('Loom recorded.\n', out)
-        self.assertEqual('', err)
+        self.assertEqual('Loom recorded.\n', err)
+        self.assertEqual('', out)
 
     def test_record_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""
@@ -540,19 +540,13 @@ class TestUp(TestsWithLooms):
         tree.branch.new_thread('patch')
         tree.branch._set_nick('patch')
         # make a change to afile in patch.
-        f = open('afile', 'wb')
-        try:
-            f.write('new contents of afile\n')
-        finally:
-            f.close()
+        with open('afile', 'wb') as f:
+            f.write(b'new contents of afile\n')
         patch_rev = tree.commit('make a change to afile')
         # make the same change in vendor.
         self.run_bzr(['down-thread'])
-        f = open('afile', 'wb')
-        try:
-            f.write('new contents of afile\n')
-        finally:
-            f.close()
+        with open('afile', 'wb') as f:
+            f.write(b'new contents of afile\n')
         vendor_release = tree.commit('make the same change to afile')
         # check that the trees no longer differ after the up merge,
         # and that we are 
@@ -721,7 +715,7 @@ class TestCombineThread(TestsWithLooms):
         loom_tree.up_thread()
         self.build_tree(['file-a'])
         tree.add('file-a')
-        tree.commit('change the tree', rev_id='above-vendor-1')
+        tree.commit('change the tree', rev_id=b'above-vendor-1')
         loom_tree.down_thread()
         return tree, loom_tree
 
@@ -743,7 +737,7 @@ class TestCombineThread(TestsWithLooms):
         loom_tree.up_thread()
         self.build_tree(['file-b'])
         tree.add('file-b')
-        tree.commit('a unique change', rev_id='uniquely-yrs-1')
+        tree.commit('a unique change', rev_id=b'uniquely-yrs-1')
         loom_tree.down_thread()
         return tree, loom_tree
 
@@ -801,7 +795,7 @@ class TestCombineThread(TestsWithLooms):
         self.run_bzr('combine-thread')
         tree = workingtree.WorkingTree.open('.')
         self.assertEqual('above-vendor', tree.branch.nick)
-        self.assertEqual('above-vendor-1', tree.last_revision())
+        self.assertEqual(b'above-vendor-1', tree.last_revision())
 
     def test_combine_thread_on_non_loomed_branch(self):
         """We should raise a user-friendly exception if the branch isn't loomed yet."""

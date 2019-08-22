@@ -270,7 +270,7 @@ class cmd_record(breezy.commands.Command):
         (abranch, path) = breezy.branch.Branch.open_containing('.')
         branch.require_loom_branch(abranch)
         abranch.record_loom(message)
-        print "Loom recorded."
+        breezy.trace.note("Loom recorded.")
 
 
 class cmd_revert_loom(breezy.commands.Command):

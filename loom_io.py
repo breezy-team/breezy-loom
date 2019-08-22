@@ -26,7 +26,7 @@ import breezy.osutils
 
 # The current format marker for serialised loom state.
 # This belongs in a format object at some point.
-_CURRENT_LOOM_FORMAT_STRING = "Loom current 1"
+_CURRENT_LOOM_FORMAT_STRING = b"Loom current 1"
 
 # the current loom format :
 # first line is the format signature
@@ -43,10 +43,10 @@ class LoomWriter(object):
 
     def write_threads(self, threads, stream):
         """Write threads to stream with a format header."""
-        thread_content = 'Loom meta 1\n'
+        thread_content = b'Loom meta 1\n'
         for thread, rev_id in threads:
-            thread_content += '%s %s\n' % (rev_id, thread)
-        thread_content = thread_content.encode('utf8')
+            thread_content += b'%s %s\n' % (rev_id, thread.encode('utf-8'))
+        thread_content = thread_content
         stream.write(thread_content)
         return breezy.osutils.sha_strings([thread_content])
 
@@ -63,21 +63,21 @@ class LoomStateWriter(object):
 
     def write(self, stream):
         """Write the state object to stream."""
-        lines = [_CURRENT_LOOM_FORMAT_STRING + '\n']
-        lines.append(' '.join(self._state.get_parents()) + '\n')
+        lines = [_CURRENT_LOOM_FORMAT_STRING + b'\n']
+        lines.append(b' '.join(self._state.get_parents()) + b'\n')
         # Note that we could possibly optimise our unicode handling here.
         for thread, rev_id, parents in self._state.get_threads():
             assert len(parents) == len(self._state.get_parents())
             # leading space for conflict status
-            line = " "
+            line = b" "
             for parent in parents:
                 if parent is not None:
-                    line += "%s " % parent.decode('utf8')
+                    line += b"%s " % parent
                 else:
-                    line += " "
-            line += ": "
-            lines.append('%s%s %s\n' % (line, rev_id.decode('utf8'), thread))
-        stream.write(''.join(lines).encode('utf8'))
+                    line += b" "
+            line += b": "
+            lines.append(b'%s%s %s\n' % (line, rev_id, thread.encode('utf-8')))
+        stream.write(b''.join(lines))
 
 
 class LoomStateReader(object):
@@ -101,12 +101,13 @@ class LoomStateReader(object):
         if self._content is None:
             # Names are unicode,revids are utf8 - it's arguable whether decode
             # all and encode revids, or vice verca is better.
-            self._content = self._stream.read().decode('utf8').split('\n')
+            self._content = self._stream.read().split(b'\n')
             # this is where detection of different formats should go.
             # we probably want either a  factory for readers, or a strategy
             # for the reader that is looked up on this format string.
             # either way, its in the future.
-            assert self._content[0] == _CURRENT_LOOM_FORMAT_STRING 
+            assert self._content[0] == _CURRENT_LOOM_FORMAT_STRING, \
+                    "%r != %r" % (self._content[0], _CURRENT_LOOM_FORMAT_STRING)
 
     def read_parents(self):
         """Read the parents field from the stream.
@@ -114,7 +115,7 @@ class LoomStateReader(object):
         :return: a list of parent revision ids.
         """
         self._read()
-        return self._content[1].encode('utf8').split()
+        return self._content[1].split()
 
     def read_thread_details(self):
         """Read the details for the threads.
@@ -128,20 +129,19 @@ class LoomStateReader(object):
         """
         result = []
         parent_count = len(self.read_parents())
-        split_count = parent_count + 2
         # skip the format and parent lines, and the trailing \n line.
         for line in self._content[2:-1]:
-            conflict_status, line = line.split(' ', 1)
+            conflict_status, line = line.split(b' ', 1)
             parents = []
-            parent = ""
+            parent = b""
             while True:
-                parent, line = line.split(' ', 1)
-                if parent == ':':
+                parent, line = line.split(b' ', 1)
+                if parent == b':':
                     break
-                elif parent == '':
+                elif parent == b'':
                     parents.append(None)
                 else:
-                    parents.append(parent.encode('utf8'))
-            rev_id, name = line.split(' ', 1)
-            result.append((name, rev_id.encode('utf8'), parents))
+                    parents.append(parent)
+            rev_id, name = line.split(b' ', 1)
+            result.append((name.decode('utf-8'), rev_id, parents))
         return result

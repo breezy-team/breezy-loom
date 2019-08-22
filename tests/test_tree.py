@@ -174,16 +174,16 @@ class TestTreeDecorator(TestCaseWithLoom):
 
     def test_up_many_commits(self):
         loom_tree = self.get_loom_with_two_threads()
-        loom_tree.tree.commit('bottom', rev_id='bottom-1')
+        loom_tree.tree.commit('bottom', rev_id=b'bottom-1')
         loom_tree.up_thread()
-        loom_tree.tree.commit('top', rev_id='top-1')
+        loom_tree.tree.commit('top', rev_id=b'top-1')
         loom_tree.down_thread()
-        loom_tree.tree.commit('bottom', rev_id='bottom-2')
+        loom_tree.tree.commit('bottom', rev_id=b'bottom-2')
         loom_tree.up_many()
         last_revision = loom_tree.tree.last_revision()
         self.assertNotEqual(last_revision, 'top-1')
         rev = loom_tree.tree.branch.repository.get_revision(last_revision)
-        self.assertEqual(['top-1', 'bottom-2'], rev.parent_ids)
+        self.assertEqual([b'top-1', b'bottom-2'], rev.parent_ids)
         self.assertEqual('Merge bottom into top', rev.message)
 
     def test_up_many_halts_on_conflicts(self):
@@ -191,16 +191,16 @@ class TestTreeDecorator(TestCaseWithLoom):
         tree = loom_tree.tree
         self.build_tree_contents([('source/file', 'contents-a')])
         tree.add('file')
-        tree.commit('bottom', rev_id='bottom-1')
+        tree.commit('bottom', rev_id=b'bottom-1')
         loom_tree.up_thread()
         self.build_tree_contents([('source/file', 'contents-b')])
-        tree.commit('middle', rev_id='middle-1')
+        tree.commit('middle', rev_id=b'middle-1')
         loom_tree.down_thread()
         self.build_tree_contents([('source/file', 'contents-c')])
-        tree.commit('bottom', rev_id='bottom-2')
+        tree.commit('bottom', rev_id=b'bottom-2')
         loom_tree.up_many()
         self.assertEqual('middle', tree.branch.nick)
-        self.assertEqual(['middle-1', 'bottom-2'], tree.get_parent_ids())
+        self.assertEqual([b'middle-1', b'bottom-2'], tree.get_parent_ids())
         self.assertEqual(1, len(tree.conflicts()))
 
     def test_up_many_target_thread(self):

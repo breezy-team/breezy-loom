@@ -26,14 +26,13 @@ loom branch.
 
 from __future__ import absolute_import
 
-from StringIO import StringIO
+from io import BytesIO
 
 import breezy.branch
 from breezy import (
     commit as _mod_commit,
     controldir,
     errors,
-    fetch as _mod_fetch,
     symbol_versioning,
     trace,
     ui,
@@ -42,6 +41,7 @@ from breezy import (
 from breezy.bzr import (
     branch as _mod_bzrbranch,
     bzrdir,
+    fetch as _mod_fetch,
     inventory as _mod_inventory,
     inventorytree as _mod_inventorytree,
     remote,
@@ -56,7 +56,7 @@ from breezy.plugins.loom import (
     )
 
 
-EMPTY_REVISION = 'empty:'
+EMPTY_REVISION = b'empty:'
 
 
 from breezy.bzr.fullhistory import BzrBranch5, BzrBranchFormat5
@@ -65,12 +65,9 @@ from breezy.bzr.fullhistory import BzrBranch5, BzrBranchFormat5
 def create_thread(loom, thread_name):
     """Create a thread in the branch loom called thread."""
     require_loom_branch(loom)
-    loom.lock_write()
-    try:
+    with loom.lock_write():
         loom.new_thread(thread_name, loom.nick)
         loom._set_nick(thread_name)
-    finally:
-        loom.unlock()
 
 
 class AlreadyLoom(errors.BzrError):
@@ -87,8 +84,7 @@ def loomify(branch):
 
     If branch is a BzrBranch5 branch, it will become a LoomBranch.
     """
-    try:
-        branch.lock_write()
+    with branch.lock_write():
         try:
             require_loom_branch(branch)
         except NotALoom:
@@ -104,8 +100,6 @@ def loomify(branch):
         except KeyError:
             raise UnsupportedBranchFormat(branch._format)
         format.take_over(branch)
-    finally:
-        branch.unlock()
 
 
 
@@ -174,7 +168,7 @@ class LoomMetaTree(_mod_inventorytree.InventoryTree):
         self._loom_stream = loom_stream
         self._loom_sha1 = loom_sha1
     
-    def get_file(self, path, file_id):
+    def get_file(self, path, file_id=None):
         """Get the content of file_id from this tree.
 
         As usual this must be for the single existing file 'loom'.
@@ -184,16 +178,16 @@ class LoomMetaTree(_mod_inventorytree.InventoryTree):
     def get_file_with_stat(self, path, file_id=None):
         return (self.get_file(path, file_id), None)
 
-    def get_file_sha1(self, path, file_id, stat_value=None):
+    def get_file_sha1(self, path, file_id=None, stat_value=None):
         """Get the sha1 for a file. 
 
         This tree only has one file, so it MUST be present!
         """
         assert path == 'loom'
-        assert file_id == 'loom_meta_tree'
+        assert file_id is None or file_id == b'loom_meta_tree'
         return self._loom_sha1
 
-    def is_executable(self, file_id, path):
+    def is_executable(self, path, file_id=None):
         """get the executable status for file_id.
         
         Nothing in a LoomMetaTree is executable.
@@ -364,8 +358,9 @@ class LoomSupport(object):
         if revisionid is empty:, this is a new, empty branch.
         """
         tree = self.repository.revision_tree(rev_id)
-        lines = tree.get_file('loom', 'loom_meta_tree').read().split('\n')
-        assert lines[0] == 'Loom meta 1'
+        with tree.get_file('loom') as f:
+            lines = f.read().split(b'\n')
+        assert lines[0] == b'Loom meta 1'
         return lines[1:-1]
 
     def loom_parents(self):
@@ -403,8 +398,8 @@ class LoomSupport(object):
         """Parse the body of a loom file."""
         result = []
         for line in content:
-            rev_id, name = line.split(' ', 1)
-            result.append((name, rev_id))
+            rev_id, name = line.split(b' ', 1)
+            result.append((name.decode('utf-8'), rev_id))
         return result
 
     def _loom_get_nick(self):
@@ -467,9 +462,9 @@ class LoomSupport(object):
                 raise _mod_commit.PointlessCommit
             builder = self.get_commit_builder(parents)
             loom_ie = _mod_inventory.make_entry(
-                'file', 'loom', _mod_inventory.ROOT_ID, 'loom_meta_tree')
+                'file', 'loom', _mod_inventory.ROOT_ID, b'loom_meta_tree')
             writer = loom_io.LoomWriter()
-            loom_stream = StringIO()
+            loom_stream = BytesIO()
             new_threads = [thread[0:2] for thread in threads]
             loom_sha1 = writer.write_threads(new_threads, loom_stream)
             loom_stream.seek(0)
@@ -566,7 +561,7 @@ class LoomSupport(object):
 
     def _set_last_loom(self, state):
         """Record state to the last-loom control file."""
-        stream = StringIO()
+        stream = BytesIO()
         writer = loom_io.LoomStateWriter(state)
         writer.write(stream)
         stream.seek(0)
@@ -680,9 +675,7 @@ class _Puller(object):
         pb = ui.ui_factory.nested_progress_bar()
         try:
             result = self.prepare_result(_override_hook_target)
-            self.target.lock_write()
-            self.source.lock_read()
-            try:
+            with self.target.lock_write(), self.source.lock_read():
                 source_state = self.real_source.get_loom_state()
                 source_parents = source_state.get_parents()
                 if not source_parents:
@@ -736,9 +729,6 @@ class _Puller(object):
                     result.tag_conflicts = tag_ret
                 self.do_hooks(result, run_hooks)
                 return result
-            finally:
-                self.source.unlock()
-                self.target.unlock()
         finally:
             pb.finished()
 
@@ -795,7 +785,7 @@ class LoomFormatMixin(object):
         files = []
         state = loom_state.LoomState()
         writer = loom_io.LoomStateWriter(state)
-        state_stream = StringIO()
+        state_stream = BytesIO()
         writer.write(state_stream)
         state_stream.seek(0)
         files.append(('last-loom', state_stream))
@@ -847,7 +837,7 @@ class LoomFormatMixin(object):
         branch._transport.put_bytes('format', self.get_format_string())
         state = loom_state.LoomState()
         writer = loom_io.LoomStateWriter(state)
-        state_stream = StringIO()
+        state_stream = BytesIO()
         writer.write(state_stream)
         state_stream.seek(0)
         branch._transport.put_file('last-loom', state_stream)
@@ -874,7 +864,7 @@ class BzrBranchLoomFormat1(LoomFormatMixin, BzrBranchFormat5):
     @classmethod
     def get_format_string(cls):
         """See BranchFormat.get_format_string()."""
-        return "Bazaar-NG Loom branch format 1\n"
+        return b"Bazaar-NG Loom branch format 1\n"
 
     def get_format_description(self):
         """See BranchFormat.get_format_description()."""
@@ -904,7 +894,7 @@ class BzrBranchLoomFormat6(LoomFormatMixin, _mod_bzrbranch.BzrBranchFormat6):
     @classmethod
     def get_format_string(cls):
         """See BranchFormat.get_format_string()."""
-        return "Bazaar-NG Loom branch format 6\n"
+        return b"Bazaar-NG Loom branch format 6\n"
 
     def get_format_description(self):
         """See BranchFormat.get_format_description()."""
@@ -934,7 +924,7 @@ class BzrBranchLoomFormat7(LoomFormatMixin, _mod_bzrbranch.BzrBranchFormat7):
     @classmethod
     def get_format_string(cls):
         """See BranchFormat.get_format_string()."""
-        return "Bazaar-NG Loom branch format 7\n"
+        return b"Bazaar-NG Loom branch format 7\n"
 
     def get_format_description(self):
         """See BranchFormat.get_format_description()."""
@@ -1045,7 +1035,7 @@ class InterLoomBranch(breezy.branch.GenericInterBranch):
                 self.source._synchronize_history(self.target, revision_id)
             try:
                 parent = self.source.get_parent()
-            except errors.InaccessibleParent, e:
+            except errors.InaccessibleParent as e:
                 trace.mutter('parent was not accessible to copy: %s', e)
             else:
                 if parent:

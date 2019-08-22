@@ -129,14 +129,14 @@ else:
             'breezy.plugins.loom.revspec', 'RevisionSpecBelow')
 
 _LOOM_FORMATS = {
-    "Bazaar-NG Loom branch format 1\n": "BzrBranchLoomFormat1",
-    "Bazaar-NG Loom branch format 6\n": "BzrBranchLoomFormat6",
-    "Bazaar-NG Loom branch format 7\n": "BzrBranchLoomFormat7",
+    b"Bazaar-NG Loom branch format 1\n": "BzrBranchLoomFormat1",
+    b"Bazaar-NG Loom branch format 6\n": "BzrBranchLoomFormat6",
+    b"Bazaar-NG Loom branch format 7\n": "BzrBranchLoomFormat7",
     }
 
 
 def register_formats():
-    for format_string, kls in _LOOM_FORMATS.iteritems():
+    for format_string, kls in _LOOM_FORMATS.items():
         _mod_branch.format_registry.register_lazy(format_string,
                 "breezy.plugins.loom.branch", kls)
 
