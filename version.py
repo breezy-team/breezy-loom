@@ -25,5 +25,6 @@ __all__ = [
     'brz_maximum_version',
     ]
 
-brz_plugin_version = (2, 3, 0, 'dev', 0)
+brz_plugin_version = (3, 0, 0, 'dev', 0)
 brz_minimum_version = (3, 0, 0)
+brz_maximum_version = None

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python3
 from distutils.core import setup
 
 brz_plugin_name = 'loom'
@@ -24,12 +24,12 @@ from version import *
 
 if __name__ == '__main__':
     setup(name="Loom",
-          version="2.2.1dev0",
+          version="3.0.0",
           description="Loom plugin for bzr.",
           author="Canonical Ltd",
           author_email="bazaar@lists.canonical.com",
           license="GNU GPL v2",
-          url="https://launchpad.net/bzr-loom",
+          url="https://launchpad.net/brz-loom",
           packages=['breezy.plugins.loom',
                     'breezy.plugins.loom.tests',
                     ],
