@@ -251,7 +251,8 @@ class LoomSupport(object):
         # Looms are not currently bindable.
         raise errors.UpgradeRequired(self.base)
 
-    def clone(self, to_controldir, revision_id=None, repository_policy=None, name=None):
+    def clone(self, to_controldir, revision_id=None, repository_policy=None, name=None,
+              tag_selector=None):
         """Clone the branch into to_controldir.
         
         This differs from the base clone by cloning the loom, setting the
@@ -271,7 +272,7 @@ class LoomSupport(object):
             repository_policy.configure_branch(result)
         with self.lock_read():
             breezy.branch.InterBranch.get(self, result).copy_content_into(
-                revision_id=revision_id)
+                revision_id=revision_id, tag_selector=tag_selector)
             return result
 
     def _get_checkout_format(self, lightweight=False):
@@ -899,7 +900,7 @@ class BzrBranchLoomFormat6(LoomFormatMixin, _mod_bzrbranch.BzrBranchFormat6):
     def get_format_description(self):
         """See BranchFormat.get_format_description()."""
         return "Loom branch format 6"
-        
+
     def __str__(self):
         return "bzr loom format 6 (based on bzr branch format 6)\n"
 
@@ -971,16 +972,15 @@ class InterLoomBranch(breezy.branch.GenericInterBranch):
         format = klass.unwrap_format(branch._format)
         return isinstance(format, LoomFormatMixin)
 
-    def copy_content_into(self, revision_id=None):
+    def copy_content_into(self, revision_id=None, tag_selector=None):
         with self.lock_write():
             if not self.__class__.branch_is_loom(self.source):
                 # target is loom, but the generic code path works Just Fine for
                 # regular to loom copy_content_into.
                 return super(InterLoomBranch, self).copy_content_into(
-                    revision_id=revision_id)
+                    revision_id=revision_id, tag_selector=tag_selector)
             # XXX: hint for breezy - break this into two routines, one for
             # copying the last-rev pointer, one for copying parent etc.
-            source_nick = self.source.nick
             state = self.get_loom_state(self.source)
             parents = state.get_parents()
             if parents:
@@ -990,11 +990,12 @@ class InterLoomBranch(breezy.branch.GenericInterBranch):
             threads = self.get_threads(self.source, state.get_basis_revision_id())
             if revision_id not in (None, NULL_REVISION):
                 if threads:
-                    # revision_id should be in the loom, or its an error 
-                    found_threads = [thread for thread, rev in threads
+                    # revision_id should be in the loom, or its an error
+                    found_threads = [
+                        thread for thread, rev in threads
                         if rev == revision_id]
                     if not found_threads:
-                        # the thread we have been asked to set in the remote 
+                        # the thread we have been asked to set in the remote
                         # side has not been recorded yet, so its data is not
                         # present at this point.
                         raise UnrecordedRevision(self.source, revision_id)
@@ -1043,11 +1044,12 @@ class InterLoomBranch(breezy.branch.GenericInterBranch):
             if threads:
                 self.target._set_nick(threads[-1][0])
             if self.source._push_should_merge_tags():
-                self.source.tags.merge_to(self.target.tags)
+                self.source.tags.merge_to(
+                    self.target.tags, seletor=tag_selector)
 
     def pull(self, overwrite=False, stop_revision=None,
-        run_hooks=True, possible_transports=None, _override_hook_target=None,
-        local=False):
+             run_hooks=True, possible_transports=None, _override_hook_target=None,
+             local=False, tag_selector=None):
         """Perform a pull, reading from self.source and writing to self.target.
 
         If the source branch is a non-loom branch, the pull is done against the
@@ -1064,7 +1066,7 @@ class InterLoomBranch(breezy.branch.GenericInterBranch):
                 overwrite=overwrite, stop_revision=stop_revision,
                 possible_transports=possible_transports,
                 _override_hook_target=_override_hook_target, local=local,
-                run_hooks=run_hooks)
+                run_hooks=run_hooks, tag_selector=tag_selector)
 
 
 breezy.branch.InterBranch.register_optimiser(InterLoomBranch)
